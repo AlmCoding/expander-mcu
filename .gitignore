@@ -1,0 +1,7 @@
+ExpanderFw/Debug
+
+.$FirmwareArchitecturedrawio.drawio.bkp
+.$UartCom.drawio.bkp
+.$I2cCom.drawio.bkp
+
+*.dtmp
