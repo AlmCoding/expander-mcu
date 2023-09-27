@@ -1,32 +1,34 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    app_azure_rtos.c
-  * @author  MCD Application Team
-  * @brief   app_azure_rtos application implementation file
-  ******************************************************************************
-    * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    app_azure_rtos.c
+ * @author  MCD Application Team
+ * @brief   app_azure_rtos application implementation file
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2023 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
 #include "app_azure_rtos.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "os/builder.hpp"
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+#define USE_CUSTOM_APP_THREADX_INIT
 
 /* USER CODE END PTD */
 
@@ -85,7 +87,14 @@ VOID tx_application_define(VOID *first_unused_memory)
   else
   {
     /* USER CODE BEGIN TX_Byte_Pool_Success */
-
+#ifdef USE_CUSTOM_APP_THREADX_INIT
+    memory_ptr = (VOID*)&tx_app_byte_pool;
+    status = buildOs(memory_ptr);
+    if (status != TX_SUCCESS) {
+      while (1) {
+      }
+    }
+#else
     /* USER CODE END TX_Byte_Pool_Success */
 
     memory_ptr = (VOID *)&tx_app_byte_pool;
@@ -93,13 +102,12 @@ VOID tx_application_define(VOID *first_unused_memory)
     if (status != TX_SUCCESS)
     {
       /* USER CODE BEGIN  App_ThreadX_Init_Error */
-      while(1)
-      {
+      while (1) {
       }
       /* USER CODE END  App_ThreadX_Init_Error */
     }
     /* USER CODE BEGIN  App_ThreadX_Init_Success */
-
+#endif
     /* USER CODE END  App_ThreadX_Init_Success */
 
   }

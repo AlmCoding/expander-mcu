@@ -8,7 +8,7 @@
 #define TF_CONFIG_H
 
 #include <stdint.h>
-#include "../app/srv/debug.hpp"
+#include "util/debug.hpp"
 
 //----------------------------- FRAME FORMAT ---------------------------------
 // The format can be adjusted to fit your particular application needs
