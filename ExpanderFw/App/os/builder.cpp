@@ -30,13 +30,10 @@ void enterOs() {
 UINT buildOs(VOID* memory_ptr) {
   /* Init scheduler */
 
-  /*
-  createMutexes();
-  createTimers();
-  */
-
   createThreads(memory_ptr);
   createQueues(memory_ptr);
+  // createMutexes();
+  // createTimers();
 
   return TX_SUCCESS;
 }

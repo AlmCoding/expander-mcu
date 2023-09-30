@@ -103,19 +103,19 @@ TX_QUEUE* getQueue(msg::MsgQueueId queue) {
   TX_QUEUE* qhdl = nullptr;
 
   switch (queue) {
-    case msg::MsgQueueId::CtrlTaskQueue: {
+    case msg::MsgQueueId::CtrlThreadQueue: {
       qhdl = &ctrl_queue_;
       break;
     }
-    case msg::MsgQueueId::UartTaskQueue: {
+    case msg::MsgQueueId::UartThreadQueue: {
       qhdl = &uart_queue_;
       break;
     }
-    case msg::MsgQueueId::GpioTaskQueue: {
+    case msg::MsgQueueId::GpioThreadQueue: {
       qhdl = &gpio_queue_;
       break;
     }
-    case msg::MsgQueueId::I2cTaskQueue: {
+    case msg::MsgQueueId::I2cThreadQueue: {
       qhdl = &i2c_queue_;
       break;
     }

@@ -30,13 +30,13 @@ FrameDriver::FrameDriver() {
   TF_AddGenericListener(&tf_, genericCallback);
 }
 
-Status_t FrameDriver::registerTxCallback(app::usb::UsbMsgType type, TxCallback callback) {
+Status_t FrameDriver::registerTxCallback(TfMsgType type, TxCallback callback) {
   tx_callbacks_[static_cast<uint8_t>(type)] = callback;
   return Status_t::Ok;
 }
 
-void FrameDriver::callTxCallback(app::usb::UsbMsgType type) {
-  TF_Msg msg = { 0 };
+void FrameDriver::callTxCallback(TfMsgType type) {
+  TF_Msg msg = {};
 
   msg.type = static_cast<TF_TYPE>(type);
   msg.len = static_cast<TF_LEN>(tx_callbacks_[static_cast<uint8_t>(type)](tx_buffer_, sizeof(tx_buffer_)));
@@ -51,7 +51,7 @@ void FrameDriver::callTxCallback(app::usb::UsbMsgType type) {
   }
 }
 
-Status_t FrameDriver::registerRxCallback(app::usb::UsbMsgType type, RxCallback callback) {
+Status_t FrameDriver::registerRxCallback(TfMsgType type, RxCallback callback) {
   Status_t status = Status_t::Error;
 
   if (TF_AddTypeListener(&tf_, static_cast<uint8_t>(type), typeCallback) == true) {
@@ -62,7 +62,7 @@ Status_t FrameDriver::registerRxCallback(app::usb::UsbMsgType type, RxCallback c
   return status;
 }
 
-void FrameDriver::callRxCallback(app::usb::UsbMsgType type, const uint8_t* data, size_t len) {
+void FrameDriver::callRxCallback(TfMsgType type, const uint8_t* data, size_t len) {
   rx_callbacks_[static_cast<uint8_t>(type)](data, len);
 }
 
@@ -85,7 +85,7 @@ TF_Result typeCallback(TinyFrame* /*tf*/, TF_Msg* msg) {
   DEBUG_INFO("=>I msg: type: %d, len: %d", msg->type, msg->len);
 
   driver::tf::FrameDriver& frameDriver = driver::tf::FrameDriver::getInstance();
-  frameDriver.callRxCallback(static_cast<app::usb::UsbMsgType>(msg->type), msg->data, msg->len);
+  frameDriver.callRxCallback(static_cast<TfMsgType>(msg->type), msg->data, msg->len);
 
   return TF_STAY;
 }

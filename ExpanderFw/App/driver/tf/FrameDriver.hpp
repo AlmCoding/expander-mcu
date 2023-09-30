@@ -10,8 +10,8 @@
 
 #ifdef __cplusplus
 
-#include "app/usb/usbComTypes.hpp"
 #include "common.hpp"
+#include "driver/tf/tfMsgTypes.hpp"
 
 extern "C" {
 #include "tf/TinyFrame.h"
@@ -33,11 +33,11 @@ class FrameDriver {
     return instance;
   }
 
-  Status_t registerTxCallback(app::usb::UsbMsgType type, TxCallback callback);
-  void callTxCallback(app::usb::UsbMsgType type);
+  Status_t registerTxCallback(TfMsgType type, TxCallback callback);
+  void callTxCallback(driver::tf::TfMsgType type);
 
-  Status_t registerRxCallback(app::usb::UsbMsgType type, RxCallback callback);
-  void callRxCallback(app::usb::UsbMsgType type, const uint8_t* data, size_t size);
+  Status_t registerRxCallback(TfMsgType type, RxCallback callback);
+  void callRxCallback(TfMsgType type, const uint8_t* data, size_t size);
 
   // Forward data to tiny frame (downstream)
   void receiveData(const uint8_t* data, size_t size);
@@ -46,8 +46,8 @@ class FrameDriver {
   FrameDriver();
 
   TinyFrame tf_;
-  TxCallback tx_callbacks_[static_cast<uint8_t>(app::usb::UsbMsgType::NumValues)] = { nullptr };
-  RxCallback rx_callbacks_[static_cast<uint8_t>(app::usb::UsbMsgType::NumValues)] = { nullptr };
+  TxCallback tx_callbacks_[static_cast<uint8_t>(TfMsgType::NumValues)] = { nullptr };
+  RxCallback rx_callbacks_[static_cast<uint8_t>(TfMsgType::NumValues)] = { nullptr };
   uint8_t tx_buffer_[TF_MAX_PAYLOAD_RX];
 };
 

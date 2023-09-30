@@ -14,9 +14,9 @@ extern "C" {
 #include "tf/TF_Config.h"
 }
 
-namespace app::usb {
+namespace driver::tf {
 
-enum class UsbMsgType : uint8_t {
+enum class TfMsgType : uint8_t {
   CtrlMsg = 0,
   UartMsg,
   I2cMsg,
@@ -29,9 +29,9 @@ enum class UsbMsgType : uint8_t {
   NumValues,
 };
 
-static_assert(static_cast<uint8_t>(UsbMsgType::NumValues) <= TF_MAX_TYPE_LST,
+static_assert(static_cast<uint8_t>(TfMsgType::NumValues) <= TF_MAX_TYPE_LST,
               "Increase TF_MAX_TYPE_LST in TF_Config.h file.");
 
-}  // namespace app::usb
+}  // namespace driver::tf
 
 #endif /* APP_USB_USBCOMTYPES_HPP_ */

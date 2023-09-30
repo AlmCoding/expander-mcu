@@ -8,19 +8,19 @@
 #ifndef OS_MSG_MSG_DEF_HPP_
 #define OS_MSG_MSG_DEF_HPP_
 
-#include "app/usb/usbComTypes.hpp"
+#include "driver/tf/tfMsgTypes.hpp"
 
 namespace os::msg {
 
 enum class MsgQueueId : uint8_t {
-  CtrlTaskQueue = 0,
-  UartTaskQueue,
-  GpioTaskQueue,
-  I2cTaskQueue,
+  CtrlThreadQueue = 0,
+  UartThreadQueue,
+  GpioThreadQueue,
+  I2cThreadQueue,
 };
 
 enum class MsgId : uint8_t {
-  TriggerTask = 0,
+  TriggerThread = 0,
   ServiceUpstreamRequest,
 };
 
@@ -28,7 +28,7 @@ typedef uint32_t RequestCnt;
 
 typedef struct {
   MsgId id;
-  app::usb::UsbMsgType type;
+  driver::tf::TfMsgType type;
   RequestCnt cnt;
 } BaseMsg;
 
