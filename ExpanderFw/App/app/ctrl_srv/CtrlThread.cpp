@@ -6,6 +6,7 @@
  */
 
 #include "app/ctrl_srv/CtrlThread.hpp"
+#include "os/thread.hpp"
 #include "util/debug.hpp"
 
 #define DEBUG_ENABLE_CTRL_THREAD
@@ -23,7 +24,7 @@ namespace app::ctrl_srv {
 
 void CtrlThread::Execute(ULONG /*thread_input*/) {
   while (1) {
-    tx_thread_sleep(10);
+    tx_thread_sleep(os::CtrlThread_CycleTicks);
   }
 }
 

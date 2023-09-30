@@ -6,6 +6,7 @@
  */
 
 #include "app/gpio_srv/GpioThread.hpp"
+#include "os/thread.hpp"
 #include "util/debug.hpp"
 
 #define DEBUG_ENABLE_GPIO_THREAD
@@ -23,7 +24,7 @@ namespace app::gpio_srv {
 
 void GpioThread::Execute(ULONG /*thread_input*/) {
   while (1) {
-    tx_thread_sleep(10);
+    tx_thread_sleep(os::GpioThread_CycleTicks);
   }
 }
 

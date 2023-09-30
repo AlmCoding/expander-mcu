@@ -99,25 +99,24 @@ UINT createQueues(VOID* memory_ptr) {
   return TX_SUCCESS;
 }
 
-/*
-osMessageQueueId_t getQueue(msg::MsgQueue queue) {
-  osMessageQueueId_t qhdl = nullptr;
+TX_QUEUE* getQueue(msg::MsgQueueId queue) {
+  TX_QUEUE* qhdl = nullptr;
 
   switch (queue) {
-    case msg::MsgQueue::CtrlTaskQueue: {
-      qhdl = ctrlTaskQueueHandle;
+    case msg::MsgQueueId::CtrlTaskQueue: {
+      qhdl = &ctrl_queue_;
       break;
     }
-    case msg::MsgQueue::UartTaskQueue: {
-      qhdl = uartTaskQueueHandle;
+    case msg::MsgQueueId::UartTaskQueue: {
+      qhdl = &uart_queue_;
       break;
     }
-    case msg::MsgQueue::GpioTaskQueue: {
-      qhdl = gpioTaskQueueHandle;
+    case msg::MsgQueueId::GpioTaskQueue: {
+      qhdl = &gpio_queue_;
       break;
     }
-    case msg::MsgQueue::I2cTaskQueue: {
-      qhdl = i2cTaskQueueHandle;
+    case msg::MsgQueueId::I2cTaskQueue: {
+      qhdl = &i2c_queue_;
       break;
     }
     default: {
@@ -127,6 +126,5 @@ osMessageQueueId_t getQueue(msg::MsgQueue queue) {
 
   return qhdl;
 }
-*/
 
 }  // namespace os

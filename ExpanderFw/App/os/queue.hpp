@@ -27,7 +27,7 @@ constexpr size_t I2cQueue_MsgCnt = 8;
 constexpr size_t QueueMessageSize = sizeof(msg::BaseMsg);
 
 UINT createQueues(VOID* memory_ptr);
-// osMessageQueueId_t getQueue(msg::MsgQueue queue);
+TX_QUEUE* getQueue(msg::MsgQueueId queue);
 
 }  // namespace os
 

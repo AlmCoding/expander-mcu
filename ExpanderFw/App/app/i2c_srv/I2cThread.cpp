@@ -6,6 +6,7 @@
  */
 
 #include "app/i2c_srv/I2cThread.hpp"
+#include "os/thread.hpp"
 #include "util/debug.hpp"
 
 #define DEBUG_ENABLE_I2C_THREAD
@@ -23,7 +24,7 @@ namespace app::i2c_srv {
 
 void I2cThread::Execute(ULONG /*thread_input*/) {
   while (1) {
-    tx_thread_sleep(10);
+    tx_thread_sleep(os::I2cThread_CycleTicks);
   }
 }
 

@@ -12,14 +12,14 @@
 
 namespace os::msg {
 
-enum class MsgQueue {
+enum class MsgQueueId : uint8_t {
   CtrlTaskQueue = 0,
   UartTaskQueue,
   GpioTaskQueue,
   I2cTaskQueue,
 };
 
-enum class MsgId {
+enum class MsgId : uint8_t {
   TriggerTask = 0,
   ServiceUpstreamRequest,
 };

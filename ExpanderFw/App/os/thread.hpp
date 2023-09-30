@@ -18,10 +18,10 @@ constexpr char UartThread_Name[] = "UartThread";
 constexpr char GpioThread_Name[] = "GpioThread";
 constexpr char I2cThread_Name[] = "I2cThread";
 
-constexpr TickNum CtrlThread_CycleTime = 1000;  // event driven
-constexpr TickNum UartThread_CycleTime = 1;
-constexpr TickNum GpioThread_CycleTime = 1000;  // event driven
-constexpr TickNum I2cThread_CycleTime = 1;
+constexpr TickNum CtrlThread_CycleTicks = Ticks100ms;  // event driven
+constexpr TickNum UartThread_CycleTicks = Ticks1ms;
+constexpr TickNum GpioThread_CycleTicks = Ticks100ms;  // event driven
+constexpr TickNum I2cThread_CycleTicks = Ticks1ms;
 
 constexpr uint32_t CtrlThread_StackSize = 4096;
 constexpr uint32_t UartThread_StackSize = 4096;

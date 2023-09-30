@@ -7,6 +7,7 @@
 
 #include "app/uart_srv/UartThread.hpp"
 #include "util/debug.hpp"
+#include "os/thread.hpp"
 
 #define DEBUG_ENABLE_UART_THREAD
 #ifdef DEBUG_ENABLE_UART_THREAD
@@ -23,7 +24,7 @@ namespace app::uart_srv {
 
 void UartThread::Execute(ULONG /*thread_input*/) {
   while (1) {
-    tx_thread_sleep(10);
+    tx_thread_sleep(os::UartThread_CycleTicks);
   }
 }
 
