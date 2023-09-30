@@ -6,7 +6,9 @@
  */
 
 #include "os/builder.hpp"
-#include "tx_api.h"
+#include "os/queue.hpp"
+#include "os/thread.hpp"
+#include "util/debug.hpp"
 
 #define DEBUG_ENABLE_BUILDER
 #ifdef DEBUG_ENABLE_BUILDER
@@ -31,9 +33,10 @@ UINT buildOs(VOID* memory_ptr) {
   /*
   createMutexes();
   createTimers();
-  createQueues();
-  createTasks();
   */
+
+  createThreads(memory_ptr);
+  createQueues(memory_ptr);
 
   return TX_SUCCESS;
 }
