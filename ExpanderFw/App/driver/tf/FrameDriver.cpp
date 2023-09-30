@@ -11,9 +11,9 @@
 
 #define DEBUG_ENABLE_FRAME_DRIVER
 #ifdef DEBUG_ENABLE_FRAME_DRIVER
-#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][FrmDrv]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][FrmDrv]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][FrmDrv]: " f "\n", ##__VA_ARGS__);
+#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][FrmDrv]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][FrmDrv]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][FrmDrv]: " f "\n", ##__VA_ARGS__)
 #else
 #define DEBUG_INFO(...)
 #define DEBUG_WARN(...)
@@ -47,7 +47,7 @@ void FrameDriver::callTxCallback(TfMsgType type) {
     TF_Send(&tf_, &msg);
 
   } else {
-    DEBUG_ERROR("Msg (type: %d) is empty!", msg.type)
+    DEBUG_ERROR("Msg (type: %d) is empty!", msg.type);
   }
 }
 

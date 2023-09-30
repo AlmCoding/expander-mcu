@@ -14,9 +14,9 @@
 
 #define DEBUG_ENABLE_I2C_MASTER
 #ifdef DEBUG_ENABLE_I2C_MASTER
-#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][I2cMstr]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][I2cMstr]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][I2cMstr]: " f "\n", ##__VA_ARGS__);
+#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][I2cMstr]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][I2cMstr]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][I2cMstr]: " f "\n", ##__VA_ARGS__)
 #else
 #define DEBUG_INFO(...)
 #define DEBUG_WARN(...)
@@ -47,10 +47,10 @@ Status_t I2cMaster::config() {
   Status_t status;
 
   if (init() == Status_t::Ok) {
-    DEBUG_INFO("Init [ok]")
+    DEBUG_INFO("Init [ok]");
 
   } else {
-    DEBUG_ERROR("Init [failed]")
+    DEBUG_ERROR("Init [failed]");
     status = Status_t::Error;
   }
 

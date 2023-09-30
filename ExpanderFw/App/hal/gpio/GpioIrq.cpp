@@ -10,9 +10,9 @@
 
 #define DEBUG_ENABLE_GPIO_IRQ
 #ifdef DEBUG_ENABLE_GPIO_IRQ
-#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][GpioIrq]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][GpioIrq]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][GpioIrq]: " f "\n", ##__VA_ARGS__);
+#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][GpioIrq]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][GpioIrq]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][GpioIrq]: " f "\n", ##__VA_ARGS__)
 #else
 #define DEBUG_INFO(...)
 #define DEBUG_WARN(...)
@@ -31,7 +31,7 @@ Status_t GpioIrq::registerGpio(Gpio* gpio) {
   Status_t status;
 
   if (gpio == nullptr) {
-    DEBUG_ERROR("Invalid Gpio register attempt")
+    DEBUG_ERROR("Invalid Gpio register attempt");
     return Status_t::Error;
   }
 
@@ -43,7 +43,7 @@ Status_t GpioIrq::registerGpio(Gpio* gpio) {
   }
 
   if (registered_ < static_cast<size_t>(Gpio::Id::GpioCount)) {
-    DEBUG_INFO("Register Gpio(%d) [ok]", gpio->id_)
+    DEBUG_INFO("Register Gpio(%d) [ok]", gpio->id_);
 
     gpio_[registered_] = gpio;
     HAL_NVIC_EnableIRQ(gpio->irq_);
@@ -52,7 +52,7 @@ Status_t GpioIrq::registerGpio(Gpio* gpio) {
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Register Gpio(%d) [failed]", gpio->id_)
+    DEBUG_ERROR("Register Gpio(%d) [failed]", gpio->id_);
     status = Status_t::Error;
   }
 
@@ -85,7 +85,7 @@ Status_t GpioIrq::deregisterGpio(Gpio* gpio) {
     registered_--;
     gpio_[registered_] = nullptr;
 
-    DEBUG_INFO("Deregister gpio(%d) [ok]", gpio->id_)
+    DEBUG_INFO("Deregister gpio(%d) [ok]", gpio->id_);
   }
 
   if (shared_irq == true) {

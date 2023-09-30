@@ -12,9 +12,9 @@
 
 #define DEBUG_ENABLE_UART
 #ifdef DEBUG_ENABLE_UART
-#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][Uart]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][Uart]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][Uart]: " f "\n", ##__VA_ARGS__);
+#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][Uart]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][Uart]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][Uart]: " f "\n", ##__VA_ARGS__)
 #else
 #define DEBUG_INFO(...)
 #define DEBUG_WARN(...)
@@ -36,19 +36,19 @@ Status_t Uart::config(uint32_t baudrate) {
   uart_handle_->Init.BaudRate = baudrate;
 
   if (HAL_UART_Init(uart_handle_) == HAL_OK) {
-    DEBUG_INFO("Config [ok]")
+    DEBUG_INFO("Config [ok]");
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Config [failed]")
+    DEBUG_ERROR("Config [failed]");
     status = Status_t::Error;
   }
 
   if (init() == Status_t::Ok) {
-    DEBUG_INFO("Init [ok]")
+    DEBUG_INFO("Init [ok]");
 
   } else {
-    DEBUG_ERROR("Init [failed]")
+    DEBUG_ERROR("Init [failed]");
     status = Status_t::Error;
   }
 
@@ -94,11 +94,11 @@ Status_t Uart::stopDma() {
   Status_t status;
 
   if (HAL_UART_DMAStop(uart_handle_) == HAL_OK) {
-    DEBUG_INFO("Stop dma [ok]")
+    DEBUG_INFO("Stop dma [ok]");
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Stop dma [failed]")
+    DEBUG_ERROR("Stop dma [failed]");
     status = Status_t::Error;
   }
 
@@ -109,11 +109,11 @@ Status_t Uart::startRx() {
   Status_t status;
 
   if (HAL_UART_Receive_DMA(uart_handle_, rx_buffer_, sizeof(rx_buffer_)) == HAL_OK) {
-    DEBUG_INFO("Start rx [ok]")
+    DEBUG_INFO("Start rx [ok]");
     status = Status_t::Ok;
 
   } else {
-    DEBUG_INFO("Start rx [failed]")
+    DEBUG_INFO("Start rx [failed]");
     status = Status_t::Error;
   }
 
@@ -153,8 +153,8 @@ size_t Uart::getFreeTxSpace(uint32_t seq_num) {
     }
   }
 
-  DEBUG_INFO("[%d, dma: %d, [%d, %d[", this_tx_start_, dma_tx_read_pos, next_tx_start_, next_tx_end)
-  DEBUG_INFO("Free tx space (len: %d, seq: %d)", free_tx_space, seq_num)
+  DEBUG_INFO("[%d, dma: %d, [%d, %d[", this_tx_start_, dma_tx_read_pos, next_tx_start_, next_tx_end);
+  DEBUG_INFO("Free tx space (len: %d, seq: %d)", free_tx_space, seq_num);
   return free_tx_space;
 }
 
@@ -162,7 +162,7 @@ Status_t Uart::scheduleTx(const uint8_t* data, size_t len, uint32_t seq_num) {
   Status_t status;
 
   if (getFreeTxSpace(seq_num) >= len) {
-    DEBUG_INFO("Sched. tx (len: %d, seq: %d)", len, seq_num)
+    DEBUG_INFO("Sched. tx (len: %d, seq: %d)", len, seq_num);
 
     size_t new_tx_end;
     size_t tx_len = len;
@@ -245,7 +245,7 @@ Status_t Uart::startTx() {
       next_tx_start_ = new_tx_start;
 
       DEBUG_INFO("Start tx (len: %d) [ok]", tx_len);
-      DEBUG_INFO("Tx=[%d, dma: %d, %d[", this_tx_start_, DMA_TX_READ_POS, next_tx_start_)
+      DEBUG_INFO("Tx=[%d, dma: %d, %d[", this_tx_start_, DMA_TX_READ_POS, next_tx_start_);
       status = Status_t::Ok;
 
     } else {
@@ -262,8 +262,8 @@ Status_t Uart::startTx() {
 }
 
 void Uart::txCompleteCb() {
-  DEBUG_INFO("Tx cplt (seq: %d)", seqence_number_)
-  DEBUG_INFO("Cplt=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_READ_POS, next_tx_start_, next_tx_end_)
+  DEBUG_INFO("Tx cplt (seq: %d)", seqence_number_);
+  DEBUG_INFO("Cplt=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_READ_POS, next_tx_start_, next_tx_end_);
 
   // Check for new data
   if (next_tx_end_ != next_tx_start_) {
@@ -285,7 +285,7 @@ void Uart::txCompleteCb() {
 }
 
 void Uart::rxCompleteCb() {
-  DEBUG_INFO("Rx cplt (seq: %d)", seqence_number_)
+  DEBUG_INFO("Rx cplt (seq: %d)", seqence_number_);
 
   // Trigger uart task for fast service notification
   os::msg::BaseMsg msg = {};

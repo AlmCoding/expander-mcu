@@ -11,9 +11,9 @@
 
 #define DEBUG_ENABLE_QUEUE
 #ifdef DEBUG_ENABLE_QUEUE
-#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][queue]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][queue]: " f "\n", ##__VA_ARGS__);
-#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][queue]: " f "\n", ##__VA_ARGS__);
+#define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][queue]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][queue]: " f "\n", ##__VA_ARGS__)
+#define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][queue]: " f "\n", ##__VA_ARGS__)
 #else
 #define DEBUG_INFO(...)
 #define DEBUG_WARN(...)
