@@ -17,21 +17,6 @@
 namespace hal::i2c {
 
 class I2cMaster {
- private:
-  constexpr static size_t RequestQueue_MsgCnt = 8;
-  constexpr static size_t DataBufferSize = 64 + 1;
-
-  typedef struct {
-    size_t space1;  // Starts at data_end_
-    size_t space2;  // Starts at 0
-  } Space;
-
-  typedef struct {
-    bool ongoing;
-    uint16_t id;
-    uint16_t max_idx;
-  } SequenceState;
-
  public:
   enum class RequestStatus {
     NotInit = 0,
@@ -76,6 +61,31 @@ class I2cMaster {
   Status_t serviceStatus(StatusInfo* info, uint8_t* read_data, size_t max_size);
 
  private:
+  constexpr static size_t RequestQueue_MaxItemCnt = 4;
+  constexpr static size_t RequestBufferSize = RequestQueue_MaxItemCnt * 2;
+  constexpr static size_t DataBufferSize = 64 + 1;
+
+  typedef struct {
+    size_t space1;  // Starts at data_end_
+    size_t space2;  // Starts at 0
+  } Space;
+
+  typedef struct {
+    uint16_t seq_id;
+    uint16_t max_idx;
+    bool ongoing;
+  } SequenceState;
+
+  typedef struct {
+    Request request;
+    bool used;
+  } RequestSlot;
+
+  typedef struct {
+    RequestSlot* slot;
+  } QueueItem;
+
+  RequestSlot* setupRequestSlot(Request* request);
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   Space getFreeSpace();
   Status_t allocateBufferSpace(Request* request);
@@ -89,19 +99,21 @@ class I2cMaster {
   void complete();
 
   I2C_HandleTypeDef* i2c_handle_;
-
   TX_QUEUE pending_queue_;
   TX_QUEUE complete_queue_;
-  uint8_t pending_queue_buffer_[RequestQueue_MsgCnt * sizeof(Request) * sizeof(ULONG)];
-  uint8_t complete_queue_buffer_[RequestQueue_MsgCnt * sizeof(Request) * sizeof(ULONG)];
+
+  uint8_t pending_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem)];
+  uint8_t complete_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem)];
+  RequestSlot request_buffer_[RequestBufferSize];
+  size_t request_buffer_idx_ = 0;
 
   uint8_t data_buffer_[DataBufferSize];
   size_t data_start_ = 0;
   size_t data_end_ = 0;
 
-  bool request_complete_ = true;
-  Request request_;
-  SequenceState sequence_ = {};
+  RequestSlot* request_slot_ = nullptr;
+  Request* request_ = nullptr;
+  SequenceState sequence_state_ = {};
 
   uint32_t seqence_number_ = 0;
 

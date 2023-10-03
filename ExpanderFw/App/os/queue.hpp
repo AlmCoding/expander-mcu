@@ -19,10 +19,10 @@ constexpr char UartQueue_Name[] = "UartQueue";
 constexpr char GpioQueue_Name[] = "GpioQueue";
 constexpr char I2cQueue_Name[] = "I2cQueue";
 
-constexpr size_t CtrlQueue_MsgCnt = 8;
-constexpr size_t UartQueue_MsgCnt = 8;
-constexpr size_t GpioQueue_MsgCnt = 8;
-constexpr size_t I2cQueue_MsgCnt = 8;
+constexpr size_t CtrlQueue_MaxMsgCnt = 8;
+constexpr size_t UartQueue_MaxMsgCnt = 8;
+constexpr size_t GpioQueue_MaxMsgCnt = 8;
+constexpr size_t I2cQueue_MaxMsgCnt = 8;
 
 constexpr size_t QueueMessageSize = sizeof(msg::BaseMsg);
 
