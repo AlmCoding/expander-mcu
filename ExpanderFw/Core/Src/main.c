@@ -19,12 +19,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "app_threadx.h"
 #include "main.h"
-#include "adc.h"
 #include "i2c.h"
 #include "icache.h"
 #include "memorymap.h"
 #include "tim.h"
-#include "ucpd.h"
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
@@ -100,14 +98,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC1_Init();
   MX_ICACHE_Init();
-  MX_UCPD1_Init();
-  MX_USB_OTG_HS_HCD_Init();
+  MX_USB_OTG_HS_PCD_Init();
   MX_MEMORYMAP_Init();
-  MX_TIM2_Init();
   MX_I2C2_Init();
   MX_USART2_UART_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 #ifdef RENAME_CUBEMX_MAIN
   return;
@@ -146,10 +142,8 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMBOOST = RCC_PLLMBOOST_DIV1;
@@ -191,6 +185,11 @@ static void SystemPower_Config(void)
   HAL_PWREx_EnableVddIO2();
 
   /*
+   * Disable the internal Pull-Up in Dead Battery pins of UCPD peripheral
+   */
+  HAL_PWREx_DisableUCPDDeadBattery();
+
+  /*
    * Switch to SMPS regulator instead of LDO
    */
   if (HAL_PWREx_ConfigSupply(PWR_SMPS_SUPPLY) != HAL_OK)
@@ -216,7 +215,7 @@ static void SystemPower_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
-
+  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {
     HAL_IncTick();

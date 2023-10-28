@@ -83,3 +83,10 @@ ds
 de
 rs
 ws
+ux
+endpoints
+standalone
+usbx
+cdc
+deactivation
+lib
