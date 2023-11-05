@@ -43,7 +43,7 @@ Status_t GpioIrq::registerGpio(Gpio* gpio) {
   }
 
   if (registered_ < static_cast<size_t>(Gpio::Id::GpioCount)) {
-    DEBUG_INFO("Register Gpio(%d) [ok]", gpio->id_);
+    DEBUG_INFO("Register Gpio(%d) [OK]", gpio->id_);
 
     gpio_[registered_] = gpio;
     HAL_NVIC_EnableIRQ(gpio->irq_);
@@ -52,7 +52,7 @@ Status_t GpioIrq::registerGpio(Gpio* gpio) {
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Register Gpio(%d) [failed]", gpio->id_);
+    DEBUG_ERROR("Register Gpio(%d) [FAILED]", gpio->id_);
     status = Status_t::Error;
   }
 
@@ -85,7 +85,7 @@ Status_t GpioIrq::deregisterGpio(Gpio* gpio) {
     registered_--;
     gpio_[registered_] = nullptr;
 
-    DEBUG_INFO("Deregister gpio(%d) [ok]", gpio->id_);
+    DEBUG_INFO("Deregister gpio(%d) [OK]", gpio->id_);
   }
 
   if (shared_irq == true) {

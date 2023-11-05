@@ -55,7 +55,7 @@ int32_t I2cService::postRequest(const uint8_t* data, size_t len) {
 
   /* Now we are ready to decode the message. */
   if (pb_decode(&stream, i2c_proto_I2cMsg_fields, &i2c_msg) == false) {
-    DEBUG_ERROR("ProtoBuf decode [failed]");
+    DEBUG_ERROR("ProtoBuf decode [FAILED]");
     return -1;
   }
 
@@ -104,7 +104,7 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_len) {
 
   /* Now we are ready to encode the message! */
   if (pb_encode(&stream, i2c_proto_I2cMsg_fields, &i2c_msg) == false) {
-    DEBUG_ERROR("ProtoBuf encode [failed]");
+    DEBUG_ERROR("ProtoBuf encode [FAILED]");
     return -1;
   }
 
@@ -126,11 +126,11 @@ Status_t I2cService::serviceMasterStatusRequest(i2c_proto_I2cMsg* msg, size_t ma
     msg->msg.master_status.buffer_space1 = info.buffer_space1;
     msg->msg.master_status.buffer_space2 = info.buffer_space2;
 
-    DEBUG_INFO("Srv status (req: %d) [ok]", info.request_id);
+    DEBUG_INFO("Srv status (req: %d) [OK]", info.request_id);
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Srv status (req: %d) [failed]", info.request_id);
+    DEBUG_ERROR("Srv status (req: %d) [FAILED]", info.request_id);
     status = Status_t::Error;
   }
 

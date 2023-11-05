@@ -39,13 +39,13 @@ Status_t I2cIrq::registerI2cMaster(I2cMaster* i2c_master) {
   }
 
   if (registered_master_ < I2cCount) {
-    DEBUG_INFO("Register I2cMaster(%d) [ok]", registered_master_);
+    DEBUG_INFO("Register I2cMaster(%d) [OK]", registered_master_);
     i2c_master_[registered_master_] = i2c_master;
     registered_master_++;
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Register I2cMaster(%d) [failed]", registered_master_);
+    DEBUG_ERROR("Register I2cMaster(%d) [FAILED]", registered_master_);
     status = Status_t::Error;
   }
 

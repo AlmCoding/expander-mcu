@@ -36,19 +36,19 @@ Status_t Uart::config(uint32_t baudrate) {
   uart_handle_->Init.BaudRate = baudrate;
 
   if (HAL_UART_Init(uart_handle_) == HAL_OK) {
-    DEBUG_INFO("Config [ok]");
+    DEBUG_INFO("Config [OK]");
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Config [failed]");
+    DEBUG_ERROR("Config [FAILED]");
     status = Status_t::Error;
   }
 
   if (init() == Status_t::Ok) {
-    DEBUG_INFO("Init [ok]");
+    DEBUG_INFO("Init [OK]");
 
   } else {
-    DEBUG_ERROR("Init [failed]");
+    DEBUG_ERROR("Init [FAILED]");
     status = Status_t::Error;
   }
 
@@ -94,11 +94,11 @@ Status_t Uart::stopDma() {
   Status_t status;
 
   if (HAL_UART_DMAStop(uart_handle_) == HAL_OK) {
-    DEBUG_INFO("Stop dma [ok]");
+    DEBUG_INFO("Stop dma [OK]");
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Stop dma [failed]");
+    DEBUG_ERROR("Stop dma [FAILED]");
     status = Status_t::Error;
   }
 
@@ -109,11 +109,11 @@ Status_t Uart::startRx() {
   Status_t status;
 
   if (HAL_UART_Receive_DMA(uart_handle_, rx_buffer_, sizeof(rx_buffer_)) == HAL_OK) {
-    DEBUG_INFO("Start rx [ok]");
+    DEBUG_INFO("Start rx [OK]");
     status = Status_t::Ok;
 
   } else {
-    DEBUG_INFO("Start rx [failed]");
+    DEBUG_INFO("Start rx [FAILED]");
     status = Status_t::Error;
   }
 
@@ -244,12 +244,12 @@ Status_t Uart::startTx() {
       this_tx_start_ = next_tx_start_;
       next_tx_start_ = new_tx_start;
 
-      DEBUG_INFO("Start tx (len: %d) [ok]", tx_len);
+      DEBUG_INFO("Start tx (len: %d) [OK]", tx_len);
       DEBUG_INFO("Tx=[%d, dma: %d, %d[", this_tx_start_, DMA_TX_READ_POS, next_tx_start_);
       status = Status_t::Ok;
 
     } else {
-      DEBUG_ERROR("Start tx (len: %d) [failed]", tx_len);
+      DEBUG_ERROR("Start tx (len: %d) [FAILED]", tx_len);
       status = Status_t::Error;
     }
 

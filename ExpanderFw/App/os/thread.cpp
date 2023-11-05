@@ -10,6 +10,8 @@
 #include "app/gpio_srv/GpioThread.hpp"
 #include "app/i2c_srv/I2cThread.hpp"
 #include "app/uart_srv/UartThread.hpp"
+#include "app/usb_com/UsbReadThread.hpp"
+#include "app/usb_com/UsbWriteThread.hpp"
 #include "util/debug.hpp"
 
 #define DEBUG_ENABLE_THREAD
@@ -25,6 +27,8 @@
 
 namespace os {
 
+static TX_THREAD usb_read_thread_;
+static TX_THREAD usb_write_thread_;
 static TX_THREAD ctrl_thread_;
 static TX_THREAD uart_thread_;
 static TX_THREAD gpio_thread_;
@@ -35,9 +39,47 @@ UINT createThreads(VOID* memory_ptr) {
   CHAR* pointer;
 
   //*************************************************************************************************
+  // Allocate usbRead stack
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UsbReadThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
+    DEBUG_ERROR("Allocate %s stack [FAILED]", UsbReadThread_Name);
+    return TX_POOL_ERROR;
+  }
+  // Create usbRead thread
+  if (tx_thread_create(&usb_read_thread_,                                 //
+                       const_cast<char*>(UsbReadThread_Name),             //
+                       app::usb_com::UsbReadThread::execute, 0, pointer,  //
+                       UsbReadThread_StackSize,                           //
+                       UsbReadThread_Priority,                            //
+                       UsbReadThread_PreemptionThreshold,                 //
+                       UsbReadThread_TimeSlice,                           //
+                       UsbReadThread_AutoStart) != TX_SUCCESS) {
+    DEBUG_ERROR("Create %s [FAILED]", UsbReadThread_Name);
+    return TX_THREAD_ERROR;
+  }
+
+  //*************************************************************************************************
+  // Allocate usbWrite stack
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UsbWriteThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
+    DEBUG_ERROR("Allocate %s stack [FAILED]", UsbWriteThread_Name);
+    return TX_POOL_ERROR;
+  }
+  // Create usbWrite thread
+  if (tx_thread_create(&usb_write_thread_,                                 //
+                       const_cast<char*>(UsbWriteThread_Name),             //
+                       app::usb_com::UsbWriteThread::execute, 0, pointer,  //
+                       UsbWriteThread_StackSize,                           //
+                       UsbWriteThread_Priority,                            //
+                       UsbWriteThread_PreemptionThreshold,                 //
+                       UsbWriteThread_TimeSlice,                           //
+                       UsbWriteThread_AutoStart) != TX_SUCCESS) {
+    DEBUG_ERROR("Create %s [FAILED]", UsbWriteThread_Name);
+    return TX_THREAD_ERROR;
+  }
+
+  //*************************************************************************************************
   // Allocate ctrl stack
   if (tx_byte_allocate(byte_pool, (VOID**)&pointer, CtrlThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("Allocate %s stack [failed]", CtrlThread_Name);
+    DEBUG_ERROR("Allocate %s stack [FAILED]", CtrlThread_Name);
     return TX_POOL_ERROR;
   }
   // Create ctrl thread
@@ -49,14 +91,14 @@ UINT createThreads(VOID* memory_ptr) {
                        CtrlThread_PreemptionThreshold,              //
                        CtrlThread_TimeSlice,                        //
                        CtrlThread_AutoStart) != TX_SUCCESS) {
-    DEBUG_ERROR("Create %s [failed]", CtrlThread_Name);
+    DEBUG_ERROR("Create %s [FAILED]", CtrlThread_Name);
     return TX_THREAD_ERROR;
   }
 
   //*************************************************************************************************
   // Allocate uart stack
   if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UartThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("Allocate %s stack [failed]", UartThread_Name);
+    DEBUG_ERROR("Allocate %s stack [FAILED]", UartThread_Name);
     return TX_POOL_ERROR;
   }
   // Create uart thread
@@ -68,14 +110,14 @@ UINT createThreads(VOID* memory_ptr) {
                        UartThread_PreemptionThreshold,                  //
                        UartThread_TimeSlice,                            //
                        UartThread_AutoStart) != TX_SUCCESS) {
-    DEBUG_ERROR("Create %s [failed]", UartThread_Name);
+    DEBUG_ERROR("Create %s [FAILED]", UartThread_Name);
     return TX_THREAD_ERROR;
   }
 
   //*************************************************************************************************
   // Allocate gpio stack
   if (tx_byte_allocate(byte_pool, (VOID**)&pointer, GpioThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("Allocate %s stack [failed]", GpioThread_Name);
+    DEBUG_ERROR("Allocate %s stack [FAILED]", GpioThread_Name);
     return TX_POOL_ERROR;
   }
   // Create gpio thread
@@ -87,14 +129,14 @@ UINT createThreads(VOID* memory_ptr) {
                        GpioThread_PreemptionThreshold,                  //
                        GpioThread_TimeSlice,                            //
                        GpioThread_AutoStart) != TX_SUCCESS) {
-    DEBUG_ERROR("Create %s [failed]", GpioThread_Name);
+    DEBUG_ERROR("Create %s [FAILED]", GpioThread_Name);
     return TX_THREAD_ERROR;
   }
 
   //*************************************************************************************************
   // Allocate i2c stack
   if (tx_byte_allocate(byte_pool, (VOID**)&pointer, I2cThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("Allocate %s stack [failed]", I2cThread_Name);
+    DEBUG_ERROR("Allocate %s stack [FAILED]", I2cThread_Name);
     return TX_POOL_ERROR;
   }
   // Create i2c thread
@@ -106,11 +148,11 @@ UINT createThreads(VOID* memory_ptr) {
                        I2cThread_PreemptionThreshold,                 //
                        I2cThread_TimeSlice,                           //
                        I2cThread_AutoStart) != TX_SUCCESS) {
-    DEBUG_ERROR("Create %s [failed]", I2cThread_Name);
+    DEBUG_ERROR("Create %s [FAILED]", I2cThread_Name);
     return TX_THREAD_ERROR;
   }
 
-  DEBUG_INFO("Create threads (pool: %d) [ok]", byte_pool->tx_byte_pool_available);
+  DEBUG_INFO("Create threads (pool: %d) [OK]", byte_pool->tx_byte_pool_available);
   return TX_SUCCESS;
 }
 

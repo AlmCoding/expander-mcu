@@ -39,13 +39,13 @@ Status_t UartIrq::registerUart(Uart* uart) {
   }
 
   if (registered_ < UartCount) {
-    DEBUG_INFO("Register Uart(%d) [ok]", registered_);
+    DEBUG_INFO("Register Uart(%d) [OK]", registered_);
     uart_[registered_] = uart;
     registered_++;
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Register Uart(%d) [failed]", registered_);
+    DEBUG_ERROR("Register Uart(%d) [FAILED]", registered_);
     status = Status_t::Error;
   }
 

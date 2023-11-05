@@ -90,3 +90,7 @@ usbx
 cdc
 deactivation
 lib
+rollback
+baudrate
+acm
+nov

@@ -55,7 +55,7 @@ int32_t GpioService::postRequest(const uint8_t* data, size_t len) {
 
   /* Now we are ready to decode the message. */
   if (pb_decode(&stream, gpio_proto_GpioMsg_fields, &gpio_msg) == false) {
-    DEBUG_ERROR("ProtoBuf decode [failed]");
+    DEBUG_ERROR("ProtoBuf decode [FAILED]");
     return -1;
   }
 
@@ -114,7 +114,7 @@ int32_t GpioService::serviceRequest(uint8_t* data, size_t max_len) {
 
   /* Now we are ready to encode the message! */
   if (pb_encode(&stream, gpio_proto_GpioMsg_fields, &gpio_msg) == false) {
-    DEBUG_ERROR("ProtoBuf encode [failed]");
+    DEBUG_ERROR("ProtoBuf encode [FAILED]");
     return -1;
   }
 

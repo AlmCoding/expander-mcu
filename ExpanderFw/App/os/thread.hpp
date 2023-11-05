@@ -13,36 +13,50 @@
 
 namespace os {
 
+constexpr char UsbReadThread_Name[] = "UsbReadThread";
+constexpr char UsbWriteThread_Name[] = "UsbWriteThread";
 constexpr char CtrlThread_Name[] = "CtrlThread";
 constexpr char UartThread_Name[] = "UartThread";
 constexpr char GpioThread_Name[] = "GpioThread";
 constexpr char I2cThread_Name[] = "I2cThread";
 
-constexpr TickNum CtrlThread_CycleTicks = Ticks100ms;  // event driven
+// constexpr TickNum UsbReadThread_CycleTicks = Ticks100ms;   // event driven
+constexpr TickNum UsbWriteThread_CycleTicks = Ticks100ms;  // event driven
+constexpr TickNum CtrlThread_CycleTicks = Ticks100ms;      // event driven
 constexpr TickNum UartThread_CycleTicks = Ticks1ms;
 constexpr TickNum GpioThread_CycleTicks = Ticks100ms;  // event driven
 constexpr TickNum I2cThread_CycleTicks = Ticks1ms;
 
+constexpr uint32_t UsbReadThread_StackSize = 4096;
+constexpr uint32_t UsbWriteThread_StackSize = 4096;
 constexpr uint32_t CtrlThread_StackSize = 4096;
 constexpr uint32_t UartThread_StackSize = 4096;
 constexpr uint32_t GpioThread_StackSize = 4096;
 constexpr uint32_t I2cThread_StackSize = 4096;
 
+constexpr uint32_t UsbReadThread_Priority = 10;
+constexpr uint32_t UsbWriteThread_Priority = 10;
 constexpr uint32_t CtrlThread_Priority = 10;
 constexpr uint32_t UartThread_Priority = 10;
 constexpr uint32_t GpioThread_Priority = 10;
 constexpr uint32_t I2cThread_Priority = 10;
 
+constexpr uint32_t UsbReadThread_PreemptionThreshold = 10;
+constexpr uint32_t UsbWriteThread_PreemptionThreshold = 10;
 constexpr uint32_t CtrlThread_PreemptionThreshold = 10;
 constexpr uint32_t UartThread_PreemptionThreshold = 10;
 constexpr uint32_t GpioThread_PreemptionThreshold = 10;
 constexpr uint32_t I2cThread_PreemptionThreshold = 10;
 
+constexpr uint32_t UsbReadThread_TimeSlice = TX_NO_TIME_SLICE;
+constexpr uint32_t UsbWriteThread_TimeSlice = TX_NO_TIME_SLICE;
 constexpr uint32_t CtrlThread_TimeSlice = TX_NO_TIME_SLICE;
 constexpr uint32_t UartThread_TimeSlice = TX_NO_TIME_SLICE;
 constexpr uint32_t GpioThread_TimeSlice = TX_NO_TIME_SLICE;
 constexpr uint32_t I2cThread_TimeSlice = TX_NO_TIME_SLICE;
 
+constexpr uint32_t UsbReadThread_AutoStart = TX_AUTO_START;
+constexpr uint32_t UsbWriteThread_AutoStart = TX_AUTO_START;
 constexpr uint32_t CtrlThread_AutoStart = TX_AUTO_START;
 constexpr uint32_t UartThread_AutoStart = TX_AUTO_START;
 constexpr uint32_t GpioThread_AutoStart = TX_AUTO_START;

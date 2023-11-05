@@ -54,7 +54,7 @@ int32_t UartService::postRequest(const uint8_t* data, size_t len) {
 
   /* Now we are ready to decode the message. */
   if (pb_decode(&stream, uart_proto_UartMsg_fields, &uart_msg) == false) {
-    DEBUG_ERROR("ProtoBuf decode [failed]");
+    DEBUG_ERROR("ProtoBuf decode [FAILED]");
     return -1;
   }
 
@@ -88,7 +88,7 @@ int32_t UartService::serviceRequest(uint8_t* data, size_t max_len) {
 
   /* Now we are ready to encode the message! */
   if (pb_encode(&stream, uart_proto_UartMsg_fields, &uart_msg) == false) {
-    DEBUG_ERROR("ProtoBuf encode [failed]");
+    DEBUG_ERROR("ProtoBuf encode [FAILED]");
     return -1;
   }
 
@@ -110,11 +110,11 @@ Status_t UartService::serviceStatusRequest(uart_proto_UartMsg* msg, size_t max_l
     msg->msg.status.tx_space = info.tx_space;
     msg->msg.status.rx_data.size = info.rx_size;
 
-    DEBUG_INFO("Srv status (seq: %d) [ok]", msg->sequence_number);
+    DEBUG_INFO("Srv status (seq: %d) [OK]", msg->sequence_number);
     status = Status_t::Ok;
 
   } else {
-    DEBUG_INFO("Srv status (seq: %d) [failed]", msg->sequence_number);
+    DEBUG_INFO("Srv status (seq: %d) [FAILED]", msg->sequence_number);
     status = Status_t::Error;
   }
 

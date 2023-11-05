@@ -41,6 +41,8 @@ void GpioThread::execute(uint32_t /*thread_input*/) {
   // Register callback for outgoing msg
   driver::tf::FrameDriver::getInstance().registerTxCallback(GpioThread::ThreadTfMsgType, serviceRequest_cb);
 
+  DEBUG_INFO("Setup [OK]");
+
   /* Infinite loop */
   while (1) {
     if (os::msg::receive_msg(os::msg::MsgQueueId::GpioThreadQueue, &msg, os::GpioThread_CycleTicks) == true) {
@@ -59,12 +61,13 @@ void GpioThread::requestService_cb(os::msg::RequestCnt cnt) {
     .id = os::msg::MsgId::ServiceUpstreamRequest,
     .type = GpioThread::ThreadTfMsgType,
     .cnt = cnt,
+    .ptr = nullptr,
   };
 
   if (os::msg::send_msg(os::msg::MsgQueueId::CtrlThreadQueue, &req_msg) == true) {
-    DEBUG_INFO("Notify ctrlTask: %d [ok]", ++msg_count_);
+    DEBUG_INFO("Notify ctrlTask: %d [OK]", ++msg_count_);
   } else {
-    DEBUG_ERROR("Notify ctrlTask: %d [failed]", ++msg_count_);
+    DEBUG_ERROR("Notify ctrlTask: %d [FAILED]", ++msg_count_);
   }
 }
 
@@ -76,7 +79,7 @@ int32_t GpioThread::serviceRequest_cb(uint8_t* data, size_t max_len) {
   ongoing_service_ = false;
   int32_t len = gpio_service_.serviceRequest(data, max_len);
 
-  DEBUG_INFO("Service request: %d [ok]", msg_count_);
+  DEBUG_INFO("Service request: %d [OK]", msg_count_);
   return len;
 }
 

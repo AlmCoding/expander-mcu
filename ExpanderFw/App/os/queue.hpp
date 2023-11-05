@@ -14,11 +14,15 @@
 
 namespace os {
 
+constexpr char UsbReadQueue_Name[] = "UsbReadQueue";
+constexpr char UsbWriteQueue_Name[] = "UsbWriteQueue";
 constexpr char CtrlQueue_Name[] = "CtrlQueue";
 constexpr char UartQueue_Name[] = "UartQueue";
 constexpr char GpioQueue_Name[] = "GpioQueue";
 constexpr char I2cQueue_Name[] = "I2cQueue";
 
+constexpr size_t UsbReadQueue_MaxMsgCnt = 8;
+constexpr size_t UsbWriteQueue_MaxMsgCnt = 8;
 constexpr size_t CtrlQueue_MaxMsgCnt = 8;
 constexpr size_t UartQueue_MaxMsgCnt = 8;
 constexpr size_t GpioQueue_MaxMsgCnt = 8;

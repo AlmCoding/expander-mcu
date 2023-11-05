@@ -40,6 +40,8 @@ void I2cThread::execute(uint32_t /*thread_input*/) {
   // Register callback for outgoing msg
   driver::tf::FrameDriver::getInstance().registerTxCallback(I2cThread::ThreadTfMsgType, serviceRequest_cb);
 
+  DEBUG_INFO("Setup [OK]");
+
   /* Infinite loop */
   while (1) {
     if (os::msg::receive_msg(os::msg::MsgQueueId::I2cThreadQueue, &msg, os::I2cThread_CycleTicks) == true) {
@@ -59,12 +61,13 @@ void I2cThread::requestService_cb(os::msg::RequestCnt cnt) {
     .id = os::msg::MsgId::ServiceUpstreamRequest,
     .type = I2cThread::ThreadTfMsgType,
     .cnt = cnt,
+    .ptr = nullptr,
   };
 
   if (os::msg::send_msg(os::msg::MsgQueueId::CtrlThreadQueue, &req_msg) == true) {
-    DEBUG_INFO("Notify ctrlTask: %d [ok]", ++msg_count_);
+    DEBUG_INFO("Notify ctrlTask: %d [OK]", ++msg_count_);
   } else {
-    DEBUG_ERROR("Notify ctrlTask: %d [failed]", ++msg_count_);
+    DEBUG_ERROR("Notify ctrlTask: %d [FAILED]", ++msg_count_);
   }
 }
 
@@ -76,7 +79,7 @@ int32_t I2cThread::serviceRequest_cb(uint8_t* data, size_t max_len) {
   ongoing_service_ = false;
   int32_t len = i2c_service_.serviceRequest(data, max_len);
 
-  DEBUG_INFO("Service request: %d [ok]", msg_count_);
+  DEBUG_INFO("Service request: %d [OK]", msg_count_);
   return len;
 }
 

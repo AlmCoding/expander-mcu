@@ -44,10 +44,10 @@ Status_t I2cMaster::config() {
   Status_t status;
 
   if (init() == Status_t::Ok) {
-    DEBUG_INFO("Init [ok]");
+    DEBUG_INFO("Init [OK]");
 
   } else {
-    DEBUG_ERROR("Init [failed]");
+    DEBUG_ERROR("Init [FAILED]");
     status = Status_t::Error;
   }
 
@@ -162,7 +162,7 @@ Status_t I2cMaster::exitScheduleRequest(Request* request, uint32_t seq_num) {
   uint32_t sts = TX_QUEUE_ERROR;
 
   if (request->status_code == hal::i2c::I2cMaster::RequestStatus::NoSpace) {
-    DEBUG_WARN("Sched. request (req: %d) [failed]", request->request_id);
+    DEBUG_WARN("Sched. request (req: %d) [FAILED]", request->request_id);
     RequestSlot* request_slot = setupRequestSlot(request);
     if (request_slot != nullptr) {
       QueueItem queue_item = { .slot = request_slot };
@@ -170,13 +170,13 @@ Status_t I2cMaster::exitScheduleRequest(Request* request, uint32_t seq_num) {
     }
 
     if (sts != TX_SUCCESS) {
-      DEBUG_ERROR("Report rejected request (req: %d) [failed]", request->request_id);
+      DEBUG_ERROR("Report rejected request (req: %d) [FAILED]", request->request_id);
     }
 
     status = Status_t::Error;
 
   } else {
-    DEBUG_INFO("Sched. request (req: %d) [ok]", request->request_id);
+    DEBUG_INFO("Sched. request (req: %d) [OK]", request->request_id);
     status = Status_t::Ok;
   }
 
@@ -196,7 +196,7 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
 
   QueueItem queue_item;
   if (tx_queue_receive(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
-    DEBUG_ERROR("No cplt. requests to service [failed]");
+    DEBUG_ERROR("No cplt. requests to service [FAILED]");
     status = Status_t::Error;
   }
 
@@ -302,7 +302,7 @@ Status_t I2cMaster::allocateBufferSpace(Request* request) {
 
   } else {
     // No enough free space
-    DEBUG_ERROR("Allocate space (req. id: %d) [failed]", request->request_id);
+    DEBUG_ERROR("Allocate space (req. id: %d) [FAILED]", request->request_id);
     status = Status_t::Error;
   }
 
@@ -397,7 +397,7 @@ Status_t I2cMaster::startRequest() {
       // Write + read
       status = startWrite();
     } else {
-      DEBUG_ERROR("Start request (req: %d) [failed]", request_->request_id);
+      DEBUG_ERROR("Start request (req: %d) [FAILED]", request_->request_id);
       status = Status_t::Error;
     }
   }
@@ -437,11 +437,11 @@ Status_t I2cMaster::startWrite() {
                                                request_->write_size,                  // Length
                                                xfer_options);
   if (hal_status == HAL_OK) {
-    DEBUG_INFO("Start write (req: %d) [ok]", request_->request_id);
+    DEBUG_INFO("Start write (req: %d) [OK]", request_->request_id);
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Start write (req: %d) [failed]", request_->request_id);
+    DEBUG_ERROR("Start write (req: %d) [FAILED]", request_->request_id);
     status = Status_t::Error;
   }
 
@@ -462,11 +462,11 @@ Status_t I2cMaster::startReadReg() {
                                     request_->read_size);
 
   if (hal_status == HAL_OK) {
-    DEBUG_INFO("Start read reg (req: %d) [ok]", request_->request_id);
+    DEBUG_INFO("Start read reg (req: %d) [OK]", request_->request_id);
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Start read reg (req: %d) [failed]", request_->request_id);
+    DEBUG_ERROR("Start read reg (req: %d) [FAILED]", request_->request_id);
     status = Status_t::Error;
   }
 
@@ -506,11 +506,11 @@ Status_t I2cMaster::startRead() {
                                               xfer_options);
 
   if (hal_status == HAL_OK) {
-    DEBUG_INFO("Start read (req: %d) [ok]", request_->request_id);
+    DEBUG_INFO("Start read (req: %d) [OK]", request_->request_id);
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Start read (req: %d) [failed]", request_->request_id);
+    DEBUG_ERROR("Start read (req: %d) [FAILED]", request_->request_id);
     status = Status_t::Error;
   }
 
@@ -522,13 +522,13 @@ void I2cMaster::writeCompleteCb() {
     startRead();
 
   } else {
-    DEBUG_INFO("Write cplt (req: %d) [ok]", request_->request_id);
+    DEBUG_INFO("Write cplt (req: %d) [OK]", request_->request_id);
     complete();
   }
 }
 
 void I2cMaster::readCompleteCb() {
-  DEBUG_INFO("Read cplt (req: %d) [ok]", request_->request_id);
+  DEBUG_INFO("Read cplt (req: %d) [OK]", request_->request_id);
   complete();
 }
 
@@ -539,7 +539,7 @@ void I2cMaster::complete() {
   // Add request to complete_queue
   QueueItem queue_item = { .slot = request_slot_ };
   if (tx_queue_send(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
-    DEBUG_ERROR("Cplt queue put (req: %d) [failed]", request_->request_id);
+    DEBUG_ERROR("Cplt queue put (req: %d) [FAILED]", request_->request_id);
   }
 
   if (request_->sequence_idx == 0) {

@@ -13,7 +13,9 @@
 namespace os::msg {
 
 enum class MsgQueueId : uint8_t {
-  CtrlThreadQueue = 0,
+  UsbReadThreadQueue = 0,
+  UsbWriteThreadQueue,
+  CtrlThreadQueue,
   UartThreadQueue,
   GpioThreadQueue,
   I2cThreadQueue,
@@ -21,6 +23,7 @@ enum class MsgQueueId : uint8_t {
 
 enum class MsgId : uint8_t {
   TriggerThread = 0,
+  UsbDeviceActivate,
   ServiceUpstreamRequest,
 };
 
@@ -30,6 +33,7 @@ typedef struct {
   MsgId id;
   driver::tf::TfMsgType type;
   RequestCnt cnt;
+  void* ptr;
 } BaseMsg;
 
 }  // namespace os::msg
