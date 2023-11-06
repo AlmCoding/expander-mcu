@@ -48,10 +48,10 @@ void UsbReadThread::execute(uint32_t /*thread_input*/) {
     if ((device_->ux_slave_device_state == UX_DEVICE_CONFIGURED) && (cdc_acm_ != nullptr)) {
       // Read the received data in blocking mode
       ux_device_class_cdc_acm_read(cdc_acm_, (UCHAR*)usb_read_buffer_, 64, &actual_length);
+
       if (actual_length != 0) {
-      } else {
-        // Sleep thread for 1ms if no data received
-        tx_thread_sleep(Ticks1ms);
+        auto& tf_driver = driver::tf::FrameDriver::getInstance();
+        tf_driver.receiveData(usb_read_buffer_, actual_length);
       }
 
     } else {
@@ -74,6 +74,10 @@ void UsbReadThread::processMsg(os::msg::BaseMsg* msg) {
         DEBUG_INFO("Usb device activate [FAILED]");
       }
       break;
+    }
+    case os::msg::MsgId::UsbDeviceDeactivate: {
+      cdc_acm_ = nullptr;
+      DEBUG_INFO("Usb device deactivate [OK]");
     }
     case os::msg::MsgId::TriggerThread:
     case os::msg::MsgId::ServiceUpstreamRequest:

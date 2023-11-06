@@ -40,6 +40,22 @@ void notifyUsbDeviceActivate(void* cdc_acm) {
   }
 }
 
-void notifyUsbDeviceDeactivate() {}
+void notifyUsbDeviceDeactivate() {
+  bool success = false;
+
+  os::msg::BaseMsg msg = {
+    .id = os::msg::MsgId::UsbDeviceDeactivate,
+    .type = driver::tf::TfMsgType::NumValues,
+    .cnt = 0,
+    .ptr = nullptr,
+  };
+
+  success = os::msg::send_msg(os::msg::MsgQueueId::UsbReadThreadQueue, &msg, 0);
+  success = success && os::msg::send_msg(os::msg::MsgQueueId::UsbWriteThreadQueue, &msg, 0);
+
+  if (success == false) {
+    DEBUG_INFO("Send UsbDeviceDeactivate msg [FAILED]");
+  }
+}
 
 }  // namespace util

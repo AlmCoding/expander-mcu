@@ -24,6 +24,7 @@ enum class MsgQueueId : uint8_t {
 enum class MsgId : uint8_t {
   TriggerThread = 0,
   UsbDeviceActivate,
+  UsbDeviceDeactivate,
   ServiceUpstreamRequest,
 };
 

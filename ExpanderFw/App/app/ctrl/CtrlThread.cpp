@@ -50,6 +50,7 @@ void CtrlThread::processMsg(os::msg::BaseMsg* msg) {
   switch (msg->id) {
     case os::msg::MsgId::TriggerThread:
     case os::msg::MsgId::UsbDeviceActivate:
+    case os::msg::MsgId::UsbDeviceDeactivate:
     case os::msg::MsgId::ServiceUpstreamRequest:
     default: {
       break;

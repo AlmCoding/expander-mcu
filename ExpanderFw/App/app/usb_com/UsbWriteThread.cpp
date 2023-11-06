@@ -56,6 +56,10 @@ void UsbWriteThread::processMsg(os::msg::BaseMsg* msg) {
       }
       break;
     }
+    case os::msg::MsgId::UsbDeviceDeactivate: {
+      cdc_acm_ = nullptr;
+      DEBUG_INFO("Usb device deactivate [OK]");
+    }
     case os::msg::MsgId::TriggerThread:
     case os::msg::MsgId::ServiceUpstreamRequest:
     default: {

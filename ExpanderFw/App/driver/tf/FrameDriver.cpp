@@ -74,8 +74,8 @@ void FrameDriver_receiveData(const uint8_t* data, size_t len) {
   util::Stopwatch stopwatch{};
   stopwatch.start();
 
-  driver::tf::FrameDriver& frameDriver = driver::tf::FrameDriver::getInstance();
-  frameDriver.receiveData(data, len);
+  auto& tf_driver = driver::tf::FrameDriver::getInstance();
+  tf_driver.receiveData(data, len);
 
   stopwatch.stop();
   DEBUG_INFO("USB rx: %d us", stopwatch.time());
@@ -84,8 +84,8 @@ void FrameDriver_receiveData(const uint8_t* data, size_t len) {
 TF_Result typeCallback(TinyFrame* /*tf*/, TF_Msg* msg) {
   DEBUG_INFO("=>I msg: type: %d, len: %d", msg->type, msg->len);
 
-  driver::tf::FrameDriver& frameDriver = driver::tf::FrameDriver::getInstance();
-  frameDriver.callRxCallback(static_cast<TfMsgType>(msg->type), msg->data, msg->len);
+  auto& tf_driver = driver::tf::FrameDriver::getInstance();
+  tf_driver.callRxCallback(static_cast<TfMsgType>(msg->type), msg->data, msg->len);
 
   return TF_STAY;
 }
