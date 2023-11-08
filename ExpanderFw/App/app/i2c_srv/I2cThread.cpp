@@ -64,10 +64,10 @@ void I2cThread::requestService_cb(os::msg::RequestCnt cnt) {
     .ptr = nullptr,
   };
 
-  if (os::msg::send_msg(os::msg::MsgQueueId::CtrlThreadQueue, &req_msg) == true) {
-    DEBUG_INFO("Notify ctrlTask: %d [OK]", ++msg_count_);
+  if (os::msg::send_msg(os::msg::MsgQueueId::UsbWriteThreadQueue, &req_msg) == true) {
+    DEBUG_INFO("Notify usbWriteTask: %d [OK]", ++msg_count_);
   } else {
-    DEBUG_ERROR("Notify ctrlTask: %d [FAILED]", ++msg_count_);
+    DEBUG_ERROR("Notify usbWriteTask: %d [FAILED]", ++msg_count_);
   }
 }
 

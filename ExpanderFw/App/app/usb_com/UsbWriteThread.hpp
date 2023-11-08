@@ -19,9 +19,11 @@ constexpr static size_t UsbWriteBufferSize = 2048;
 class UsbWriteThread {
  public:
   static void execute(uint32_t thread_input);
+  static void sendData(const uint8_t* data, uint32_t size);
 
  private:
   static void processMsg(os::msg::BaseMsg* msg);
+  static void serviceUpstream(os::msg::BaseMsg* msg);
 
   static uint32_t msg_count_;
   static UX_SLAVE_DEVICE* device_;

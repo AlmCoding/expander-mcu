@@ -1,9 +1,8 @@
 
 extern "C" {
 
+#include "app/usb_com/UsbWriteThread.hpp"
 #include "tf/TinyFrame.h"
-// #include "usbd_cdc_if.h"
-#include "util/Timeout.hpp"
 #include "util/debug.hpp"
 
 #define DEBUG_ENABLE_MAIN
@@ -26,26 +25,8 @@ extern "C" {
  * Also remember to periodically call TF_Tick() if you wish to use the
  * listener timeout feature.
  */
-
 void TF_WriteImpl(TinyFrame* /*tf*/, const uint8_t* buff, uint32_t len) {
-  /*
-  util::Timeout timeout{};
-  bool notified = false;
-
-  while (CDC_IsTransmit_Busy() == 1) {
-    if (notified == false) {
-      timeout.start(Time10ms);
-      DEBUG_INFO("USB tx busy ...");
-      notified = true;
-
-    } else if (timeout.isExpired() == true) {
-      DEBUG_ERROR("USB tx timeout expired! (%d)", timeout.remaining());
-      break;
-    }
-  }
-
-  CDC_Transmit_FS(const_cast<uint8_t*>(buff), static_cast<uint16_t>(len));
-  */
+  app::usb_com::UsbWriteThread::sendData(buff, len);
 }
 
 // --------- Mutex callbacks ----------

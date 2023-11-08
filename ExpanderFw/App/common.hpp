@@ -29,6 +29,7 @@ constexpr TickNum Ticks3ms = 3 * Ticks1ms;
 constexpr TickNum Ticks5ms = 5 * Ticks1ms;
 constexpr TickNum Ticks10ms = 10 * Ticks1ms;
 constexpr TickNum Ticks100ms = 100 * Ticks1ms;
+constexpr TickNum Ticks500ms = 500 * Ticks1ms;
 
 enum class Status_t {
   Error = -1,

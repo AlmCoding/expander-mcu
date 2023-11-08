@@ -20,11 +20,10 @@ constexpr char UartThread_Name[] = "UartThread";
 constexpr char GpioThread_Name[] = "GpioThread";
 constexpr char I2cThread_Name[] = "I2cThread";
 
-// constexpr TickNum UsbReadThread_CycleTicks = Ticks100ms;   // event driven
-constexpr TickNum UsbWriteThread_CycleTicks = Ticks100ms;  // event driven
-constexpr TickNum CtrlThread_CycleTicks = Ticks100ms;      // event driven
+constexpr TickNum UsbWriteThread_CycleTicks = TX_WAIT_FOREVER;  // event driven
+constexpr TickNum CtrlThread_CycleTicks = Ticks500ms;           // heart beat led
 constexpr TickNum UartThread_CycleTicks = Ticks1ms;
-constexpr TickNum GpioThread_CycleTicks = Ticks100ms;  // event driven
+constexpr TickNum GpioThread_CycleTicks = TX_WAIT_FOREVER;  // event driven
 constexpr TickNum I2cThread_CycleTicks = Ticks1ms;
 
 constexpr uint32_t UsbReadThread_StackSize = 4096;
