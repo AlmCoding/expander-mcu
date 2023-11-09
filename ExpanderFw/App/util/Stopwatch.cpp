@@ -10,7 +10,9 @@
 
 namespace util {
 
-Stopwatch::Stopwatch() {}
+Stopwatch::Stopwatch() {
+  HAL_TIM_Base_Start(&htim2);
+}
 
 Stopwatch::~Stopwatch() {}
 
