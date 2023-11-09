@@ -161,6 +161,118 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles EXTI Line2 interrupt.
+  */
+void EXTI2_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI2_IRQn 0 */
+
+  /* USER CODE END EXTI2_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_5_Pin);
+  /* USER CODE BEGIN EXTI2_IRQn 1 */
+
+  /* USER CODE END EXTI2_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI Line3 interrupt.
+  */
+void EXTI3_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI3_IRQn 0 */
+
+  /* USER CODE END EXTI3_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_6_Pin);
+  /* USER CODE BEGIN EXTI3_IRQn 1 */
+
+  /* USER CODE END EXTI3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI Line5 interrupt.
+  */
+void EXTI5_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI5_IRQn 0 */
+
+  /* USER CODE END EXTI5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_7_Pin);
+  /* USER CODE BEGIN EXTI5_IRQn 1 */
+
+  /* USER CODE END EXTI5_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI Line8 interrupt.
+  */
+void EXTI8_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI8_IRQn 0 */
+
+  /* USER CODE END EXTI8_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_0_Pin);
+  /* USER CODE BEGIN EXTI8_IRQn 1 */
+
+  /* USER CODE END EXTI8_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI Line9 interrupt.
+  */
+void EXTI9_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI9_IRQn 0 */
+
+  /* USER CODE END EXTI9_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_1_Pin);
+  /* USER CODE BEGIN EXTI9_IRQn 1 */
+
+  /* USER CODE END EXTI9_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI Line10 interrupt.
+  */
+void EXTI10_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI10_IRQn 0 */
+
+  /* USER CODE END EXTI10_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_2_Pin);
+  /* USER CODE BEGIN EXTI10_IRQn 1 */
+
+  /* USER CODE END EXTI10_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI Line11 interrupt.
+  */
+void EXTI11_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI11_IRQn 0 */
+
+  /* USER CODE END EXTI11_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_3_Pin);
+  /* USER CODE BEGIN EXTI11_IRQn 1 */
+
+  /* USER CODE END EXTI11_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI Line12 interrupt.
+  */
+void EXTI12_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI12_IRQn 0 */
+
+  /* USER CODE END EXTI12_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_4_Pin);
+  /* USER CODE BEGIN EXTI12_IRQn 1 */
+
+  /* USER CODE END EXTI12_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM6 global interrupt.
   */
 void TIM6_IRQHandler(void)

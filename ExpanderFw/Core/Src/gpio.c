@@ -148,6 +148,31 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI8_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI8_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI10_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI11_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI11_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI12_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI12_IRQn);
+
 }
 
 /* USER CODE BEGIN 2 */
