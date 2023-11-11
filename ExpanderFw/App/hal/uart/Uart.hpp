@@ -21,8 +21,6 @@ class Uart {
   constexpr static size_t TxBufferSize = 64 + 1;
 
  public:
-  enum class ServiceInfo { None = 0, SendRxData, SendStatus };
-
   typedef struct {
     uint32_t sequence_number;
     bool rx_overflow;
@@ -58,6 +56,7 @@ class Uart {
   uint8_t tx_buffer_[TxBufferSize];
 
   size_t this_tx_start_ = 0;
+  size_t this_tx_size_ = 0;
   size_t next_tx_start_ = 0;
   size_t next_tx_end_ = 0;
   bool tx_complete_ = true;

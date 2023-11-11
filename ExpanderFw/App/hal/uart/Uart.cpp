@@ -21,11 +21,10 @@
 #define DEBUG_ERROR(...)
 #endif
 
-#define DMA_RX_WRITE_POS 0  //(sizeof(rx_buffer_) - uart_handle_->hdmarx->Instance->CNDTR)
-#define DMA_TX_READ_POS 0   //(uart_handle_->hdmatx->Instance->CMAR - reinterpret_cast<uint32_t>(tx_buffer_))
+#define DMA_RX_MEM_WRITE_POS (sizeof(rx_buffer_) - __HAL_DMA_GET_COUNTER(uart_handle_->hdmarx))
+#define DMA_TX_MEM_READ_POS (this_tx_start_ + this_tx_size_ - __HAL_DMA_GET_COUNTER(uart_handle_->hdmatx))
 
 namespace hal::uart {
-
 Uart::Uart(UART_HandleTypeDef* uart_handle) : uart_handle_{ uart_handle } {}
 
 Status_t Uart::config(uint32_t baudrate) {
@@ -58,6 +57,7 @@ Status_t Uart::config(uint32_t baudrate) {
 
 Status_t Uart::init() {
   this_tx_start_ = 0;
+  this_tx_size_ = 0;
   next_tx_start_ = 0;
   next_tx_end_ = 0;
   tx_complete_ = true;
@@ -121,7 +121,7 @@ Status_t Uart::startRx() {
 }
 
 bool Uart::isRxBufferEmpty() {
-  if (rx_read_pos_ == DMA_RX_WRITE_POS) {
+  if (rx_read_pos_ == DMA_RX_MEM_WRITE_POS) {
     return true;
   } else {
     return false;
@@ -140,7 +140,9 @@ size_t Uart::getFreeTxSpace(uint32_t seq_num) {
   size_t dma_tx_read_pos;
 
   if (BITS_SET(uart_handle_->gState, HAL_UART_STATE_BUSY_TX) == true) {
-    dma_tx_read_pos = DMA_TX_READ_POS;
+    dma_tx_read_pos = DMA_TX_MEM_READ_POS;
+    // dma_tx_read_pos = this_tx_start_;
+
   } else {
     dma_tx_read_pos = next_tx_start_;
   }
@@ -226,7 +228,7 @@ Status_t Uart::startTx() {
     size_t tx_len;
     size_t new_tx_start;
 
-    // Protect against change due to new scheduleTx (interrupt context)
+    // Protect against change due to new scheduleTx (which runs in interrupt context)
     size_t next_tx_end = next_tx_end_;
 
     if (next_tx_start_ < next_tx_end) {
@@ -241,11 +243,12 @@ Status_t Uart::startTx() {
     // Start transmit
     tx_status = HAL_UART_Transmit_DMA(uart_handle_, tx_buffer_ + next_tx_start_, static_cast<uint16_t>(tx_len));
     if (tx_status == HAL_OK) {
+      this_tx_size_ = tx_len;
       this_tx_start_ = next_tx_start_;
       next_tx_start_ = new_tx_start;
 
       DEBUG_INFO("Start tx (len: %d) [OK]", tx_len);
-      DEBUG_INFO("Tx=[%d, dma: %d, %d[", this_tx_start_, DMA_TX_READ_POS, next_tx_start_);
+      DEBUG_INFO("Tx=[%d, dma: %d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_);
       status = Status_t::Ok;
 
     } else {
@@ -263,17 +266,21 @@ Status_t Uart::startTx() {
 
 void Uart::txCompleteCb() {
   DEBUG_INFO("Tx cplt (seq: %d)", seqence_number_);
-  DEBUG_INFO("Cplt=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_READ_POS, next_tx_start_, next_tx_end_);
+  DEBUG_INFO("Cplt=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_, next_tx_end_);
 
-  // Check for new data
-  if (next_tx_end_ != next_tx_start_) {
-    startTx();
+  this_tx_start_ = next_tx_start_;
+  this_tx_size_ = 0;
 
-  } else {
+  if (next_tx_end_ == next_tx_start_) {
+    // No new data pending
     this_tx_start_ = 0;
     next_tx_start_ = 0;
     next_tx_end_ = 0;
     tx_complete_ = true;
+
+  } else {
+    // Start transmit of new data
+    startTx();
   }
 
   send_status_msg_ = true;
@@ -296,7 +303,7 @@ void Uart::rxCompleteCb() {
 size_t Uart::serviceRx(uint8_t* data, size_t max_len) {
   int32_t rx_cnt;
   bool rx_circulation = false;
-  size_t dma_rx_write_pos = DMA_RX_WRITE_POS;
+  size_t dma_rx_write_pos = DMA_RX_MEM_WRITE_POS;
 
   rx_cnt = dma_rx_write_pos - rx_read_pos_;
   if (rx_cnt < 0) {

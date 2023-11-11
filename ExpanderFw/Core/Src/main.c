@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "app_threadx.h"
 #include "main.h"
+#include "gpdma.h"
 #include "i2c.h"
 #include "icache.h"
 #include "memorymap.h"
@@ -98,12 +99,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ICACHE_Init();
+  MX_GPDMA1_Init();
   MX_USB_OTG_HS_PCD_Init();
   MX_MEMORYMAP_Init();
   MX_I2C2_Init();
-  MX_USART2_UART_Init();
+  MX_ICACHE_Init();
   MX_TIM2_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 #ifdef RENAME_CUBEMX_MAIN
   return;
