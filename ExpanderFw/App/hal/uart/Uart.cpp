@@ -23,6 +23,7 @@
 
 #define DMA_RX_MEM_WRITE_POS (sizeof(rx_buffer_) - __HAL_DMA_GET_COUNTER(uart_handle_->hdmarx))
 #define DMA_TX_MEM_READ_POS (this_tx_start_ + this_tx_size_ - __HAL_DMA_GET_COUNTER(uart_handle_->hdmatx))
+#define RX_BUFFER_EMPTY (rx_read_pos_ == DMA_RX_MEM_WRITE_POS)
 
 namespace hal::uart {
 Uart::Uart(UART_HandleTypeDef* uart_handle) : uart_handle_{ uart_handle } {}
@@ -79,7 +80,7 @@ uint32_t Uart::poll() {
   startTx();
 #endif
 
-  if (isRxBufferEmpty() == false) {
+  if (RX_BUFFER_EMPTY == false) {
     send_status_msg_ = true;
   }
 
@@ -120,14 +121,6 @@ Status_t Uart::startRx() {
   return status;
 }
 
-bool Uart::isRxBufferEmpty() {
-  if (rx_read_pos_ == DMA_RX_MEM_WRITE_POS) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 size_t Uart::getFreeTxSpace(uint32_t seq_num) {
   /* From next_tx_end_ to DMA_TX_READ_POS - 1
    * The -1 is needed because [next_tx_start_, next_tx_end_[
@@ -139,29 +132,36 @@ size_t Uart::getFreeTxSpace(uint32_t seq_num) {
   size_t next_tx_end = next_tx_end_;
   size_t dma_tx_read_pos;
 
+  /*
   if (BITS_SET(uart_handle_->gState, HAL_UART_STATE_BUSY_TX) == true) {
-    dma_tx_read_pos = DMA_TX_MEM_READ_POS;
-    // dma_tx_read_pos = this_tx_start_;
-
+    // dma_tx_read_pos = DMA_TX_MEM_READ_POS;
+    dma_tx_read_pos = this_tx_start_;
   } else {
     dma_tx_read_pos = next_tx_start_;
   }
+  */
+
+  // dma_tx_read_pos = this_tx_start_;
+  dma_tx_read_pos = DMA_TX_MEM_READ_POS;
 
   if (dma_tx_read_pos != next_tx_end) {
-    free_tx_space += dma_tx_read_pos - next_tx_end;
+    free_tx_space = free_tx_space + dma_tx_read_pos - next_tx_end;
 
     if (dma_tx_read_pos > next_tx_end) {
       free_tx_space -= sizeof(tx_buffer_);
     }
   }
 
-  DEBUG_INFO("[%d, dma: %d, [%d, %d[", this_tx_start_, dma_tx_read_pos, next_tx_start_, next_tx_end);
+  DEBUG_INFO("Free=[%d, dma: %d, [%d, %d[", this_tx_start_, dma_tx_read_pos, next_tx_start_, next_tx_end);
   DEBUG_INFO("Free tx space (len: %d, seq: %d)", free_tx_space, seq_num);
   return free_tx_space;
 }
 
 Status_t Uart::scheduleTx(const uint8_t* data, size_t len, uint32_t seq_num) {
   Status_t status;
+
+  __disable_irq();
+  DEBUG_INFO("PreSched.=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_, next_tx_end_);
 
   if (getFreeTxSpace(seq_num) >= len) {
     DEBUG_INFO("Sched. tx (len: %d, seq: %d)", len, seq_num);
@@ -191,6 +191,8 @@ Status_t Uart::scheduleTx(const uint8_t* data, size_t len, uint32_t seq_num) {
     next_tx_end_ = new_tx_end;
     tx_complete_ = false;
     tx_overflow_ = false;
+
+    DEBUG_INFO("PostSched.=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_, next_tx_end_);
     status = Status_t::Ok;
 
 #if (START_UART_REQUEST_IMMEDIATELY == true)
@@ -205,6 +207,7 @@ Status_t Uart::scheduleTx(const uint8_t* data, size_t len, uint32_t seq_num) {
   }
 
   seqence_number_ = seq_num;
+  __enable_irq();
 
   // Trigger uart task
   os::msg::BaseMsg msg = {};
@@ -218,68 +221,69 @@ Status_t Uart::startTx() {
   Status_t status;
   HAL_StatusTypeDef tx_status;
 
-  // Return if tx busy
+  // Check if transmission ongoing
   if (BITS_SET(uart_handle_->gState, HAL_UART_STATE_BUSY_TX) == true) {
+    // Uart is busy
     return Status_t::Busy;
   }
 
-  // Check for new data
-  if (next_tx_end_ != next_tx_start_) {
-    size_t tx_len;
-    size_t new_tx_start;
+  // Check for pending data
+  if (next_tx_end_ == next_tx_start_) {
+    // No pending data
+    return Status_t::Ok;
+  }
 
-    // Protect against change due to new scheduleTx (which runs in interrupt context)
-    size_t next_tx_end = next_tx_end_;
+  size_t tx_len;
+  size_t new_tx_start;
 
-    if (next_tx_start_ < next_tx_end) {
-      tx_len = next_tx_end - next_tx_start_;
-      new_tx_start = next_tx_end;
+  // Protect against change due to new scheduleTx (which runs in interrupt context)
+  size_t next_tx_end = next_tx_end_;
 
-    } else {
-      tx_len = sizeof(tx_buffer_) - next_tx_start_;
-      new_tx_start = 0;
-    }
-
-    // Start transmit
-    tx_status = HAL_UART_Transmit_DMA(uart_handle_, tx_buffer_ + next_tx_start_, static_cast<uint16_t>(tx_len));
-    if (tx_status == HAL_OK) {
-      this_tx_size_ = tx_len;
-      this_tx_start_ = next_tx_start_;
-      next_tx_start_ = new_tx_start;
-
-      DEBUG_INFO("Start tx (len: %d) [OK]", tx_len);
-      DEBUG_INFO("Tx=[%d, dma: %d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_);
-      status = Status_t::Ok;
-
-    } else {
-      DEBUG_ERROR("Start tx (len: %d) [FAILED]", tx_len);
-      status = Status_t::Error;
-    }
+  if (next_tx_start_ < next_tx_end) {
+    tx_len = next_tx_end - next_tx_start_;
+    new_tx_start = next_tx_end;
 
   } else {
-    // Nothing to be done
+    tx_len = sizeof(tx_buffer_) - next_tx_start_;
+    new_tx_start = 0;
+  }
+
+  DEBUG_INFO("PreTx=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_, next_tx_end_);
+
+  // Start transmit
+  tx_status = HAL_UART_Transmit_DMA(uart_handle_, tx_buffer_ + this_tx_start_, static_cast<uint16_t>(tx_len));
+  if (tx_status == HAL_OK) {
+    this_tx_size_ = tx_len;
+    next_tx_start_ = new_tx_start;
+
+    DEBUG_INFO("Start tx (len: %d) [OK]", tx_len);
+    DEBUG_INFO("PostTx=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_, next_tx_end_);
     status = Status_t::Ok;
+
+  } else {
+    DEBUG_ERROR("Start tx (len: %d) [FAILED]", tx_len);
+    status = Status_t::Error;
   }
 
   return status;
 }
 
 void Uart::txCompleteCb() {
-  DEBUG_INFO("Tx cplt (seq: %d)", seqence_number_);
+  DEBUG_INFO("Tx cplt (len: %d, seq: %d)", this_tx_size_, seqence_number_);
   DEBUG_INFO("Cplt=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_, next_tx_end_);
 
-  this_tx_start_ = next_tx_start_;
-  this_tx_size_ = 0;
-
   if (next_tx_end_ == next_tx_start_) {
-    // No new data pending
+    // No pending data
     this_tx_start_ = 0;
+    this_tx_size_ = 0;
     next_tx_start_ = 0;
     next_tx_end_ = 0;
     tx_complete_ = true;
 
   } else {
-    // Start transmit of new data
+    // Start transmission of pending data
+    this_tx_size_ = 0;
+    this_tx_start_ = next_tx_start_;
     startTx();
   }
 

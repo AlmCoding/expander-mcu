@@ -44,7 +44,6 @@ class Uart {
  private:
   Status_t stopDma();
   Status_t startRx();
-  bool isRxBufferEmpty();
   size_t getFreeTxSpace(uint32_t seq_num);
   Status_t startTx();
   void txCompleteCb();
