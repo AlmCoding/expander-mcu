@@ -110,7 +110,7 @@ Status_t UartService::serviceStatusRequest(uart_proto_UartMsg* msg, size_t max_l
     msg->msg.status.tx_space = info.tx_space;
     msg->msg.status.rx_data.size = info.rx_size;
 
-    DEBUG_INFO("Srv status (seq: %d) [OK]", msg->sequence_number);
+    DEBUG_INFO("Srv status (len: %d, seq: %d) [OK]", info.rx_size, msg->sequence_number);
     status = Status_t::Ok;
 
   } else {

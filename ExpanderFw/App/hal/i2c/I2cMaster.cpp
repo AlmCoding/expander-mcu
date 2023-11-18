@@ -92,6 +92,32 @@ uint32_t I2cMaster::poll() {
   return service_requests;
 }
 
+I2cMaster::Space I2cMaster::getFreeSpace() {
+  Space space;
+
+  if (data_start_ <= data_end_) {
+    space.end_to_back = sizeof(data_buffer_) - data_end_;
+    space.front_to_start = data_start_;
+
+  } else {
+    space.end_to_back = data_start_ - data_end_;
+    space.front_to_start = 0;
+  }
+
+  if (space.end_to_back > 0) {
+    space.end_to_back--;
+  }
+
+  if (space.front_to_start > 0) {
+    space.front_to_start--;
+  }
+
+  DEBUG_INFO("Space [ds: %d, de: %d, sp1: %d, sp2: %d]",  //
+             data_start_, data_end_, space.end_to_back, space.front_to_start);
+  ETL_ASSERT((space.end_to_back + space.front_to_start) <= (sizeof(data_buffer_) - 1), ETL_ERROR(0));
+  return space;
+}
+
 Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num) {
   uint32_t sts, free_slots;
 
@@ -132,6 +158,58 @@ Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint3
 #endif
 
   return exitScheduleRequest(request, seq_num);
+}
+
+Status_t I2cMaster::allocateBufferSpace(Request* request) {
+  Status_t status = Status_t::Ok;
+  Space space = getFreeSpace();
+
+  DEBUG_INFO("Before allocate (req: %d) [ds: %d, de: %d, sp1: %d, sp2: %d]",  //
+             request->request_id, data_start_, data_end_, space.end_to_back, space.front_to_start);
+
+  if (space.end_to_back >= (request->write_size + request->read_size)) {
+    // Place everything into space1
+    request->write_start = data_end_;
+    data_end_ += request->write_size;
+    request->read_start = data_end_;
+    data_end_ += request->read_size;
+
+  } else if ((request->write_size >= request->read_size) &&      //
+             (space.end_to_back >= request->write_size) &&  //
+             (space.front_to_start >= request->read_size)) {
+    // Put write data into space1 and read data into space2
+    request->write_start = data_end_;
+    request->read_start = 0;
+    data_end_ = request->read_size;
+
+  } else if ((request->write_size < request->read_size) &&      //
+             (space.end_to_back >= request->read_size) &&  //
+             (space.front_to_start >= request->write_size)) {
+    // Put read data into space1 and write data into space2
+    request->read_start = data_end_;
+    request->write_start = 0;
+    data_end_ = request->write_size;
+
+  } else if (space.front_to_start >= (request->write_size + request->read_size)) {
+    // Place everything into space2
+    request->write_start = 0;
+    data_end_ = request->write_size;
+    request->read_start = data_end_;
+    data_end_ += request->read_size;
+
+  } else {
+    // No enough free space
+    DEBUG_ERROR("Allocate space (req. id: %d) [FAILED]", request->request_id);
+    status = Status_t::Error;
+  }
+
+  space = getFreeSpace();
+  DEBUG_INFO("After allocate (req: %d, ws: %d (%d), rs: %d (%d)) [ds: %d, de: %d, sp1: %d, sp2: %d]",
+             request->request_id,                                                                 //
+             request->write_start, request->write_size, request->read_start, request->read_size,  //
+             data_start_, data_end_, space.end_to_back, space.front_to_start);
+
+  return status;
 }
 
 I2cMaster::RequestSlot* I2cMaster::setupRequestSlot(Request* request) {
@@ -189,170 +267,6 @@ Status_t I2cMaster::exitScheduleRequest(Request* request, uint32_t seq_num) {
   os::msg::send_msg(os::msg::MsgQueueId::I2cThreadQueue, &msg);
 
   return status;
-}
-
-Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t max_size) {
-  Status_t status = Status_t::Ok;
-
-  QueueItem queue_item;
-  if (tx_queue_receive(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
-    DEBUG_ERROR("No cplt. requests to service [FAILED]");
-    status = Status_t::Error;
-  }
-
-  Request* request = &queue_item.slot->request;
-
-  info->sequence_number = seqence_number_;
-  info->status_code = request->status_code;
-  info->request_id = request->request_id;
-
-  if (request->status_code == RequestStatus::Complete) {
-    info->read_size = request->read_size;
-
-    ETL_ASSERT(request->read_size <= max_size, ETL_ERROR(0));
-    if (request->read_size > 0) {
-      std::memcpy(read_data, data_buffer_ + request->read_start, request->read_size);
-    }
-
-    // Free buffer space
-    freeBufferSpace(request);
-
-  } else {
-    info->read_size = 0;
-  }
-
-  uint32_t sts_pend, sts_cplt;
-  uint32_t free_slots_pend, free_slots_cplt;
-  sts_pend = tx_queue_info_get(&pending_queue_, nullptr, nullptr, &free_slots_pend, nullptr, nullptr, nullptr);
-  sts_cplt = tx_queue_info_get(&complete_queue_, nullptr, nullptr, &free_slots_cplt, nullptr, nullptr, nullptr);
-  ETL_ASSERT(sts_pend == TX_SUCCESS, ETL_ERROR(0));
-  ETL_ASSERT(sts_cplt == TX_SUCCESS, ETL_ERROR(0));
-  info->queue_space = static_cast<uint16_t>(etl::min(free_slots_pend, free_slots_cplt));
-
-  Space free = getFreeSpace();
-  info->buffer_space1 = static_cast<uint16_t>(free.space1);
-  info->buffer_space2 = static_cast<uint16_t>(free.space2);
-
-  // Release slot
-  queue_item.slot->used = false;
-  return status;
-}
-
-I2cMaster::Space I2cMaster::getFreeSpace() {
-  Space free;
-
-  if (data_start_ < data_end_) {
-    free.space1 = sizeof(data_buffer_) - data_end_ - 1;
-
-    if (data_start_ > 0) {
-      free.space2 = data_start_ - 1;
-    } else {
-      free.space2 = 0;
-    }
-
-  } else if (data_start_ > data_end_) {
-    free.space1 = data_start_ - data_end_ - 1;
-    free.space2 = 0;
-
-  } else {
-    free.space1 = sizeof(data_buffer_) - 1;
-    free.space2 = 0;
-  }
-
-  ETL_ASSERT((free.space1 + free.space2) <= (sizeof(data_buffer_) - 1), ETL_ERROR(0));
-  return free;
-}
-
-Status_t I2cMaster::allocateBufferSpace(Request* request) {
-  Status_t status = Status_t::Ok;
-  Space free = getFreeSpace();
-
-  DEBUG_INFO("Before allocate (req: %d) [ds: %d, de: %d, sp1: %d, sp2: %d]",  //
-             request->request_id, data_start_, data_end_, free.space1, free.space2);
-
-  if (free.space1 >= (request->write_size + request->read_size)) {
-    // Place everything into space1
-    request->write_start = data_end_;
-    data_end_ += request->write_size;
-    request->read_start = data_end_;
-    data_end_ += request->read_size;
-
-  } else if ((request->write_size >= request->read_size) &&  //
-             (free.space1 >= request->write_size) &&         //
-             (free.space2 >= request->read_size)) {
-    // Put write data into space1 and read data into space2
-    request->write_start = data_end_;
-    request->read_start = 0;
-    data_end_ = request->read_size;
-
-  } else if ((request->write_size < request->read_size) &&  //
-             (free.space1 >= request->read_size) &&         //
-             (free.space2 >= request->write_size)) {
-    // Put read data into space1 and write data into space2
-    request->read_start = data_end_;
-    request->write_start = 0;
-    data_end_ = request->write_size;
-
-  } else if (free.space2 >= (request->write_size + request->read_size)) {
-    // Place everything into space2
-    request->write_start = 0;
-    data_end_ = request->write_size;
-    request->read_start = data_end_;
-    data_end_ += request->read_size;
-
-  } else {
-    // No enough free space
-    DEBUG_ERROR("Allocate space (req. id: %d) [FAILED]", request->request_id);
-    status = Status_t::Error;
-  }
-
-  free = getFreeSpace();
-  DEBUG_INFO("After allocate (req: %d, ws: %d (%d), rs: %d (%d)) [ds: %d, de: %d, sp1: %d, sp2: %d]",
-             request->request_id,                                                                 //
-             request->write_start, request->write_size, request->read_start, request->read_size,  //
-             data_start_, data_end_, free.space1, free.space2);
-
-  return status;
-}
-
-void I2cMaster::freeBufferSpace(Request* request) {
-  Space free = getFreeSpace();
-  DEBUG_INFO("Before free (req: %d, ws: %d (%d), rs: %d (%d)) [ds: %d, de: %d, sp1: %d, sp2: %d]",
-             request->request_id,                                                                 //
-             request->write_start, request->write_size, request->read_start, request->read_size,  //
-             data_start_, data_end_, free.space1, free.space2);
-
-  if (data_start_ == request->write_start) {
-    data_start_ += request->write_size;
-
-    if (data_start_ == request->read_start) {
-      data_start_ += request->read_size;
-    } else if (request->read_start == 0) {
-      data_start_ = request->read_size;
-    } else {
-      ETL_ASSERT(false, ETL_ERROR(0));
-    }
-
-  } else if (data_start_ == request->read_start) {
-    data_start_ += request->read_size;
-
-    if (request->write_start == 0) {
-      data_start_ = request->write_size;
-    } else {
-      ETL_ASSERT(false, ETL_ERROR(0));
-    }
-
-  } else if (request->write_start == 0) {
-    // Skip gap at buffer end
-    data_start_ = request->write_size + request->read_size;
-
-  } else {
-    ETL_ASSERT(false, ETL_ERROR(0));
-  }
-
-  free = getFreeSpace();
-  DEBUG_INFO("After free (req: %d) [ds: %d, de: %d, sp1: %d, sp2: %d]",  //
-             request->request_id, data_start_, data_end_, free.space1, free.space2);
 }
 
 Status_t I2cMaster::startRequest() {
@@ -540,6 +454,8 @@ void I2cMaster::complete() {
   QueueItem queue_item = { .slot = request_slot_ };
   if (tx_queue_send(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
     DEBUG_ERROR("Cplt queue put (req: %d) [FAILED]", request_->request_id);
+  } else {
+    DEBUG_INFO("Cplt queue put (req: %d) [OK]", request_->request_id);
   }
 
   if (request_->sequence_idx == 0) {
@@ -553,6 +469,99 @@ void I2cMaster::complete() {
   os::msg::BaseMsg msg = {};
   msg.id = os::msg::MsgId::TriggerThread;
   os::msg::send_msg(os::msg::MsgQueueId::I2cThreadQueue, &msg);
+}
+
+Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t max_size) {
+  Status_t status = Status_t::Ok;
+
+  QueueItem queue_item;
+  if (tx_queue_receive(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
+    DEBUG_ERROR("No cplt. requests to service [FAILED]");
+    status = Status_t::Error;
+  }
+
+  Request* request = &queue_item.slot->request;
+
+  info->sequence_number = seqence_number_;
+  info->status_code = request->status_code;
+  info->request_id = request->request_id;
+
+  if (request->status_code == RequestStatus::Complete) {
+    info->read_size = request->read_size;
+
+    ETL_ASSERT(request->read_size <= max_size, ETL_ERROR(0));
+    if (request->read_size > 0) {
+      std::memcpy(read_data, data_buffer_ + request->read_start, request->read_size);
+    }
+
+    // Free buffer space
+    freeBufferSpace(request);
+
+  } else {
+    info->read_size = 0;
+  }
+
+  uint32_t sts_pend, sts_cplt;
+  uint32_t free_slots_pend, free_slots_cplt;
+  sts_pend = tx_queue_info_get(&pending_queue_, nullptr, nullptr, &free_slots_pend, nullptr, nullptr, nullptr);
+  sts_cplt = tx_queue_info_get(&complete_queue_, nullptr, nullptr, &free_slots_cplt, nullptr, nullptr, nullptr);
+  ETL_ASSERT(sts_pend == TX_SUCCESS, ETL_ERROR(0));
+  ETL_ASSERT(sts_cplt == TX_SUCCESS, ETL_ERROR(0));
+  info->queue_space = static_cast<uint16_t>(etl::min(free_slots_pend, free_slots_cplt));
+
+  Space space = getFreeSpace();
+  info->buffer_space1 = static_cast<uint16_t>(space.end_to_back);
+  info->buffer_space2 = static_cast<uint16_t>(space.front_to_start);
+
+  // Release slot
+  queue_item.slot->used = false;
+  return status;
+}
+
+void I2cMaster::freeBufferSpace(Request* request) {
+  Space free_space = getFreeSpace();
+  DEBUG_INFO("Before free (req: %d, ws: %d (%d), rs: %d (%d)) [ds: %d, de: %d, sp1: %d, sp2: %d]",
+             request->request_id,                                                                 //
+             request->write_start, request->write_size, request->read_start, request->read_size,  //
+             data_start_, data_end_, free_space.end_to_back, free_space.front_to_start);
+
+  if (data_start_ == request->write_start) {
+    data_start_ += request->write_size;
+
+    if (data_start_ == request->read_start) {
+      data_start_ += request->read_size;
+    } else if (request->read_start == 0) {
+      data_start_ = request->read_size;
+    } else {
+      ETL_ASSERT(false, ETL_ERROR(0));
+    }
+
+  } else if (data_start_ == request->read_start) {
+    data_start_ += request->read_size;
+
+    if (request->write_start == 0) {
+      data_start_ = request->write_size;
+    } else {
+      ETL_ASSERT(false, ETL_ERROR(0));
+    }
+
+  } else if (request->write_start == 0) {
+    // Skip gap at buffer end
+    data_start_ = request->write_size + request->read_size;
+
+  } else {
+    ETL_ASSERT(false, ETL_ERROR(0));
+  }
+
+  // Reset when buffer empty
+  if (data_start_ == data_end_) {
+    data_start_ = 0;
+    data_end_ = 0;
+  }
+
+  free_space = getFreeSpace();
+  DEBUG_INFO("After free (req: %d) [ds: %d, de: %d, sp1: %d, sp2: %d]",  //
+             request->request_id, data_start_, data_end_, free_space.end_to_back, free_space.front_to_start);
 }
 
 }  // namespace hal::i2c

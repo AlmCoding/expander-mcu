@@ -66,8 +66,8 @@ class I2cMaster {
   constexpr static size_t DataBufferSize = 64 + 1;
 
   typedef struct {
-    size_t space1;  // Starts at data_end_
-    size_t space2;  // Starts at 0
+    size_t end_to_back;     // [data_end_ to end[
+    size_t front_to_start;  // [0 to data_start_[
   } Space;
 
   typedef struct {
@@ -85,10 +85,10 @@ class I2cMaster {
     RequestSlot* slot;
   } QueueItem;
 
-  RequestSlot* setupRequestSlot(Request* request);
-  Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   Space getFreeSpace();
   Status_t allocateBufferSpace(Request* request);
+  RequestSlot* setupRequestSlot(Request* request);
+  Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   void freeBufferSpace(Request* request);
   Status_t startRequest();
   Status_t startWrite();
@@ -102,8 +102,8 @@ class I2cMaster {
   TX_QUEUE pending_queue_;
   TX_QUEUE complete_queue_;
 
-  uint8_t pending_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem)];
-  uint8_t complete_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem)];
+  uint8_t pending_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem) * sizeof(ULONG)];
+  uint8_t complete_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem) * sizeof(ULONG)];
   RequestSlot request_buffer_[RequestBufferSize];
   size_t request_buffer_idx_ = 0;
 

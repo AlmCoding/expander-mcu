@@ -80,11 +80,7 @@ uint32_t Uart::poll() {
   startTx();
 #endif
 
-  if (RX_BUFFER_EMPTY == false) {
-    send_status_msg_ = true;
-  }
-
-  if (send_status_msg_ == true) {
+  if ((RX_BUFFER_EMPTY == false) || (send_status_msg_ == true)) {
     service_requests = 1;
   }
 
@@ -95,7 +91,7 @@ Status_t Uart::stopDma() {
   Status_t status;
 
   if (HAL_UART_DMAStop(uart_handle_) == HAL_OK) {
-    DEBUG_INFO("Stop dma [OK]");
+    DEBUG_INFO("Rx=(rx_srv_pos_: %d, rx_dma_pos: %d)", rx_read_pos_, DMA_RX_MEM_WRITE_POS);
     status = Status_t::Ok;
 
   } else {
@@ -129,20 +125,8 @@ size_t Uart::getFreeTxSpace(uint32_t seq_num) {
    */
 
   size_t free_tx_space = sizeof(tx_buffer_) - 1;
+  size_t dma_tx_read_pos = DMA_TX_MEM_READ_POS;
   size_t next_tx_end = next_tx_end_;
-  size_t dma_tx_read_pos;
-
-  /*
-  if (BITS_SET(uart_handle_->gState, HAL_UART_STATE_BUSY_TX) == true) {
-    // dma_tx_read_pos = DMA_TX_MEM_READ_POS;
-    dma_tx_read_pos = this_tx_start_;
-  } else {
-    dma_tx_read_pos = next_tx_start_;
-  }
-  */
-
-  // dma_tx_read_pos = this_tx_start_;
-  dma_tx_read_pos = DMA_TX_MEM_READ_POS;
 
   if (dma_tx_read_pos != next_tx_end) {
     free_tx_space = free_tx_space + dma_tx_read_pos - next_tx_end;
@@ -161,6 +145,7 @@ Status_t Uart::scheduleTx(const uint8_t* data, size_t len, uint32_t seq_num) {
   Status_t status;
 
   __disable_irq();
+  DEBUG_INFO("Rx=(rx_srv_pos_: %d, rx_dma_pos: %d)", rx_read_pos_, DMA_RX_MEM_WRITE_POS);
   DEBUG_INFO("PreSched.=[%d, dma: %d, [%d, %d[", this_tx_start_, DMA_TX_MEM_READ_POS, next_tx_start_, next_tx_end_);
 
   if (getFreeTxSpace(seq_num) >= len) {
@@ -221,16 +206,16 @@ Status_t Uart::startTx() {
   Status_t status;
   HAL_StatusTypeDef tx_status;
 
-  // Check if transmission ongoing
-  if (BITS_SET(uart_handle_->gState, HAL_UART_STATE_BUSY_TX) == true) {
-    // Uart is busy
-    return Status_t::Busy;
-  }
-
   // Check for pending data
   if (next_tx_end_ == next_tx_start_) {
     // No pending data
     return Status_t::Ok;
+  }
+
+  // Check if transmission ongoing
+  if (BITS_SET(uart_handle_->gState, HAL_UART_STATE_BUSY_TX) == true) {
+    // Uart is busy
+    return Status_t::Busy;
   }
 
   size_t tx_len;
@@ -274,8 +259,8 @@ void Uart::txCompleteCb() {
 
   if (next_tx_end_ == next_tx_start_) {
     // No pending data
-    this_tx_start_ = 0;
     this_tx_size_ = 0;
+    this_tx_start_ = 0;
     next_tx_start_ = 0;
     next_tx_end_ = 0;
     tx_complete_ = true;
@@ -338,6 +323,7 @@ size_t Uart::serviceRx(uint8_t* data, size_t max_len) {
 
 Status_t Uart::serviceStatus(StatusInfo* status, uint8_t* data, size_t max_len) {
   send_status_msg_ = false;
+  DEBUG_INFO("Rx=(rx_srv_pos_: %d, rx_dma_pos: %d)", rx_read_pos_, DMA_RX_MEM_WRITE_POS);
 
   status->sequence_number = seqence_number_;
   status->rx_overflow = rx_overflow_;
@@ -347,6 +333,9 @@ Status_t Uart::serviceStatus(StatusInfo* status, uint8_t* data, size_t max_len) 
   status->tx_space = static_cast<uint16_t>(getFreeTxSpace(status->sequence_number));
   status->rx_size = static_cast<uint16_t>(serviceRx(data, max_len));
 
+  DEBUG_INFO("Rx=(rx_srv_pos_: %d, rx_dma_pos: %d)", rx_read_pos_, DMA_RX_MEM_WRITE_POS);
+  data[status->rx_size] = '\0';
+  DEBUG_INFO("Rx='%s'", data);
   return Status_t::Ok;
 }
 
