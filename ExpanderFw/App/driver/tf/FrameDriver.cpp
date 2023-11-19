@@ -43,7 +43,7 @@ void FrameDriver::callTxCallback(TfMsgType type) {
   msg.data = tx_buffer_;
 
   if (msg.len > 0) {
-    DEBUG_INFO("O=> msg: type: %d, len: %d", msg.type, msg.len);
+    DEBUG_INFO("O=> msg (type: %d, len: %d)", msg.type, msg.len);
     TF_Send(&tf_, &msg);
 
   } else {
@@ -82,7 +82,7 @@ void FrameDriver_receiveData(const uint8_t* data, size_t len) {
 }
 
 TF_Result typeCallback(TinyFrame* /*tf*/, TF_Msg* msg) {
-  DEBUG_INFO("=>I msg: type: %d, len: %d", msg->type, msg->len);
+  DEBUG_INFO("=>I msg (type: %d, len: %d)", msg->type, msg->len);
 
   auto& tf_driver = driver::tf::FrameDriver::getInstance();
   tf_driver.callRxCallback(static_cast<TfMsgType>(msg->type), msg->data, msg->len);
