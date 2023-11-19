@@ -15,7 +15,7 @@
 
 namespace app::i2c_srv {
 
-constexpr uint32_t DefaultClockRate = 100000;
+constexpr uint32_t DefaultClockRate = 400e3;
 
 class I2cService {
  public:
@@ -32,8 +32,10 @@ class I2cService {
   int32_t postMasterRequest(i2c_proto_I2cMsg* msg);
   Status_t serviceMasterStatusRequest(i2c_proto_I2cMsg* msg, size_t max_len);
 
-  hal::i2c::I2cMaster i2cMaster0_{ &hi2c2 };
+  hal::i2c::I2cMaster i2cMaster0_{ &hi2c1 };
   // hal::uart::I2cSlave i2cSlave0_{ &hi2c1 };
+  hal::i2c::I2cMaster i2cMaster1_{ &hi2c2 };
+  // hal::uart::I2cSlave i2cSlave1_{ &hi2c2 };
 
   app::ctrl::RequestSrvCallback request_service_cb_ = nullptr;
 };

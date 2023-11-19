@@ -106,6 +106,7 @@ int main(void)
   MX_ICACHE_Init();
   MX_TIM2_Init();
   MX_USART2_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 #ifdef RENAME_CUBEMX_MAIN
   return;

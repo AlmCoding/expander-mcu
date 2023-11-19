@@ -32,6 +32,9 @@ I2cService::~I2cService() {}
 
 void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
   i2cMaster0_.config(/*DefaultClockRate*/);
+  // i2cSlave0_.config(/*DefaultClockRate*/);
+  i2cMaster1_.config(/*DefaultClockRate*/);
+  // i2cSlave1_.config(/*DefaultClockRate*/);
 
   request_service_cb_ = request_service_cb;
 }
@@ -74,6 +77,7 @@ int32_t I2cService::postRequest(const uint8_t* data, size_t len) {
 
 int32_t I2cService::postMasterRequest(i2c_proto_I2cMsg* msg) {
   int32_t status = -1;
+  Status_t sts = Status_t::Error;
   hal::i2c::I2cMaster::Request request;
 
   request.status_code = hal::i2c::I2cMaster::RequestStatus::NotInit;
@@ -84,8 +88,15 @@ int32_t I2cService::postMasterRequest(i2c_proto_I2cMsg* msg) {
   request.sequence_id = static_cast<uint16_t>(msg->msg.master_request.sequence_id);
   request.sequence_idx = static_cast<uint16_t>(msg->msg.master_request.sequence_idx);
 
-  if (i2cMaster0_.scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.master_request.write_data.bytes),
-                                  msg->sequence_number) == Status_t::Ok) {
+  if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
+    sts = i2cMaster0_.scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.master_request.write_data.bytes),
+                                      msg->sequence_number);
+  } else {
+    sts = i2cMaster1_.scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.master_request.write_data.bytes),
+                                      msg->sequence_number);
+  }
+
+  if (sts == Status_t::Ok) {
     status = 0;
   }
 
