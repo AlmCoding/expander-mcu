@@ -46,7 +46,7 @@ void GpioService::init(app::ctrl::RequestSrvCallback request_service_cb) {
 }
 
 int32_t GpioService::postRequest(const uint8_t* data, size_t len) {
-  int32_t status;
+  int32_t status = -1;
 
   /* Allocate space for the decoded message. */
   gpio_proto_GpioMsg gpio_msg = gpio_proto_GpioMsg_init_zero;
@@ -84,8 +84,7 @@ int32_t GpioService::postRequest(const uint8_t* data, size_t len) {
     status = 0;
 
   } else {
-    DEBUG_ERROR("Unknown ProtoBuf msg!");
-    status = -1;
+    DEBUG_ERROR("Invalid request message!");
   }
 
   seqence_number_ = gpio_msg.sequence_number;

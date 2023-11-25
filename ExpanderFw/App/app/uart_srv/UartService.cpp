@@ -32,12 +32,17 @@ UartService::~UartService() {}
 
 void UartService::init(app::ctrl::RequestSrvCallback request_service_cb) {
   uart0_.config(DefaultBaudRate);
+  // uart1_.config(DefaultBaudRate);
 
   request_service_cb_ = request_service_cb;
 }
 
 void UartService::poll() {
-  uint32_t request_cnt = uart0_.poll();
+  uint32_t request_cnt = 0;
+
+  if (uart0_.poll() > 0) {
+    request_cnt++;
+  }
 
   if (request_cnt > 0) {
     request_service_cb_(request_cnt);

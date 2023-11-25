@@ -80,8 +80,9 @@ void UsbWriteThread::serviceUpstream(os::msg::BaseMsg* msg) {
     stopwatch.start();
     tf_driver.callTxCallback(msg->type);
     stopwatch.stop();
+    DEBUG_INFO("Service upstream (not: %d, idx: %d, msg: %d, time: %d us) [OK]",  //
+               msg_count_, msg->cnt, msg->type, stopwatch.time());
     msg->cnt--;
-    DEBUG_INFO("USB tx (idx: %d): %d us", msg->cnt, stopwatch.time());
   }
 }
 

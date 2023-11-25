@@ -80,7 +80,12 @@ int32_t UartThread::uartTask_serviceRequest_cb(uint8_t* data, size_t max_len) {
   ongoing_service_ = false;
   int32_t len = uart_service_.serviceRequest(data, max_len);
 
-  DEBUG_INFO("Service request: %d [OK]", msg_count_);
+  if (len > 0) {
+    DEBUG_INFO("Service request (not: %d, len %d) [OK]", msg_count_, len);
+  } else {
+    DEBUG_ERROR("Service request (not: %d, len %d) [FAILED]", msg_count_, len);
+  }
+
   return len;
 }
 
