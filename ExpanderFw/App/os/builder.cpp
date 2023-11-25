@@ -6,6 +6,7 @@
  */
 
 #include "os/builder.hpp"
+#include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "os/queue.hpp"
 #include "os/thread.hpp"
 #include "util/debug.hpp"
@@ -29,11 +30,23 @@ void enterOs() {
 
 UINT buildOs(VOID* memory_ptr) {
   /* Init scheduler */
+  UINT status;
 
-  createThreads(memory_ptr);
-  createQueues(memory_ptr);
-  // createMutexes();
-  // createTimers();
+  // Create threads
+  status = createThreads(memory_ptr);
+  ETL_ASSERT(status == TX_SUCCESS, ETL_ERROR(0));
+
+  // Create queues
+  status = createQueues(memory_ptr);
+  ETL_ASSERT(status == TX_SUCCESS, ETL_ERROR(0));
+
+  // Create mutexes
+  // status = createMutexes();
+  // ETL_ASSERT(status == TX_SUCCESS, ETL_ERROR(0));
+
+  // Create timers
+  // status = createTimers();
+  // ETL_ASSERT(status == TX_SUCCESS, ETL_ERROR(0));
 
   return TX_SUCCESS;
 }

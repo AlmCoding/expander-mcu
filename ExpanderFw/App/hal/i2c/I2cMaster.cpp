@@ -174,16 +174,16 @@ Status_t I2cMaster::allocateBufferSpace(Request* request) {
     request->read_start = data_end_;
     data_end_ += request->read_size;
 
-  } else if ((request->write_size >= request->read_size) &&      //
-             (space.end_to_back >= request->write_size) &&  //
+  } else if ((request->write_size >= request->read_size) &&  //
+             (space.end_to_back >= request->write_size) &&   //
              (space.front_to_start >= request->read_size)) {
     // Put write data into space1 and read data into space2
     request->write_start = data_end_;
     request->read_start = 0;
     data_end_ = request->read_size;
 
-  } else if ((request->write_size < request->read_size) &&      //
-             (space.end_to_back >= request->read_size) &&  //
+  } else if ((request->write_size < request->read_size) &&  //
+             (space.end_to_back >= request->read_size) &&   //
              (space.front_to_start >= request->write_size)) {
     // Put read data into space1 and write data into space2
     request->read_start = data_end_;

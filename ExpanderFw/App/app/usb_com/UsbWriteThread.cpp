@@ -42,19 +42,13 @@ void UsbWriteThread::execute(uint32_t /*thread_input*/) {
   }
 }
 
-void UsbWriteThread::sendData(const uint8_t* data, uint32_t size) {
-  uint32_t actual_size = 0;
-  if (ux_device_class_cdc_acm_write(cdc_acm_, const_cast<uint8_t*>(data), size, &actual_size) != UX_SUCCESS) {
-    DEBUG_ERROR("Usb send data [FAILED]");
-  }
-}
-
 void UsbWriteThread::processMsg(os::msg::BaseMsg* msg) {
-  DEBUG_INFO("Notification received: %d", ++msg_count_);
-
   switch (msg->id) {
     case os::msg::MsgId::ServiceUpstreamRequest: {
-      serviceUpstream(msg);
+      DEBUG_INFO("Notification received: %d", ++msg_count_);
+      if (cdc_acm_ != nullptr) {
+        serviceUpstream(msg);
+      }
       break;
     }
     case os::msg::MsgId::UsbDeviceActivate: {
@@ -79,13 +73,24 @@ void UsbWriteThread::processMsg(os::msg::BaseMsg* msg) {
 
 void UsbWriteThread::serviceUpstream(os::msg::BaseMsg* msg) {
   util::Stopwatch stopwatch{};
+  auto& tf_driver = driver::tf::FrameDriver::getInstance();
+
   while (msg->cnt > 0) {
+    DEBUG_INFO("Service upstream (not: %d, idx: %d, msg: %d)", msg_count_, msg->cnt, msg->type);
     stopwatch.start();
-    auto& tf_driver = driver::tf::FrameDriver::getInstance();
     tf_driver.callTxCallback(msg->type);
     stopwatch.stop();
     msg->cnt--;
-    DEBUG_INFO("USB tx (%d): %d us", msg->cnt, stopwatch.time());
+    DEBUG_INFO("USB tx (idx: %d): %d us", msg->cnt, stopwatch.time());
+  }
+}
+
+void UsbWriteThread::sendData(const uint8_t* data, uint32_t size) {
+  uint32_t actual_size = 0;
+  uint32_t status = ux_device_class_cdc_acm_write(cdc_acm_, const_cast<uint8_t*>(data), size, &actual_size);
+
+  if ((status != UX_SUCCESS) || (actual_size != size)) {
+    DEBUG_ERROR("Usb send data (size: %d) [FAILED]", size);
   }
 }
 

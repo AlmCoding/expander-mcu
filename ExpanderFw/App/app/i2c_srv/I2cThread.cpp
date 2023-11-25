@@ -65,9 +65,10 @@ void I2cThread::requestService_cb(os::msg::RequestCnt cnt) {
   };
 
   if (os::msg::send_msg(os::msg::MsgQueueId::UsbWriteThreadQueue, &req_msg) == true) {
-    DEBUG_INFO("Notify usbWriteTask: %d [OK]", ++msg_count_);
+    DEBUG_INFO("Notify usbWriteTask (not: %d, cnt: %d  msg: %d) [OK]", ++msg_count_, cnt, I2cThread::ThreadTfMsgType);
   } else {
-    DEBUG_ERROR("Notify usbWriteTask: %d [FAILED]", ++msg_count_);
+    DEBUG_ERROR("Notify usbWriteTask (not: %d, cnt: %d  msg: %d) [FAILED]", ++msg_count_, cnt,
+                I2cThread::ThreadTfMsgType);
   }
 }
 
@@ -79,7 +80,7 @@ int32_t I2cThread::serviceRequest_cb(uint8_t* data, size_t max_len) {
   ongoing_service_ = false;
   int32_t len = i2c_service_.serviceRequest(data, max_len);
 
-  DEBUG_INFO("Service request: %d [OK]", msg_count_);
+  DEBUG_INFO("Service request (not: %d) [OK]", msg_count_);
   return len;
 }
 

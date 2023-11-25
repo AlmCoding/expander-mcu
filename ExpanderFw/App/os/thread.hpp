@@ -26,8 +26,8 @@ constexpr TickNum UartThread_CycleTicks = Ticks1ms;
 constexpr TickNum GpioThread_CycleTicks = TX_WAIT_FOREVER;  // event driven
 constexpr TickNum I2cThread_CycleTicks = Ticks1ms;
 
-constexpr uint32_t UsbReadThread_StackSize = 4096;
-constexpr uint32_t UsbWriteThread_StackSize = 4096;
+constexpr uint32_t UsbReadThread_StackSize = 8192;
+constexpr uint32_t UsbWriteThread_StackSize = 8192;
 constexpr uint32_t CtrlThread_StackSize = 4096;
 constexpr uint32_t UartThread_StackSize = 4096;
 constexpr uint32_t GpioThread_StackSize = 4096;

@@ -124,13 +124,23 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_len) {
 
   if (srv_info_.service_master0 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
-    sts = serviceMasterStatusRequest(&i2c_master0_, &i2c_msg, max_len);
+    sts = serviceMasterRequest(&i2c_master0_, &i2c_msg, max_len);
     srv_info_.service_master0 = false;
 
   } else if (srv_info_.service_master1 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
-    sts = serviceMasterStatusRequest(&i2c_master1_, &i2c_msg, max_len);
+    sts = serviceMasterRequest(&i2c_master1_, &i2c_msg, max_len);
     srv_info_.service_master1 = false;
+
+  } else if (srv_info_.service_slave0 == true) {
+    i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
+    // sts = serviceSlavaStatusRequest(&i2c_slave0_, &i2c_msg, max_len);
+    srv_info_.service_slave0 = false;
+
+  } else if (srv_info_.service_slave1 == true) {
+    i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
+    // sts = serviceSlavaStatusRequest(&i2c_slave1_, &i2c_msg, max_len);
+    srv_info_.service_slave1 = false;
   }
 
   if (sts == Status_t::Error) {
@@ -146,7 +156,7 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_len) {
   return stream.bytes_written;
 }
 
-Status_t I2cService::serviceMasterStatusRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg,
+Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg,
                                                 size_t max_len) {
   Status_t status;
   hal::i2c::I2cMaster::StatusInfo info;

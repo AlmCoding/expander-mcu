@@ -47,9 +47,9 @@ void UsbReadThread::execute(uint32_t /*thread_input*/) {
     // Check if device is configured
     if ((device_->ux_slave_device_state == UX_DEVICE_CONFIGURED) && (cdc_acm_ != nullptr)) {
       // Read the received data in blocking mode
-      ux_device_class_cdc_acm_read(cdc_acm_, usb_read_buffer_, 64, &actual_length);
+      ux_device_class_cdc_acm_read(cdc_acm_, usb_read_buffer_, sizeof(usb_read_buffer_), &actual_length);
 
-      if (actual_length != 0) {
+      if (actual_length > 0) {
         auto& tf_driver = driver::tf::FrameDriver::getInstance();
         tf_driver.receiveData(usb_read_buffer_, actual_length);
       }

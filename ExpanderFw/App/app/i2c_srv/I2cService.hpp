@@ -37,7 +37,7 @@ class I2cService {
 
  private:
   int32_t postMasterRequest(i2c_proto_I2cMsg* msg);
-  Status_t serviceMasterStatusRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_len);
+  Status_t serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_len);
 
   hal::i2c::I2cMaster i2c_master0_{ &hi2c1 };
   // hal::uart::I2cSlave i2c_slave0_{ &hi2c1 };

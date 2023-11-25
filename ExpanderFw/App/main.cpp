@@ -6,6 +6,7 @@
  */
 
 #include "main.h"
+#include "etl/error_handler.h"
 #include "os/builder.hpp"
 #include "util/debug.hpp"
 
@@ -37,6 +38,7 @@ int main(void) {
   os::enterOs();
 
   // We never get here as control is taken by the os
+  ETL_ASSERT(false, ETL_ERROR(0));
   while (1) {
   }
 }

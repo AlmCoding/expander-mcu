@@ -25,7 +25,7 @@
 
 // Adjust sizes as desired (1,2,4)
 #define TF_ID_BYTES 1
-#define TF_LEN_BYTES 1
+#define TF_LEN_BYTES 2
 #define TF_TYPE_BYTES 1
 
 // Checksum type. Options:
@@ -51,10 +51,10 @@ typedef uint8_t TF_COUNT;
 
 // Maximum received payload size (static buffer)
 // Larger payloads will be rejected.
-#define TF_MAX_PAYLOAD_RX 256
+#define TF_MAX_PAYLOAD_RX 1024
 // Size of the sending buffer. Larger payloads will be split to pieces and sent
 // in multiple calls to the write function. This can be lowered to reduce RAM usage.
-#define TF_SENDBUF_LEN 256
+#define TF_SENDBUF_LEN 1024
 
 // --- Listener counts - determine sizes of the static slot tables ---
 
