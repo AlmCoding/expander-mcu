@@ -10,6 +10,7 @@
 
 #include "app/ctrl/ctrlTypes.hpp"
 #include "hal/i2c/I2cMaster.hpp"
+#include "hal/i2c/I2cSlave.hpp"
 #include "i2c.h"
 #include "proto_c/i2c.pb.h"
 
@@ -21,8 +22,8 @@ class I2cService {
  public:
   typedef struct {
     bool service_master0;
-    bool service_slave0;
     bool service_master1;
+    bool service_slave0;
     bool service_slave1;
   } ServiceInfo;
 
@@ -38,11 +39,12 @@ class I2cService {
  private:
   int32_t postMasterRequest(i2c_proto_I2cMsg* msg);
   Status_t serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_len);
+  Status_t serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_len);
 
   hal::i2c::I2cMaster i2c_master0_{ &hi2c1 };
-  // hal::uart::I2cSlave i2c_slave0_{ &hi2c1 };
   hal::i2c::I2cMaster i2c_master1_{ &hi2c2 };
-  // hal::uart::I2cSlave i2c_slave1_{ &hi2c2 };
+  hal::i2c::I2cSlave i2c_slave0_{ &hi2c1 };
+  hal::i2c::I2cSlave i2c_slave1_{ &hi2c2 };
 
   ServiceInfo srv_info_ = {};
 

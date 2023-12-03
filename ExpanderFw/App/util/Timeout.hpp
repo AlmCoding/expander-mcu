@@ -14,9 +14,8 @@ namespace util {
 
 class Timeout {
  public:
-  Timeout();
-  Timeout(MicroSeconds timeout);
-  virtual ~Timeout();
+  Timeout() = default;
+  virtual ~Timeout() = default;
 
   void start(MicroSeconds timeout);
   bool isExpired();

@@ -15,6 +15,9 @@
 namespace hal::gpio {
 
 class GpioIrq {
+ private:
+  constexpr static size_t GpioCount = static_cast<size_t>(Gpio::Id::GpioCount);
+
  public:
   // Deleted copy constructor and assignment operator to enforce singleton
   GpioIrq(const GpioIrq&) = delete;
@@ -34,7 +37,7 @@ class GpioIrq {
   GpioIrq();
 
   app::ctrl::RequestSrvCallback request_service_cb_ = nullptr;
-  Gpio* gpio_[static_cast<size_t>(Gpio::Id::GpioCount)] = { nullptr };
+  Gpio* gpio_[GpioCount] = { nullptr };
   size_t registered_ = 0;
 };
 

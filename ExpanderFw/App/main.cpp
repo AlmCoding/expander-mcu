@@ -9,6 +9,7 @@
 #include "etl/error_handler.h"
 #include "os/builder.hpp"
 #include "util/debug.hpp"
+#include "util/time.hpp"
 
 #define DEBUG_ENABLE_MAIN
 #ifdef DEBUG_ENABLE_MAIN
@@ -33,6 +34,10 @@ int main(void) {
   // Init HW (CubeMX generated)
   initPeripherals();
   DEBUG_INFO("Init Peripherals [OK]");
+
+  // Init timebase
+  util::initTimebase();
+  DEBUG_INFO("Init Timebase [OK]");
 
   // Enter operating system
   os::enterOs();

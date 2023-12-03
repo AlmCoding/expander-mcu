@@ -31,7 +31,7 @@ Status_t GpioIrq::registerGpio(Gpio* gpio) {
   Status_t status;
 
   if (gpio == nullptr) {
-    DEBUG_ERROR("Invalid Gpio register attempt");
+    DEBUG_ERROR("Invalid Gpio register attempt!");
     return Status_t::Error;
   }
 

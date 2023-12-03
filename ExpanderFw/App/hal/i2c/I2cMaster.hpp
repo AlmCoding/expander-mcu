@@ -17,6 +17,11 @@
 namespace hal::i2c {
 
 class I2cMaster {
+ private:
+  constexpr static size_t RequestQueue_MaxItemCnt = 4;
+  constexpr static size_t RequestBufferSize = RequestQueue_MaxItemCnt * 2;
+  constexpr static size_t DataBufferSize = 64 + 1;
+
  public:
   enum class RequestStatus {
     NotInit = 0,
@@ -29,21 +34,21 @@ class I2cMaster {
   };
 
   typedef struct {
+    uint32_t request_id;
     RequestStatus status_code;
-    uint16_t request_id;
     uint16_t slave_addr;
     uint16_t write_size;
     uint16_t read_size;
-    size_t write_start;
-    size_t read_start;
-    uint16_t sequence_id;
-    uint16_t sequence_idx;
+    size_t write_start;     // Start position of write data in data buffer
+    size_t read_start;      // Start position of read section in data buffer
+    uint16_t sequence_id;   // Sequence of read/writes with restart
+    uint16_t sequence_idx;  // Index of current request in sequence
   } Request;
 
   typedef struct {
     uint32_t sequence_number;
+    uint32_t request_id;
     RequestStatus status_code;
-    uint16_t request_id;
     uint16_t read_size;
     uint16_t queue_space;
     uint16_t buffer_space1;
@@ -61,10 +66,6 @@ class I2cMaster {
   Status_t serviceStatus(StatusInfo* info, uint8_t* read_data, size_t max_size);
 
  private:
-  constexpr static size_t RequestQueue_MaxItemCnt = 4;
-  constexpr static size_t RequestBufferSize = RequestQueue_MaxItemCnt * 2;
-  constexpr static size_t DataBufferSize = 64 + 1;
-
   typedef struct {
     size_t end_to_back;     // [data_end_ to end[
     size_t front_to_start;  // [0 to data_start_[

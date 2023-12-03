@@ -27,7 +27,7 @@ Status_t UartIrq::registerUart(Uart* uart) {
   Status_t status;
 
   if (uart == nullptr) {
-    DEBUG_ERROR("Invalid Uart register attempt");
+    DEBUG_ERROR("Invalid Uart register attempt!");
     return Status_t::Error;
   }
 

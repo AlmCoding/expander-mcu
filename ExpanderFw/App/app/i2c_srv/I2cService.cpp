@@ -32,9 +32,9 @@ I2cService::~I2cService() {}
 
 void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
   i2c_master0_.config(/*DefaultClockRate*/);
-  // i2c_slave0_.config(/*DefaultClockRate*/);
   i2c_master1_.config(/*DefaultClockRate*/);
-  // i2c_slave1_.config(/*DefaultClockRate*/);
+  i2c_slave0_.config();
+  i2c_slave1_.config();
 
   request_service_cb_ = request_service_cb;
 }
@@ -49,6 +49,16 @@ void I2cService::poll() {
 
   if (i2c_master1_.poll() > 0) {
     srv_info_.service_master1 = true;
+    request_cnt++;
+  }
+
+  if (i2c_slave0_.poll() > 0) {
+    srv_info_.service_slave0 = true;
+    request_cnt++;
+  }
+
+  if (i2c_slave1_.poll() > 0) {
+    srv_info_.service_slave1 = true;
     request_cnt++;
   }
 
@@ -89,8 +99,8 @@ int32_t I2cService::postMasterRequest(i2c_proto_I2cMsg* msg) {
   Status_t sts = Status_t::Error;
   hal::i2c::I2cMaster::Request request;
 
+  request.request_id = msg->msg.master_request.request_id;
   request.status_code = hal::i2c::I2cMaster::RequestStatus::NotInit;
-  request.request_id = static_cast<uint16_t>(msg->msg.master_request.request_id);
   request.slave_addr = static_cast<uint16_t>(msg->msg.master_request.slave_addr);
   request.write_size = static_cast<uint16_t>(msg->msg.master_request.write_data.size);
   request.read_size = static_cast<uint16_t>(msg->msg.master_request.read_size);
@@ -134,16 +144,16 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_len) {
 
   } else if (srv_info_.service_slave0 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
-    // sts = serviceSlavaStatusRequest(&i2c_slave0_, &i2c_msg, max_len);
+    sts = serviceSlaveRequest(&i2c_slave0_, &i2c_msg, max_len);
     srv_info_.service_slave0 = false;
 
   } else if (srv_info_.service_slave1 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
-    // sts = serviceSlavaStatusRequest(&i2c_slave1_, &i2c_msg, max_len);
+    sts = serviceSlaveRequest(&i2c_slave1_, &i2c_msg, max_len);
     srv_info_.service_slave1 = false;
 
   } else {
-    DEBUG_ERROR("Nothing to service!");
+    DEBUG_ERROR("Nothing to service (return 0)");
     return 0;
   }
 
@@ -162,8 +172,8 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_len) {
 
 Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_len) {
   Status_t status;
-  hal::i2c::I2cMaster::StatusInfo info;
   size_t master_id;
+  hal::i2c::I2cMaster::StatusInfo info;
 
   if (i2c_master == &i2c_master0_) {
     master_id = 0;
@@ -175,8 +185,8 @@ Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_p
     msg->sequence_number = info.sequence_number;
     msg->which_msg = i2c_proto_I2cMsg_master_status_tag;
 
-    msg->msg.master_status.status_code = static_cast<i2c_proto_I2cMasterStatusCode>(info.status_code);
     msg->msg.master_status.request_id = info.request_id;
+    msg->msg.master_status.status_code = static_cast<i2c_proto_I2cMasterStatusCode>(info.status_code);
     msg->msg.master_status.read_data.size = info.read_size;
     msg->msg.master_status.queue_space = info.queue_space;
     msg->msg.master_status.buffer_space1 = info.buffer_space1;
@@ -187,6 +197,42 @@ Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_p
 
   } else {
     DEBUG_ERROR("Srv master(%d) status (req: UNKNOWN) [FAILED]", master_id);
+    status = Status_t::Error;
+  }
+
+  return status;
+}
+
+Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_len) {
+  Status_t status;
+  size_t slave_id;
+  hal::i2c::I2cSlave::StatusInfo info;
+
+  if (i2c_slave == &i2c_slave0_) {
+    slave_id = 0;
+  } else {
+    slave_id = 1;
+  }
+
+  if (i2c_slave->serviceStatus(&info, msg->msg.slave_status.mem_data.bytes, max_len) == Status_t::Ok) {
+    msg->sequence_number = info.sequence_number;
+    msg->which_msg = i2c_proto_I2cMsg_slave_status_tag;
+
+    msg->msg.slave_status.request_id = info.request.request_id;
+    msg->msg.slave_status.access_id = info.request.access_id;
+    msg->msg.slave_status.status_code = static_cast<i2c_proto_I2cSlaveStatusCode>(info.request.status_code);
+    msg->msg.slave_status.write_size = info.request.write_size;
+    msg->msg.slave_status.read_size = info.request.read_size;
+    msg->msg.slave_status.write_addr = info.request.write_addr;
+    msg->msg.slave_status.read_addr = info.request.read_addr;
+    msg->msg.slave_status.queue_space = info.queue_space;
+    msg->msg.slave_status.mem_data.size = info.size;
+
+    DEBUG_INFO("Srv slave(%d) status (req: %d) [OK]", slave_id, info.request.request_id);
+    status = Status_t::Ok;
+
+  } else {
+    DEBUG_ERROR("Srv slave(%d) status (req: UNKNOWN) [FAILED]", slave_id);
     status = Status_t::Error;
   }
 

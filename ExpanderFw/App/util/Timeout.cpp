@@ -6,25 +6,17 @@
  */
 
 #include "util/Timeout.hpp"
-#include "tim.h"
+#include "util/time.hpp"
 
 namespace util {
 
-Timeout::Timeout() {}
-
-Timeout::Timeout(MicroSeconds timeout) {
-  timeout_ = timeout;
-}
-
-Timeout::~Timeout() {}
-
 void Timeout::start(MicroSeconds timeout) {
   timeout_ = timeout;
-  start_ = htim2.Instance->CNT;
+  start_ = getTime();
 }
 
 bool Timeout::isExpired() {
-  MicroSeconds time = (htim2.Instance->CNT - start_) * TimeBase;
+  MicroSeconds time = getTime() - start_;
   if (time >= timeout_) {
     return true;
   }
@@ -32,7 +24,7 @@ bool Timeout::isExpired() {
 }
 
 MicroSeconds Timeout::remaining() {
-  return timeout_ - ((htim2.Instance->CNT - start_) * TimeBase);
+  return timeout_ - (getTime() - start_);
 }
 
 }  // namespace util

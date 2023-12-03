@@ -14,8 +14,8 @@ namespace util {
 
 class Stopwatch {
  public:
-  Stopwatch();
-  virtual ~Stopwatch();
+  Stopwatch() = default;
+  virtual ~Stopwatch() = default;
 
   void start();
   MicroSeconds time();

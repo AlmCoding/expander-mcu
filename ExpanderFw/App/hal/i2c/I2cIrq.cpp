@@ -27,7 +27,7 @@ Status_t I2cIrq::registerI2cMaster(I2cMaster* i2c_master) {
   Status_t status;
 
   if (i2c_master == nullptr) {
-    DEBUG_ERROR("Invalid I2cMaster register attempt");
+    DEBUG_ERROR("Invalid I2cMaster register attempt!");
     return Status_t::Error;
   }
 
@@ -68,6 +68,35 @@ void I2cIrq::masterReadCpltCb(I2C_HandleTypeDef* hi2c) {
       break;
     }
   }
+}
+
+Status_t I2cIrq::registerI2cSlave(I2cSlave* i2c_slave) {
+  Status_t status;
+
+  if (i2c_slave == nullptr) {
+    DEBUG_ERROR("Invalid I2cSlave register attempt!");
+    return Status_t::Error;
+  }
+
+  // Check if already registered
+  for (size_t i = 0; i < registered_slave_; i++) {
+    if (i2c_slave_[i] == i2c_slave) {
+      return Status_t::Ok;
+    }
+  }
+
+  if (registered_slave_ < I2cCount) {
+    DEBUG_INFO("Register I2cSlave(%d) [OK]", registered_slave_);
+    i2c_slave_[registered_slave_] = i2c_slave;
+    registered_slave_++;
+    status = Status_t::Ok;
+
+  } else {
+    DEBUG_ERROR("Register I2cSlave(%d) [FAILED]", registered_slave_);
+    status = Status_t::Error;
+  }
+
+  return status;
 }
 
 extern "C" {

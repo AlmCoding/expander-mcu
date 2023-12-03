@@ -6,30 +6,24 @@
  */
 
 #include "util/Stopwatch.hpp"
-#include "tim.h"
+#include "util/time.hpp"
 
 namespace util {
 
-Stopwatch::Stopwatch() {
-  HAL_TIM_Base_Start(&htim2);
-}
-
-Stopwatch::~Stopwatch() {}
-
 void Stopwatch::start() {
   running_ = true;
-  start_ = htim2.Instance->CNT;
+  start_ = getTime();
 }
 
 MicroSeconds Stopwatch::time() {
   if (running_ == true) {
-    return (htim2.Instance->CNT - start_) * TimeBase;
+    return getTime() - start_;
   }
   return time_;
 }
 
 MicroSeconds Stopwatch::stop() {
-  time_ = (htim2.Instance->CNT - start_) * TimeBase;
+  time_ = getTime() - start_;
   running_ = false;
   return time_;
 }

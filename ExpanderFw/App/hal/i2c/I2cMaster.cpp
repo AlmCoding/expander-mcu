@@ -119,7 +119,8 @@ I2cMaster::Space I2cMaster::getFreeSpace() {
 }
 
 Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num) {
-  uint32_t sts, free_slots;
+  uint32_t sts;
+  uint32_t free_slots;
 
   sts = tx_queue_info_get(&pending_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
@@ -239,7 +240,7 @@ Status_t I2cMaster::exitScheduleRequest(Request* request, uint32_t seq_num) {
   Status_t status;
   uint32_t sts = TX_QUEUE_ERROR;
 
-  if (request->status_code == hal::i2c::I2cMaster::RequestStatus::NoSpace) {
+  if (request->status_code == RequestStatus::NoSpace) {
     DEBUG_WARN("Sched. request (req: %d) [FAILED]", request->request_id);
     RequestSlot* request_slot = setupRequestSlot(request);
     if (request_slot != nullptr) {
@@ -481,16 +482,15 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
   }
 
   Request* request = &queue_item.slot->request;
-
   info->sequence_number = seqence_number_;
-  info->status_code = request->status_code;
   info->request_id = request->request_id;
+  info->status_code = request->status_code;
 
   if (request->status_code == RequestStatus::Complete) {
     info->read_size = request->read_size;
 
-    ETL_ASSERT(request->read_size <= max_size, ETL_ERROR(0));
     if (request->read_size > 0) {
+      ETL_ASSERT(request->read_size <= max_size, ETL_ERROR(0));
       std::memcpy(read_data, data_buffer_ + request->read_start, request->read_size);
     }
 
