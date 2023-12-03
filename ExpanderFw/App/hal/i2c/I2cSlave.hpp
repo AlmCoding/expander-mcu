@@ -25,6 +25,7 @@ class I2cSlave {
   enum class RequestStatus {
     NotInit = 0,
     NoSpace,
+    Pending,
     Complete,
     SlaveBusy,
     BadRequest,

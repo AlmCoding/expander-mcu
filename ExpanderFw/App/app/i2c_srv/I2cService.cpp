@@ -84,6 +84,9 @@ int32_t I2cService::postRequest(const uint8_t* data, size_t len) {
   if (i2c_msg.which_msg == i2c_proto_I2cMsg_master_request_tag) {
     status = postMasterRequest(&i2c_msg);
 
+  } else if (i2c_msg.which_msg == i2c_proto_I2cMsg_slave_request_tag) {
+    status = postSlaveRequest(&i2c_msg);
+
   } else if (i2c_msg.which_msg == i2c_proto_I2cMsg_cfg_tag) {
     status = 0;
 
@@ -96,7 +99,7 @@ int32_t I2cService::postRequest(const uint8_t* data, size_t len) {
 
 int32_t I2cService::postMasterRequest(i2c_proto_I2cMsg* msg) {
   int32_t status = -1;
-  Status_t sts = Status_t::Error;
+  hal::i2c::I2cMaster* i2c_master;
   hal::i2c::I2cMaster::Request request;
 
   request.request_id = msg->msg.master_request.request_id;
@@ -109,15 +112,43 @@ int32_t I2cService::postMasterRequest(i2c_proto_I2cMsg* msg) {
 
   if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
     DEBUG_INFO("Post master(0) request (req: %d)", request.request_id);
-    sts = i2c_master0_.scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.master_request.write_data.bytes),
-                                       msg->sequence_number);
+    i2c_master = &i2c_master0_;
   } else {
     DEBUG_INFO("Post master(1) request (req: %d)", request.request_id);
-    sts = i2c_master1_.scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.master_request.write_data.bytes),
-                                       msg->sequence_number);
+    i2c_master = &i2c_master1_;
   }
 
-  if (sts == Status_t::Ok) {
+  if (i2c_master->scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.master_request.write_data.bytes),
+                                  msg->sequence_number) == Status_t::Ok) {
+    status = 0;
+  }
+
+  return status;
+}
+
+int32_t I2cService::postSlaveRequest(i2c_proto_I2cMsg* msg) {
+  int32_t status = -1;
+  hal::i2c::I2cSlave* i2c_slave;
+  hal::i2c::I2cSlave::Request request;
+
+  request.request_id = msg->msg.slave_request.request_id;
+  request.access_id = 0;
+  request.status_code = hal::i2c::I2cSlave::RequestStatus::NotInit;
+  request.write_size = static_cast<uint16_t>(msg->msg.slave_request.write_data.size);
+  request.read_size = static_cast<uint16_t>(msg->msg.slave_request.read_size);
+  request.write_addr = msg->msg.slave_request.write_addr;
+  request.read_addr = msg->msg.slave_request.read_addr;
+
+  if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
+    DEBUG_INFO("Post slave(0) request (req: %d)", request.request_id);
+    i2c_slave = &i2c_slave0_;
+  } else {
+    DEBUG_INFO("Post slave(1) request (req: %d)", request.request_id);
+    i2c_slave = &i2c_slave1_;
+  }
+
+  if (i2c_slave->scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.slave_request.write_data.bytes),
+                                 msg->sequence_number) == Status_t::Ok) {
     status = 0;
   }
 
