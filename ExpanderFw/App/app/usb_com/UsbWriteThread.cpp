@@ -7,6 +7,7 @@
 
 #include "app/usb_com/UsbWriteThread.hpp"
 #include "driver/tf/FrameDriver.hpp"
+#include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "os/msg/msg_broker.hpp"
 #include "os/thread.hpp"
 #include "util/Stopwatch.hpp"
@@ -28,10 +29,18 @@ namespace app::usb_com {
 uint32_t UsbWriteThread::msg_count_ = 0;
 UX_SLAVE_DEVICE* UsbWriteThread::device_ = nullptr;
 UX_SLAVE_CLASS_CDC_ACM* UsbWriteThread::cdc_acm_ = nullptr;
-uint8_t UsbWriteThread::usb_write_buffer_[UsbWriteBufferSize];
+uint8_t UsbWriteThread::usb_write_buffer_[UsbWriteThread::UsbWriteBufferSize];
+uint8_t* UsbWriteThread::echo_data_ = nullptr;
+size_t UsbWriteThread::echo_size_ = 0;
 
 void UsbWriteThread::execute(uint32_t /*thread_input*/) {
   os::msg::BaseMsg msg = {};
+
+  // Register callback for incoming msg
+  driver::tf::FrameDriver::getInstance().registerRxCallback(UsbWriteThread::ThreadTfMsgType, postRequest_cb);
+
+  // Register callback for outgoing msg
+  driver::tf::FrameDriver::getInstance().registerTxCallback(UsbWriteThread::ThreadTfMsgType, serviceRequest_cb);
 
   DEBUG_INFO("Setup [OK]");
 
@@ -78,7 +87,7 @@ void UsbWriteThread::serviceUpstream(os::msg::BaseMsg* msg) {
   while (msg->cnt > 0) {
     DEBUG_INFO("Service upstream (not: %d, idx: %d, msg: %d)", msg_count_, msg->cnt, msg->type);
     stopwatch.start();
-    tf_driver.callTxCallback(msg->type);
+    tf_driver.callTxCallback(msg->type, UsbWriteThread::usb_write_buffer_, UsbWriteThread::UsbWriteBufferSize);
     stopwatch.stop();
     DEBUG_INFO("Service upstream (not: %d, idx: %d, msg: %d, time: %d us) [OK]",  //
                msg_count_, msg->cnt, msg->type, stopwatch.time());
@@ -87,12 +96,29 @@ void UsbWriteThread::serviceUpstream(os::msg::BaseMsg* msg) {
 }
 
 void UsbWriteThread::sendData(const uint8_t* data, uint32_t size) {
+  ETL_ASSERT(size <= UsbMaxWriteSize, ETL_ERROR(0));
   uint32_t actual_size = 0;
+
   uint32_t status = ux_device_class_cdc_acm_write(cdc_acm_, const_cast<uint8_t*>(data), size, &actual_size);
 
   if ((status != UX_SUCCESS) || (actual_size != size)) {
     DEBUG_ERROR("Usb send data (size: %d) [FAILED]", size);
   }
+}
+
+int32_t UsbWriteThread::postRequest_cb(const uint8_t* data, size_t size) {
+  echo_data_ = const_cast<uint8_t*>(data);
+  echo_size_ = size;
+  auto& tf_driver = driver::tf::FrameDriver::getInstance();
+  tf_driver.callTxCallback(UsbWriteThread::ThreadTfMsgType, UsbWriteThread::usb_write_buffer_,
+                           UsbWriteThread::UsbWriteBufferSize);
+  return 0;
+}
+
+int32_t UsbWriteThread::serviceRequest_cb(uint8_t* data, size_t max_size) {
+  ETL_ASSERT(echo_size_ <= max_size, ETL_ERROR(0));
+  memcpy(data, echo_data_, echo_size_);
+  return echo_size_;
 }
 
 }  // namespace app::usb_com

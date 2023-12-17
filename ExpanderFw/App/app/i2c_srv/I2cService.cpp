@@ -67,13 +67,13 @@ void I2cService::poll() {
   }
 }
 
-int32_t I2cService::postRequest(const uint8_t* data, size_t len) {
+int32_t I2cService::postRequest(const uint8_t* data, size_t size) {
   int32_t status = -1;
 
   /* Allocate space for the decoded message. */
   i2c_proto_I2cMsg i2c_msg = i2c_proto_I2cMsg_init_zero;
   /* Create a stream that reads from the buffer. */
-  pb_istream_t stream = pb_istream_from_buffer(data, len);
+  pb_istream_t stream = pb_istream_from_buffer(data, size);
 
   /* Now we are ready to decode the message. */
   if (pb_decode(&stream, i2c_proto_I2cMsg_fields, &i2c_msg) == false) {
@@ -155,32 +155,32 @@ int32_t I2cService::postSlaveRequest(i2c_proto_I2cMsg* msg) {
   return status;
 }
 
-int32_t I2cService::serviceRequest(uint8_t* data, size_t max_len) {
+int32_t I2cService::serviceRequest(uint8_t* data, size_t max_size) {
   Status_t sts = Status_t::Error;
 
   /* Allocate space for the decoded message. */
   i2c_proto_I2cMsg i2c_msg = i2c_proto_I2cMsg_init_zero;
   /* Create a stream that will write to our buffer. */
-  pb_ostream_t stream = pb_ostream_from_buffer(data, max_len);
+  pb_ostream_t stream = pb_ostream_from_buffer(data, max_size);
 
   if (srv_info_.service_master0 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
-    sts = serviceMasterRequest(&i2c_master0_, &i2c_msg, max_len);
+    sts = serviceMasterRequest(&i2c_master0_, &i2c_msg, max_size);
     srv_info_.service_master0 = false;
 
   } else if (srv_info_.service_master1 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
-    sts = serviceMasterRequest(&i2c_master1_, &i2c_msg, max_len);
+    sts = serviceMasterRequest(&i2c_master1_, &i2c_msg, max_size);
     srv_info_.service_master1 = false;
 
   } else if (srv_info_.service_slave0 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
-    sts = serviceSlaveRequest(&i2c_slave0_, &i2c_msg, max_len);
+    sts = serviceSlaveRequest(&i2c_slave0_, &i2c_msg, max_size);
     srv_info_.service_slave0 = false;
 
   } else if (srv_info_.service_slave1 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
-    sts = serviceSlaveRequest(&i2c_slave1_, &i2c_msg, max_len);
+    sts = serviceSlaveRequest(&i2c_slave1_, &i2c_msg, max_size);
     srv_info_.service_slave1 = false;
 
   } else {
@@ -201,7 +201,7 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_len) {
   return stream.bytes_written;
 }
 
-Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_len) {
+Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_size) {
   Status_t status;
   size_t master_id;
   hal::i2c::I2cMaster::StatusInfo info;
@@ -212,7 +212,7 @@ Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_p
     master_id = 1;
   }
 
-  if (i2c_master->serviceStatus(&info, msg->msg.master_status.read_data.bytes, max_len) == Status_t::Ok) {
+  if (i2c_master->serviceStatus(&info, msg->msg.master_status.read_data.bytes, max_size) == Status_t::Ok) {
     msg->sequence_number = info.sequence_number;
     msg->which_msg = i2c_proto_I2cMsg_master_status_tag;
 
@@ -234,7 +234,7 @@ Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_p
   return status;
 }
 
-Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_len) {
+Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_size) {
   Status_t status;
   size_t slave_id;
   hal::i2c::I2cSlave::StatusInfo info;
@@ -245,7 +245,7 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
     slave_id = 1;
   }
 
-  if (i2c_slave->serviceStatus(&info, msg->msg.slave_status.mem_data.bytes, max_len) == Status_t::Ok) {
+  if (i2c_slave->serviceStatus(&info, msg->msg.slave_status.mem_data.bytes, max_size) == Status_t::Ok) {
     msg->sequence_number = info.sequence_number;
     msg->which_msg = i2c_proto_I2cMsg_slave_status_tag;
 

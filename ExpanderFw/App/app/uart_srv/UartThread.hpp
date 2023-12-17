@@ -16,8 +16,8 @@ namespace app::uart_srv {
 
 class UartThread {
  public:
-  static void execute(uint32_t thread_input);
   constexpr static driver::tf::TfMsgType TaskTfMsgType = driver::tf::TfMsgType::UartMsg;
+  static void execute(uint32_t thread_input);
 
  private:
   static void uartTask_requestService_cb(os::msg::RequestCnt cnt);

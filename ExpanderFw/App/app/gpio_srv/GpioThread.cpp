@@ -71,21 +71,21 @@ void GpioThread::requestService_cb(os::msg::RequestCnt cnt) {
   }
 }
 
-int32_t GpioThread::postRequest_cb(const uint8_t* data, size_t len) {
-  return gpio_service_.postRequest(data, len);
+int32_t GpioThread::postRequest_cb(const uint8_t* data, size_t size) {
+  return gpio_service_.postRequest(data, size);
 }
 
-int32_t GpioThread::serviceRequest_cb(uint8_t* data, size_t max_len) {
+int32_t GpioThread::serviceRequest_cb(uint8_t* data, size_t max_size) {
   ongoing_service_ = false;
-  int32_t len = gpio_service_.serviceRequest(data, max_len);
+  int32_t size = gpio_service_.serviceRequest(data, max_size);
 
-  if (len > 0) {
-    DEBUG_INFO("Service request (not: %d, len %d) [OK]", msg_count_, len);
+  if (size > 0) {
+    DEBUG_INFO("Service request (not: %d, size: %d) [OK]", msg_count_, size);
   } else {
-    DEBUG_ERROR("Service request (not: %d, len %d) [FAILED]", msg_count_, len);
+    DEBUG_ERROR("Service request (not: %d, size: %d) [FAILED]", msg_count_, size);
   }
 
-  return len;
+  return size;
 }
 
 }  // namespace app::gpio_srv

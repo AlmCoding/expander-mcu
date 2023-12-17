@@ -6,6 +6,7 @@
  */
 
 #include "driver/tf/FrameDriver.hpp"
+#include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "util/Stopwatch.hpp"
 #include "util/debug.hpp"
 
@@ -31,19 +32,21 @@ FrameDriver::FrameDriver() {
 }
 
 Status_t FrameDriver::registerTxCallback(TfMsgType type, TxCallback callback) {
-  tx_callbacks_[static_cast<uint8_t>(type)] = callback;
+  auto callback_slot = &tx_callbacks_[static_cast<uint8_t>(type)];
+  ETL_ASSERT(*callback_slot == nullptr, ETL_ERROR(0));
+  *callback_slot = callback;
   return Status_t::Ok;
 }
 
-void FrameDriver::callTxCallback(TfMsgType type) {
+void FrameDriver::callTxCallback(TfMsgType type, uint8_t* buffer, size_t max_size) {
   TF_Msg msg = {};
 
   msg.type = static_cast<TF_TYPE>(type);
-  msg.len = static_cast<TF_LEN>(tx_callbacks_[static_cast<uint8_t>(type)](tx_buffer_, sizeof(tx_buffer_)));
-  msg.data = tx_buffer_;
+  msg.len = static_cast<TF_LEN>(tx_callbacks_[static_cast<uint8_t>(type)](buffer, max_size));
+  msg.data = buffer;
 
   if (msg.len > 0) {
-    DEBUG_INFO("O=> msg (type: %d, len: %d)", msg.type, msg.len);
+    DEBUG_INFO("O=> msg (type: %d, size: %d)", msg.type, msg.len);
     TF_Send(&tf_, &msg);
 
   } else {
@@ -62,27 +65,29 @@ Status_t FrameDriver::registerRxCallback(TfMsgType type, RxCallback callback) {
   return status;
 }
 
-void FrameDriver::callRxCallback(TfMsgType type, const uint8_t* data, size_t len) {
-  rx_callbacks_[static_cast<uint8_t>(type)](data, len);
+void FrameDriver::callRxCallback(TfMsgType type, const uint8_t* data, size_t size) {
+  auto callback = rx_callbacks_[static_cast<uint8_t>(type)];
+  ETL_ASSERT(callback != nullptr, ETL_ERROR(0));
+  callback(data, size);
 }
 
-void FrameDriver::receiveData(const uint8_t* data, size_t len) {
-  TF_Accept(&tf_, data, len);
+void FrameDriver::receiveData(const uint8_t* data, size_t size) {
+  TF_Accept(&tf_, data, size);
 }
 
-void FrameDriver_receiveData(const uint8_t* data, size_t len) {
+void FrameDriver_receiveData(const uint8_t* data, size_t size) {
   util::Stopwatch stopwatch{};
   stopwatch.start();
 
   auto& tf_driver = driver::tf::FrameDriver::getInstance();
-  tf_driver.receiveData(data, len);
+  tf_driver.receiveData(data, size);
 
   stopwatch.stop();
   DEBUG_INFO("USB rx: %d us", stopwatch.time());
 }
 
 TF_Result typeCallback(TinyFrame* /*tf*/, TF_Msg* msg) {
-  DEBUG_INFO("=>I msg (type: %d, len: %d)", msg->type, msg->len);
+  DEBUG_INFO("=>I msg (type: %d, size: %d)", msg->type, msg->len);
 
   auto& tf_driver = driver::tf::FrameDriver::getInstance();
   tf_driver.callRxCallback(static_cast<TfMsgType>(msg->type), msg->data, msg->len);

@@ -14,10 +14,10 @@
 
 namespace app::usb_com {
 
-constexpr static size_t UsbReadBufferSize = 2048;
-
 class UsbReadThread {
  public:
+  constexpr static size_t UsbMaxReadSize = 64;
+  constexpr static size_t UsbReadBufferSize = UsbMaxReadSize;
   static void execute(uint32_t thread_input);
 
  private:

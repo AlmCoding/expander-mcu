@@ -23,8 +23,8 @@ class GpioService {
 
   void init(app::ctrl::RequestSrvCallback request_service_cb);
 
-  int32_t postRequest(const uint8_t* data, size_t len);
-  int32_t serviceRequest(uint8_t* data, size_t max_len);
+  int32_t postRequest(const uint8_t* data, size_t size);
+  int32_t serviceRequest(uint8_t* data, size_t max_size);
 
  private:
   hal::gpio::Gpio gpio0_{ GPIOC, GPIO_0_Pin, EXTI8_IRQn, hal::gpio::Gpio::Id::Gpio0 };

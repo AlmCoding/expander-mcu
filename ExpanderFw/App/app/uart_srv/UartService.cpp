@@ -49,13 +49,13 @@ void UartService::poll() {
   }
 }
 
-int32_t UartService::postRequest(const uint8_t* data, size_t len) {
+int32_t UartService::postRequest(const uint8_t* data, size_t size) {
   int32_t status = -1;
 
   /* Allocate space for the decoded message. */
   uart_proto_UartMsg uart_msg = uart_proto_UartMsg_init_zero;
   /* Create a stream that reads from the buffer. */
-  pb_istream_t stream = pb_istream_from_buffer(data, len);
+  pb_istream_t stream = pb_istream_from_buffer(data, size);
 
   /* Now we are ready to decode the message. */
   if (pb_decode(&stream, uart_proto_UartMsg_fields, &uart_msg) == false) {
@@ -81,13 +81,13 @@ int32_t UartService::postRequest(const uint8_t* data, size_t len) {
   return status;
 }
 
-int32_t UartService::serviceRequest(uint8_t* data, size_t max_len) {
+int32_t UartService::serviceRequest(uint8_t* data, size_t max_size) {
   /* Allocate space for the decoded message. */
   uart_proto_UartMsg uart_msg = uart_proto_UartMsg_init_zero;
   /* Create a stream that will write to our buffer. */
-  pb_ostream_t stream = pb_ostream_from_buffer(data, max_len);
+  pb_ostream_t stream = pb_ostream_from_buffer(data, max_size);
 
-  if (serviceStatusRequest(&uart_msg, max_len) == Status_t::Error) {
+  if (serviceStatusRequest(&uart_msg, max_size) == Status_t::Error) {
     return -1;
   }
 
@@ -100,11 +100,11 @@ int32_t UartService::serviceRequest(uint8_t* data, size_t max_len) {
   return stream.bytes_written;
 }
 
-Status_t UartService::serviceStatusRequest(uart_proto_UartMsg* msg, size_t max_len) {
+Status_t UartService::serviceStatusRequest(uart_proto_UartMsg* msg, size_t max_size) {
   Status_t status;
   hal::uart::Uart::StatusInfo info;
 
-  if (uart0_.serviceStatus(&info, msg->msg.status.rx_data.bytes, max_len) == Status_t::Ok) {
+  if (uart0_.serviceStatus(&info, msg->msg.status.rx_data.bytes, max_size) == Status_t::Ok) {
     msg->sequence_number = info.sequence_number;
     msg->which_msg = uart_proto_UartMsg_status_tag;
 
@@ -115,7 +115,7 @@ Status_t UartService::serviceStatusRequest(uart_proto_UartMsg* msg, size_t max_l
     msg->msg.status.tx_space = info.tx_space;
     msg->msg.status.rx_data.size = info.rx_size;
 
-    DEBUG_INFO("Srv status (len: %d, seq: %d) [OK]", info.rx_size, msg->sequence_number);
+    DEBUG_INFO("Srv status (size: %d, seq: %d) [OK]", info.rx_size, msg->sequence_number);
     status = Status_t::Ok;
 
   } else {

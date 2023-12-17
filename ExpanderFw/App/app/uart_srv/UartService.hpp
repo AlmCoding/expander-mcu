@@ -25,11 +25,11 @@ class UartService {
   void init(app::ctrl::RequestSrvCallback request_service_cb);
   void poll();
 
-  int32_t postRequest(const uint8_t* data, size_t len);
-  int32_t serviceRequest(uint8_t* data, size_t max_len);
+  int32_t postRequest(const uint8_t* data, size_t size);
+  int32_t serviceRequest(uint8_t* data, size_t max_size);
 
  private:
-  Status_t serviceStatusRequest(uart_proto_UartMsg* msg, size_t max_len);
+  Status_t serviceStatusRequest(uart_proto_UartMsg* msg, size_t max_size);
 
   hal::uart::Uart uart0_{ &huart2 };
 

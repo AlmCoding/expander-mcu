@@ -17,7 +17,7 @@ extern "C" {
 namespace driver::tf {
 
 enum class TfMsgType : uint8_t {
-  CtrlMsg = 0,
+  EchoMsg = 0,
   UartMsg,
   I2cMsg,
   SpiMsg,

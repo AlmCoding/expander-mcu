@@ -16,8 +16,8 @@ namespace app::i2c_srv {
 
 class I2cThread {
  public:
-  static void execute(uint32_t thread_input);
   constexpr static driver::tf::TfMsgType ThreadTfMsgType = driver::tf::TfMsgType::I2cMsg;
+  static void execute(uint32_t thread_input);
 
  private:
   static void requestService_cb(os::msg::RequestCnt cnt);

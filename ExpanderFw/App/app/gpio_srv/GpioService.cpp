@@ -45,13 +45,13 @@ void GpioService::init(app::ctrl::RequestSrvCallback request_service_cb) {
   hal::gpio::GpioIrq::getInstance().registerRequestSrvCallback(request_service_cb);
 }
 
-int32_t GpioService::postRequest(const uint8_t* data, size_t len) {
+int32_t GpioService::postRequest(const uint8_t* data, size_t size) {
   int32_t status = -1;
 
   /* Allocate space for the decoded message. */
   gpio_proto_GpioMsg gpio_msg = gpio_proto_GpioMsg_init_zero;
   /* Create a stream that reads from the buffer. */
-  pb_istream_t stream = pb_istream_from_buffer(data, len);
+  pb_istream_t stream = pb_istream_from_buffer(data, size);
 
   /* Now we are ready to decode the message. */
   if (pb_decode(&stream, gpio_proto_GpioMsg_fields, &gpio_msg) == false) {
@@ -91,11 +91,11 @@ int32_t GpioService::postRequest(const uint8_t* data, size_t len) {
   return status;
 }
 
-int32_t GpioService::serviceRequest(uint8_t* data, size_t max_len) {
+int32_t GpioService::serviceRequest(uint8_t* data, size_t max_size) {
   /* Allocate space for the decoded message. */
   gpio_proto_GpioMsg gpio_msg = gpio_proto_GpioMsg_init_zero;
   /* Create a stream that will write to our buffer. */
-  pb_ostream_t stream = pb_ostream_from_buffer(data, max_len);
+  pb_ostream_t stream = pb_ostream_from_buffer(data, max_size);
 
   gpio_msg.sequence_number = seqence_number_;
   gpio_msg.which_msg = gpio_proto_GpioMsg_data_tag;

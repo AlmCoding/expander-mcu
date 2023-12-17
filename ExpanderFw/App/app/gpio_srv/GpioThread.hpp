@@ -16,8 +16,8 @@ namespace app::gpio_srv {
 
 class GpioThread {
  public:
-  static void execute(uint32_t thread_input);
   constexpr static driver::tf::TfMsgType ThreadTfMsgType = driver::tf::TfMsgType::GpioMsg;
+  static void execute(uint32_t thread_input);
 
  private:
   static void requestService_cb(os::msg::RequestCnt cnt);

@@ -6,6 +6,7 @@
  */
 
 #include "app/usb_com/UsbReadThread.hpp"
+#include "app/usb_com/UsbWriteThread.hpp"
 #include "driver/tf/FrameDriver.hpp"
 #include "os/msg/msg_broker.hpp"
 #include "os/thread.hpp"
@@ -23,12 +24,14 @@
 #define DEBUG_ERROR(...)
 #endif
 
+// #define DIRECT_ECHO_LOOP
+
 namespace app::usb_com {
 
 uint32_t UsbReadThread::msg_count_ = 0;
 UX_SLAVE_DEVICE* UsbReadThread::device_ = nullptr;
 UX_SLAVE_CLASS_CDC_ACM* UsbReadThread::cdc_acm_ = nullptr;
-uint8_t UsbReadThread::usb_read_buffer_[UsbReadBufferSize];
+uint8_t UsbReadThread::usb_read_buffer_[UsbReadThread::UsbReadBufferSize];
 
 void UsbReadThread::execute(uint32_t /*thread_input*/) {
   os::msg::BaseMsg msg = {};
@@ -50,8 +53,12 @@ void UsbReadThread::execute(uint32_t /*thread_input*/) {
       ux_device_class_cdc_acm_read(cdc_acm_, usb_read_buffer_, sizeof(usb_read_buffer_), &actual_length);
 
       if (actual_length > 0) {
+#ifdef DIRECT_ECHO_LOOP
+        UsbWriteThread::sendData(usb_read_buffer_, actual_length);
+#else
         auto& tf_driver = driver::tf::FrameDriver::getInstance();
         tf_driver.receiveData(usb_read_buffer_, actual_length);
+#endif
       }
 
     } else {

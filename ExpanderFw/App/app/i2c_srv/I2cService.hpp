@@ -33,14 +33,14 @@ class I2cService {
   void init(app::ctrl::RequestSrvCallback request_service_cb);
   void poll();
 
-  int32_t postRequest(const uint8_t* data, size_t len);
-  int32_t serviceRequest(uint8_t* data, size_t max_len);
+  int32_t postRequest(const uint8_t* data, size_t size);
+  int32_t serviceRequest(uint8_t* data, size_t max_size);
 
  private:
   int32_t postMasterRequest(i2c_proto_I2cMsg* msg);
   int32_t postSlaveRequest(i2c_proto_I2cMsg* msg);
-  Status_t serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_len);
-  Status_t serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_len);
+  Status_t serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_size);
+  Status_t serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_size);
 
   hal::i2c::I2cMaster i2c_master0_{ &hi2c1 };
   hal::i2c::I2cMaster i2c_master1_{ &hi2c2 };

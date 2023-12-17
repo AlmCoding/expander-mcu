@@ -19,7 +19,7 @@ class I2cSlave {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
   constexpr static size_t RequestBufferSize = RequestQueue_MaxItemCnt;
-  constexpr static size_t DataBufferSize = 64;
+  constexpr static size_t DataBufferSize = 512;
 
  public:
   enum class RequestStatus {
