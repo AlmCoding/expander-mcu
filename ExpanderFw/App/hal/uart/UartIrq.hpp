@@ -32,9 +32,9 @@ class UartIrq {
   void rxCompleteCb(UART_HandleTypeDef* huart);
 
  private:
-  UartIrq();
+  UartIrq() = default;
 
-  Uart* uart_[UartCount] = { nullptr };
+  Uart* uart_[UartCount] = {};
   size_t registered_ = 0;
 };
 

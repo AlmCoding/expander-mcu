@@ -21,8 +21,6 @@
 
 namespace hal::gpio {
 
-GpioIrq::GpioIrq() {}
-
 void GpioIrq::registerRequestSrvCallback(app::ctrl::RequestSrvCallback request_service_cb) {
   request_service_cb_ = request_service_cb;
 }

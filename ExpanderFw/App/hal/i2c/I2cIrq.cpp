@@ -21,7 +21,7 @@
 
 namespace hal::i2c {
 
-I2cIrq::I2cIrq() {}
+// I2cIrq::I2cIrq() {}
 
 Status_t I2cIrq::registerI2cMaster(I2cMaster* i2c_master) {
   Status_t status;
@@ -99,7 +99,44 @@ Status_t I2cIrq::registerI2cSlave(I2cSlave* i2c_slave) {
   return status;
 }
 
+void I2cIrq::slaveMatchWriteCb(I2C_HandleTypeDef* hi2c) {
+  for (size_t i = 0; i < registered_slave_; i++) {
+    if (i2c_slave_[i]->i2c_handle_ == hi2c) {
+      i2c_slave_[i]->addressMatchWriteCb();
+      break;
+    }
+  }
+}
+
+void I2cIrq::slaveMatchReadCb(I2C_HandleTypeDef* hi2c) {
+  for (size_t i = 0; i < registered_slave_; i++) {
+    if (i2c_slave_[i]->i2c_handle_ == hi2c) {
+      i2c_slave_[i]->addressMatchReadCb();
+      break;
+    }
+  }
+}
+
+void I2cIrq::slaveWriteCpltCb(I2C_HandleTypeDef* hi2c) {
+  for (size_t i = 0; i < registered_slave_; i++) {
+    if (i2c_slave_[i]->i2c_handle_ == hi2c) {
+      i2c_slave_[i]->writeCompleteCb();
+      break;
+    }
+  }
+}
+
+void I2cIrq::slaveReadCpltCb(I2C_HandleTypeDef* hi2c) {
+  for (size_t i = 0; i < registered_slave_; i++) {
+    if (i2c_slave_[i]->i2c_handle_ == hi2c) {
+      i2c_slave_[i]->readCompleteCb();
+      break;
+    }
+  }
+}
+
 extern "C" {
+
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef* hi2c) {
   I2cIrq::getInstance().masterWriteCpltCb(hi2c);
 }
@@ -114,6 +151,22 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef* hi2c) {
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef* hi2c) {
   I2cIrq::getInstance().masterReadCpltCb(hi2c);
+}
+
+void HAL_I2C_AddrCallback(I2C_HandleTypeDef* hi2c, uint8_t TransferDirection, uint16_t /*AddrMatchCode*/) {
+  if (TransferDirection == I2C_DIRECTION_TRANSMIT) {
+    I2cIrq::getInstance().slaveMatchWriteCb(hi2c);
+  } else {
+    I2cIrq::getInstance().slaveMatchReadCb(hi2c);
+  }
+}
+
+void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* hi2c) {
+  I2cIrq::getInstance().slaveWriteCpltCb(hi2c);
+}
+
+void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* hi2c) {
+  I2cIrq::getInstance().slaveReadCpltCb(hi2c);
 }
 
 }  // extern "C"

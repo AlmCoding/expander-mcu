@@ -34,10 +34,10 @@ class GpioIrq {
   void extiCb(uint16_t pin);
 
  private:
-  GpioIrq();
+  GpioIrq() = default;
 
   app::ctrl::RequestSrvCallback request_service_cb_ = nullptr;
-  Gpio* gpio_[GpioCount] = { nullptr };
+  Gpio* gpio_[GpioCount] = {};
   size_t registered_ = 0;
 };
 

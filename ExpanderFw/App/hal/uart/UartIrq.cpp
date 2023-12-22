@@ -21,8 +21,6 @@
 
 namespace hal::uart {
 
-UartIrq::UartIrq() {}
-
 Status_t UartIrq::registerUart(Uart* uart) {
   Status_t status;
 

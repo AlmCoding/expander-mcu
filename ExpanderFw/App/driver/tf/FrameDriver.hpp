@@ -46,8 +46,8 @@ class FrameDriver {
   FrameDriver();
 
   TinyFrame tf_;
-  TxCallback tx_callbacks_[static_cast<uint8_t>(TfMsgType::NumValues)] = { nullptr };
-  RxCallback rx_callbacks_[static_cast<uint8_t>(TfMsgType::NumValues)] = { nullptr };
+  TxCallback tx_callbacks_[static_cast<uint8_t>(TfMsgType::NumValues)] = {};
+  RxCallback rx_callbacks_[static_cast<uint8_t>(TfMsgType::NumValues)] = {};
 };
 
 extern "C" {

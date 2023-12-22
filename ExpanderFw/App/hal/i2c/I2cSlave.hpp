@@ -71,6 +71,10 @@ class I2cSlave {
 
   RequestSlot* setupRequestSlot(Request* request);
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
+  void addressMatchWriteCb();
+  void addressMatchReadCb();
+  void writeCompleteCb();
+  void readCompleteCb();
 
   I2C_HandleTypeDef* i2c_handle_;
   TX_QUEUE request_queue_;

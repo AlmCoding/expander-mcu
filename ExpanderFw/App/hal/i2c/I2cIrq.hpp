@@ -33,12 +33,16 @@ class I2cIrq {
   void masterReadCpltCb(I2C_HandleTypeDef* hi2c);
 
   Status_t registerI2cSlave(I2cSlave* i2c_slave);
+  void slaveMatchWriteCb(I2C_HandleTypeDef* hi2c);
+  void slaveMatchReadCb(I2C_HandleTypeDef* hi2c);
+  void slaveWriteCpltCb(I2C_HandleTypeDef* hi2c);
+  void slaveReadCpltCb(I2C_HandleTypeDef* hi2c);
 
  private:
-  I2cIrq();
+  I2cIrq() = default;
 
-  I2cMaster* i2c_master_[I2cCount] = { nullptr };
-  I2cSlave* i2c_slave_[I2cCount] = { nullptr };
+  I2cMaster* i2c_master_[I2cCount] = {};
+  I2cSlave* i2c_slave_[I2cCount] = {};
   size_t registered_master_ = 0;
   size_t registered_slave_ = 0;
 };

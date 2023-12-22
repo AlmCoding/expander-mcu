@@ -174,6 +174,22 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
   return status;
 }
 
+void I2cSlave::addressMatchWriteCb() {
+  //
+}
+
+void I2cSlave::addressMatchReadCb() {
+  //
+}
+
+void I2cSlave::writeCompleteCb() {
+  //
+}
+
+void I2cSlave::readCompleteCb() {
+  //
+}
+
 Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max_size) {
   Status_t status = Status_t::Ok;
 

@@ -31,8 +31,12 @@ I2cService::I2cService() {}
 I2cService::~I2cService() {}
 
 void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
-  i2c_master0_.config(/*DefaultClockRate*/);
-  i2c_master1_.config(/*DefaultClockRate*/);
+  // i2c_config0_.init();
+  // i2c_config1_.init();
+
+  i2c_master0_.config();
+  i2c_master1_.config();
+
   i2c_slave0_.config();
   i2c_slave1_.config();
 
@@ -88,7 +92,7 @@ int32_t I2cService::postRequest(const uint8_t* data, size_t size) {
     status = postSlaveRequest(&i2c_msg);
 
   } else if (i2c_msg.which_msg == i2c_proto_I2cMsg_cfg_tag) {
-    status = 0;
+    status = postConfigRequest(&i2c_msg);
 
   } else {
     DEBUG_ERROR("Invalid request message!");
@@ -151,6 +155,30 @@ int32_t I2cService::postSlaveRequest(i2c_proto_I2cMsg* msg) {
                                  msg->sequence_number) == Status_t::Ok) {
     status = 0;
   }
+
+  return status;
+}
+
+int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* /*msg*/) {
+  int32_t status = -1;
+  /*
+  hal::i2c::I2cConfig* i2c_config;
+  hal::i2c::I2cConfig::Request request;
+
+  if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
+    DEBUG_INFO("Post config(0) request (req: %d)", request.request_id);
+    i2c_config = &i2c_config0_;
+  } else {
+    DEBUG_INFO("Post config(1) request (req: %d)", request.request_id);
+    i2c_config = &i2c_config1_;
+  }
+
+
+  if (i2c_slave->scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.slave_request.write_data.bytes),
+                                 msg->sequence_number) == Status_t::Ok) {
+    status = 0;
+  }
+  */
 
   return status;
 }

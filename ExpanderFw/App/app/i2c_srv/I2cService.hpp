@@ -9,6 +9,7 @@
 #define APP_I2C_SRV_I2CSERVICE_HPP_
 
 #include "app/ctrl/ctrlTypes.hpp"
+#include "hal/i2c/I2cConfig.hpp"
 #include "hal/i2c/I2cMaster.hpp"
 #include "hal/i2c/I2cSlave.hpp"
 #include "i2c.h"
@@ -39,9 +40,12 @@ class I2cService {
  private:
   int32_t postMasterRequest(i2c_proto_I2cMsg* msg);
   int32_t postSlaveRequest(i2c_proto_I2cMsg* msg);
+  int32_t postConfigRequest(i2c_proto_I2cMsg* msg);
   Status_t serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_size);
   Status_t serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_size);
 
+  hal::i2c::I2cConfig i2c_config0_{ &hi2c1 };
+  hal::i2c::I2cConfig i2c_config1_{ &hi2c2 };
   hal::i2c::I2cMaster i2c_master0_{ &hi2c1 };
   hal::i2c::I2cMaster i2c_master1_{ &hi2c2 };
   hal::i2c::I2cSlave i2c_slave0_{ &hi2c1 };
