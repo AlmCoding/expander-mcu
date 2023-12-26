@@ -9,6 +9,7 @@
 #define HAL_I2C_I2CMASTER_HPP_
 
 #include "common.hpp"
+#include "hal/i2c/I2cConfig.hpp"
 #include "main.h"
 #include "tx_api.h"
 
@@ -55,7 +56,7 @@ class I2cMaster {
     uint16_t buffer_space2;
   } StatusInfo;
 
-  I2cMaster(I2C_HandleTypeDef* i2c_handle);
+  I2cMaster(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
   virtual ~I2cMaster() = default;
 
   Status_t config();
@@ -90,7 +91,7 @@ class I2cMaster {
   Status_t allocateBufferSpace(Request* request);
   RequestSlot* setupRequestSlot(Request* request);
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
-  void freeBufferSpace(Request* request);
+  bool readyForNewStart();
   Status_t startRequest();
   Status_t startWrite();
   Status_t startReadReg();
@@ -98,7 +99,9 @@ class I2cMaster {
   void writeCompleteCb();
   void readCompleteCb();
   void complete();
+  void freeBufferSpace(Request* request);
 
+  I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
   TX_QUEUE pending_queue_;
   TX_QUEUE complete_queue_;

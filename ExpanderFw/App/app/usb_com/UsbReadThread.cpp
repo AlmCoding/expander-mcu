@@ -35,6 +35,7 @@ uint8_t UsbReadThread::usb_read_buffer_[UsbReadThread::UsbReadBufferSize];
 
 void UsbReadThread::execute(uint32_t /*thread_input*/) {
   os::msg::BaseMsg msg = {};
+  util::Stopwatch stopwatch{};
   uint32_t actual_length = 0;
 
   // Get the pointer to the device.
@@ -53,12 +54,15 @@ void UsbReadThread::execute(uint32_t /*thread_input*/) {
       ux_device_class_cdc_acm_read(cdc_acm_, usb_read_buffer_, sizeof(usb_read_buffer_), &actual_length);
 
       if (actual_length > 0) {
+        stopwatch.start();
 #ifdef DIRECT_ECHO_LOOP
         UsbWriteThread::sendData(usb_read_buffer_, actual_length);
 #else
         auto& tf_driver = driver::tf::FrameDriver::getInstance();
         tf_driver.receiveData(usb_read_buffer_, actual_length);
 #endif
+        stopwatch.stop();
+        DEBUG_INFO("Service downstream (size: %d, time: %d us) [OK]", actual_length, stopwatch.time());
       }
 
     } else {
@@ -69,7 +73,6 @@ void UsbReadThread::execute(uint32_t /*thread_input*/) {
 }
 
 void UsbReadThread::processMsg(os::msg::BaseMsg* msg) {
-  util::Stopwatch stopwatch{};
   DEBUG_INFO("Notification received: %d", ++msg_count_);
 
   switch (msg->id) {

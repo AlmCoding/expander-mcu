@@ -15,6 +15,11 @@
 namespace hal {
 namespace i2c {
 
+enum class I2cId {
+  I2c0 = 0,
+  I2c1,
+};
+
 class I2cConfig {
  public:
   I2cConfig(I2C_HandleTypeDef* i2c_handle);
@@ -22,7 +27,6 @@ class I2cConfig {
 
  private:
   I2C_HandleTypeDef* i2c_handle_;
-
 };
 
 } /* namespace i2c */

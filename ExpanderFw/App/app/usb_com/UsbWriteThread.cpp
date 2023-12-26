@@ -52,12 +52,11 @@ void UsbWriteThread::execute(uint32_t /*thread_input*/) {
 }
 
 void UsbWriteThread::processMsg(os::msg::BaseMsg* msg) {
+  DEBUG_INFO("Notification received: %d", ++msg_count_);
+
   switch (msg->id) {
     case os::msg::MsgId::ServiceUpstreamRequest: {
-      DEBUG_INFO("Notification received: %d", ++msg_count_);
-      if (cdc_acm_ != nullptr) {
-        serviceUpstream(msg);
-      }
+      serviceUpstream(msg);
       break;
     }
     case os::msg::MsgId::UsbDeviceActivate: {
@@ -83,6 +82,10 @@ void UsbWriteThread::processMsg(os::msg::BaseMsg* msg) {
 void UsbWriteThread::serviceUpstream(os::msg::BaseMsg* msg) {
   util::Stopwatch stopwatch{};
   auto& tf_driver = driver::tf::FrameDriver::getInstance();
+
+  if (cdc_acm_ == nullptr) {
+    return;
+  }
 
   while (msg->cnt > 0) {
     DEBUG_INFO("Service upstream (not: %d, idx: %d, msg: %d)", msg_count_, msg->cnt, msg->type);

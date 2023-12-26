@@ -6,6 +6,8 @@
  */
 
 #include "hal/i2c/I2cIrq.hpp"
+#include "enum/magic_enum.hpp"
+#include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "util/debug.hpp"
 
 #define DEBUG_ENABLE_I2C_IRQ
@@ -21,117 +23,101 @@
 
 namespace hal::i2c {
 
-// I2cIrq::I2cIrq() {}
-
-Status_t I2cIrq::registerI2cMaster(I2cMaster* i2c_master) {
-  Status_t status;
-
-  if (i2c_master == nullptr) {
-    DEBUG_ERROR("Invalid I2cMaster register attempt!");
-    return Status_t::Error;
-  }
+void I2cIrq::registerI2cMaster(I2cMaster* i2c_master) {
+  ETL_ASSERT(i2c_master != nullptr, ETL_ERROR(0));
+  size_t idx = magic_enum::enum_integer(i2c_master->i2c_id_);
 
   // Check if already registered
-  for (size_t i = 0; i < registered_master_; i++) {
-    if (i2c_master_[i] == i2c_master) {
-      return Status_t::Ok;
+  if (i2c_master_[idx] == i2c_master) {
+    return;
+  }
+
+  DEBUG_INFO("Register I2cMaster(%d) [OK]", idx);
+  ETL_ASSERT(i2c_master_[idx] == nullptr, ETL_ERROR(0));
+  i2c_master_[idx] = i2c_master;
+}
+
+I2cMaster* I2cIrq::getMaster(I2C_HandleTypeDef* hi2c) {
+  for (size_t i = 0; i < I2cCount; i++) {
+    if (i2c_master_[i]->i2c_handle_ == hi2c) {
+      return i2c_master_[i];
     }
   }
-
-  if (registered_master_ < I2cCount) {
-    DEBUG_INFO("Register I2cMaster(%d) [OK]", registered_master_);
-    i2c_master_[registered_master_] = i2c_master;
-    registered_master_++;
-    status = Status_t::Ok;
-
-  } else {
-    DEBUG_ERROR("Register I2cMaster(%d) [FAILED]", registered_master_);
-    status = Status_t::Error;
-  }
-
-  return status;
+  return nullptr;
 }
 
 void I2cIrq::masterWriteCpltCb(I2C_HandleTypeDef* hi2c) {
-  for (size_t i = 0; i < registered_master_; i++) {
-    if (i2c_master_[i]->i2c_handle_ == hi2c) {
-      i2c_master_[i]->writeCompleteCb();
-      break;
-    }
+  I2cMaster* master = getMaster(hi2c);
+  if (master != nullptr) {
+    master->writeCompleteCb();
   }
 }
 
 void I2cIrq::masterReadCpltCb(I2C_HandleTypeDef* hi2c) {
-  for (size_t i = 0; i < registered_master_; i++) {
-    if (i2c_master_[i]->i2c_handle_ == hi2c) {
-      i2c_master_[i]->readCompleteCb();
-      break;
-    }
+  I2cMaster* master = getMaster(hi2c);
+  if (master != nullptr) {
+    master->readCompleteCb();
   }
 }
 
-Status_t I2cIrq::registerI2cSlave(I2cSlave* i2c_slave) {
-  Status_t status;
-
-  if (i2c_slave == nullptr) {
-    DEBUG_ERROR("Invalid I2cSlave register attempt!");
-    return Status_t::Error;
-  }
+void I2cIrq::registerI2cSlave(I2cSlave* i2c_slave) {
+  ETL_ASSERT(i2c_slave != nullptr, ETL_ERROR(0));
+  size_t idx = magic_enum::enum_integer(i2c_slave->i2c_id_);
 
   // Check if already registered
-  for (size_t i = 0; i < registered_slave_; i++) {
-    if (i2c_slave_[i] == i2c_slave) {
-      return Status_t::Ok;
-    }
+  if (i2c_slave_[idx] == i2c_slave) {
+    return;
   }
 
-  if (registered_slave_ < I2cCount) {
-    DEBUG_INFO("Register I2cSlave(%d) [OK]", registered_slave_);
-    i2c_slave_[registered_slave_] = i2c_slave;
-    registered_slave_++;
-    status = Status_t::Ok;
-
-  } else {
-    DEBUG_ERROR("Register I2cSlave(%d) [FAILED]", registered_slave_);
-    status = Status_t::Error;
-  }
-
-  return status;
+  DEBUG_INFO("Register I2cSlave(%d) [OK]", idx);
+  ETL_ASSERT(i2c_slave_[idx] == nullptr, ETL_ERROR(0));
+  i2c_slave_[idx] = i2c_slave;
 }
 
-void I2cIrq::slaveMatchWriteCb(I2C_HandleTypeDef* hi2c) {
-  for (size_t i = 0; i < registered_slave_; i++) {
+I2cSlave* I2cIrq::getSlave(I2C_HandleTypeDef* hi2c) {
+  for (size_t i = 0; i < I2cCount; i++) {
     if (i2c_slave_[i]->i2c_handle_ == hi2c) {
-      i2c_slave_[i]->addressMatchWriteCb();
-      break;
+      return i2c_slave_[i];
     }
+  }
+  return nullptr;
+}
+
+void I2cIrq::enableSlaveListen(I2C_HandleTypeDef* hi2c) {
+  HAL_StatusTypeDef hal_status = HAL_I2C_EnableListen_IT(hi2c);
+  ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
+}
+
+void I2cIrq::disableSlaveListen(I2C_HandleTypeDef* hi2c) {
+  HAL_StatusTypeDef hal_status = HAL_I2C_DisableListen_IT(hi2c);
+  ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
+}
+
+void I2cIrq::slaveMatchWriteCb(I2C_HandleTypeDef* hi2c, uint16_t addr) {
+  I2cSlave* slave = getSlave(hi2c);
+  if (slave != nullptr) {
+    slave->addressMatchWriteCb(addr);
   }
 }
 
-void I2cIrq::slaveMatchReadCb(I2C_HandleTypeDef* hi2c) {
-  for (size_t i = 0; i < registered_slave_; i++) {
-    if (i2c_slave_[i]->i2c_handle_ == hi2c) {
-      i2c_slave_[i]->addressMatchReadCb();
-      break;
-    }
+void I2cIrq::slaveMatchReadCb(I2C_HandleTypeDef* hi2c, uint16_t addr) {
+  I2cSlave* slave = getSlave(hi2c);
+  if (slave != nullptr) {
+    slave->addressMatchReadCb(addr);
   }
 }
 
 void I2cIrq::slaveWriteCpltCb(I2C_HandleTypeDef* hi2c) {
-  for (size_t i = 0; i < registered_slave_; i++) {
-    if (i2c_slave_[i]->i2c_handle_ == hi2c) {
-      i2c_slave_[i]->writeCompleteCb();
-      break;
-    }
+  I2cSlave* slave = getSlave(hi2c);
+  if (slave != nullptr) {
+    slave->writeCompleteCb();
   }
 }
 
 void I2cIrq::slaveReadCpltCb(I2C_HandleTypeDef* hi2c) {
-  for (size_t i = 0; i < registered_slave_; i++) {
-    if (i2c_slave_[i]->i2c_handle_ == hi2c) {
-      i2c_slave_[i]->readCompleteCb();
-      break;
-    }
+  I2cSlave* slave = getSlave(hi2c);
+  if (slave != nullptr) {
+    slave->readCompleteCb();
   }
 }
 
@@ -153,12 +139,18 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef* hi2c) {
   I2cIrq::getInstance().masterReadCpltCb(hi2c);
 }
 
-void HAL_I2C_AddrCallback(I2C_HandleTypeDef* hi2c, uint8_t TransferDirection, uint16_t /*AddrMatchCode*/) {
+void HAL_I2C_AddrCallback(I2C_HandleTypeDef* hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode) {
   if (TransferDirection == I2C_DIRECTION_TRANSMIT) {
-    I2cIrq::getInstance().slaveMatchWriteCb(hi2c);
+    // Master TX slave RX
+    I2cIrq::getInstance().slaveMatchReadCb(hi2c, AddrMatchCode);
   } else {
-    I2cIrq::getInstance().slaveMatchReadCb(hi2c);
+    // Master RX slave TX
+    I2cIrq::getInstance().slaveMatchWriteCb(hi2c, AddrMatchCode);
   }
+}
+
+void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef* hi2c) {
+  I2cIrq::getInstance().enableSlaveListen(hi2c);
 }
 
 void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* hi2c) {
@@ -170,5 +162,4 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* hi2c) {
 }
 
 }  // extern "C"
-
 }  // namespace hal::i2c

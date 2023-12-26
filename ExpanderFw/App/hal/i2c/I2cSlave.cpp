@@ -6,6 +6,7 @@
  */
 
 #include "hal/i2c/I2cSlave.hpp"
+#include "enum/magic_enum.hpp"
 #include "etl/algorithm.h"      // etl::max
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "hal/i2c/I2cIrq.hpp"
@@ -26,7 +27,7 @@
 namespace hal {
 namespace i2c {
 
-I2cSlave::I2cSlave(I2C_HandleTypeDef* i2c_handle) : i2c_handle_{ i2c_handle } {
+I2cSlave::I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_id }, i2c_handle_{ i2c_handle } {
   uint32_t sts;
   sts = tx_queue_create(&request_queue_,                           //
                         const_cast<char*>("I2cSlaveRequestQ"),     //
@@ -36,17 +37,18 @@ I2cSlave::I2cSlave(I2C_HandleTypeDef* i2c_handle) : i2c_handle_{ i2c_handle } {
 }
 
 Status_t I2cSlave::config() {
-  Status_t status;
+  Status_t status = init();
 
-  if (init() == Status_t::Ok) {
-    DEBUG_INFO("Init [OK]");
+  if (status == Status_t::Ok) {
+    I2cIrq::getInstance().registerI2cSlave(this);
+    DEBUG_INFO("Init I2cSlave(%d) [OK]", magic_enum::enum_integer(i2c_id_));
 
   } else {
-    DEBUG_ERROR("Init [FAILED]");
+    DEBUG_ERROR("Init I2cSlave(%d) [FAILED]", magic_enum::enum_integer(i2c_id_));
     status = Status_t::Error;
   }
 
-  I2cIrq::getInstance().registerI2cSlave(this);
+  ETL_ASSERT(status == Status_t::Ok, ETL_ERROR(0));
   return status;
 }
 
@@ -60,6 +62,7 @@ Status_t I2cSlave::init() {
 
   seqence_number_ = 0;
 
+  I2cIrq::getInstance().enableSlaveListen(i2c_handle_);
   return Status_t::Ok;
 }
 
@@ -174,20 +177,44 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
   return status;
 }
 
-void I2cSlave::addressMatchWriteCb() {
-  //
+void I2cSlave::addressMatchWriteCb(size_t address) {
+  // Slave write, master read
+  HAL_StatusTypeDef hal_status;
+
+  hal_status =
+      HAL_I2C_Slave_Seq_Transmit_DMA(i2c_handle_, data_buffer_ + address,
+                                     static_cast<uint16_t>(sizeof(data_buffer_) - address), I2C_FIRST_AND_LAST_FRAME);
+
+  if (hal_status == HAL_OK) {
+    DEBUG_INFO("Start write (addr: 0x%04X) [OK]", address);
+  } else {
+    DEBUG_ERROR("Start write (addr: 0x%04X) [FAILED]", address);
+  }
 }
 
-void I2cSlave::addressMatchReadCb() {
-  //
+void I2cSlave::addressMatchReadCb(size_t address) {
+  // Slave read, master write
+  HAL_StatusTypeDef hal_status;
+
+  hal_status =
+      HAL_I2C_Slave_Seq_Receive_DMA(i2c_handle_, data_buffer_ + address,
+                                    static_cast<uint16_t>(sizeof(data_buffer_) - address), I2C_FIRST_AND_LAST_FRAME);
+
+  if (hal_status == HAL_OK) {
+    DEBUG_INFO("Start read (addr: 0x%04X) [OK]", address);
+  } else {
+    DEBUG_ERROR("Start read (addr: 0x%04X) [FAILED]", address);
+  }
 }
 
 void I2cSlave::writeCompleteCb() {
   //
+  DEBUG_INFO("writeCompleteCb [OK]");
 }
 
 void I2cSlave::readCompleteCb() {
   //
+  DEBUG_INFO("readCompleteCb [OK]");
 }
 
 Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max_size) {

@@ -9,6 +9,7 @@
 #define HAL_I2C_I2CSLAVE_HPP_
 
 #include "common.hpp"
+#include "hal/i2c/I2cConfig.hpp"
 #include "main.h"
 #include "tx_api.h"
 
@@ -49,7 +50,7 @@ class I2cSlave {
     uint16_t queue_space;
   } StatusInfo;
 
-  I2cSlave(I2C_HandleTypeDef* i2c_handle);
+  I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
   virtual ~I2cSlave() = default;
 
   Status_t config();
@@ -71,11 +72,12 @@ class I2cSlave {
 
   RequestSlot* setupRequestSlot(Request* request);
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
-  void addressMatchWriteCb();
-  void addressMatchReadCb();
+  void addressMatchWriteCb(size_t address);
+  void addressMatchReadCb(size_t address);
   void writeCompleteCb();
   void readCompleteCb();
 
+  I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
   TX_QUEUE request_queue_;
 
