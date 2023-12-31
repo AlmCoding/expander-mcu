@@ -24,11 +24,14 @@
 #define DEBUG_ERROR(...)
 #endif
 
+#define DMA_RX_MEM_WRITE_POS (sizeof(temp_buffer_) - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmarx))
+#define DMA_TX_MEM_READ_POS (sizeof(data_buffer_) - getDataAddress() - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmatx))
+
 namespace hal {
 namespace i2c {
 
 I2cSlave::I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_id }, i2c_handle_{ i2c_handle } {
-  uint32_t sts;
+  uint32_t sts = TX_SUCCESS;
   sts = tx_queue_create(&request_queue_,                           //
                         const_cast<char*>("I2cSlaveRequestQ"),     //
                         sizeof(QueueItem), request_queue_buffer_,  //
@@ -53,24 +56,28 @@ Status_t I2cSlave::config() {
 }
 
 Status_t I2cSlave::init() {
+  Status_t status = Status_t::Ok;
+
   tx_queue_flush(&request_queue_);
 
   memset(request_buffer_, 0, sizeof(request_buffer_));
   request_buffer_idx_ = 0;
 
   memset(data_buffer_, 0, sizeof(data_buffer_));
+  memset(temp_buffer_, 0, sizeof(temp_buffer_));
 
+  access_id_ = 0;
   seqence_number_ = 0;
 
   I2cIrq::getInstance().enableSlaveListen(i2c_handle_);
-  return Status_t::Ok;
+  return status;
 }
 
 uint32_t I2cSlave::poll() {
   uint32_t service_requests = 0;
-  uint32_t sts, free_slots;
 
-  sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
+  uint32_t free_slots = 0;
+  uint32_t sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
   if (free_slots < RequestQueue_MaxItemCnt) {
@@ -81,9 +88,9 @@ uint32_t I2cSlave::poll() {
 }
 
 Status_t I2cSlave::scheduleRequest(Request* request, uint8_t* mem_data, uint32_t seq_num) {
-  uint32_t sts;
-  uint32_t free_slots;
+  uint32_t sts = TX_SUCCESS;
 
+  uint32_t free_slots = 0;
   sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
@@ -144,12 +151,15 @@ I2cSlave::RequestSlot* I2cSlave::setupRequestSlot(Request* request) {
 }
 
 Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
-  Status_t status;
-  uint32_t sts;
+  Status_t status = Status_t::Ok;
 
-  if (request->status_code == RequestStatus::NoSpace) {
-    DEBUG_ERROR("Rejected request (req: %d) is NOT reported!", request->request_id);
+  if (request->status_code == RequestStatus::Complete) {
+    DEBUG_INFO("Sched. request (req: %d) [OK]", request->request_id);
+    status = Status_t::Ok;
+
+  } else if (request->status_code == RequestStatus::NoSpace) {
     DEBUG_ERROR("Sched. request (req: %d) [FAILED]", request->request_id);
+    DEBUG_ERROR("Rejected request (req: %d) is NOT reported!", request->request_id);
 
   } else if (request->status_code == RequestStatus::BadRequest) {
     DEBUG_ERROR("Sched. request (req: %d) [FAILED]", request->request_id);
@@ -157,13 +167,12 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
     ETL_ASSERT(request_slot != nullptr, ETL_ERROR(0));
 
     QueueItem queue_item = { .slot = request_slot };
-    sts = tx_queue_send(&request_queue_, &queue_item, 0);
+    uint32_t sts = tx_queue_send(&request_queue_, &queue_item, 0);
     ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
     status = Status_t::Error;
 
   } else {
-    DEBUG_INFO("Sched. request (req: %d) [OK]", request->request_id);
-    status = Status_t::Ok;
+    ETL_ASSERT(false, ETL_ERROR(0));
   }
 
   // Update sequence number
@@ -177,50 +186,115 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
   return status;
 }
 
-void I2cSlave::addressMatchWriteCb(size_t address) {
-  // Slave write, master read
-  HAL_StatusTypeDef hal_status;
+size_t I2cSlave::getDataAddress() {
+  uint16_t data_address = *(uint16_t*)temp_buffer_;
+  data_address = __builtin_bswap16(data_address);  // Swap bytes
+  return static_cast<size_t>(data_address);
+}
 
-  hal_status =
-      HAL_I2C_Slave_Seq_Transmit_DMA(i2c_handle_, data_buffer_ + address,
-                                     static_cast<uint16_t>(sizeof(data_buffer_) - address), I2C_FIRST_AND_LAST_FRAME);
+void I2cSlave::slaveMatchMasterWriteCb() {
+  // Slave read, master write
+  HAL_StatusTypeDef hal_status =
+      HAL_I2C_Slave_Seq_Receive_DMA(i2c_handle_, temp_buffer_, sizeof(temp_buffer_), I2C_FIRST_AND_LAST_FRAME);
 
   if (hal_status == HAL_OK) {
-    DEBUG_INFO("Start write (addr: 0x%04X) [OK]", address);
+    DEBUG_INFO("Start receive [OK]");
   } else {
-    DEBUG_ERROR("Start write (addr: 0x%04X) [FAILED]", address);
+    DEBUG_ERROR("Start receive [FAILED]");
   }
 }
 
-void I2cSlave::addressMatchReadCb(size_t address) {
-  // Slave read, master write
-  HAL_StatusTypeDef hal_status;
+void I2cSlave::slaveMatchMasterReadCb() {
+  // Slave write, master read
+  size_t data_address = getDataAddress();
+  uint16_t max_size = static_cast<uint16_t>(sizeof(data_buffer_) - data_address);
 
-  hal_status =
-      HAL_I2C_Slave_Seq_Receive_DMA(i2c_handle_, data_buffer_ + address,
-                                    static_cast<uint16_t>(sizeof(data_buffer_) - address), I2C_FIRST_AND_LAST_FRAME);
+  HAL_StatusTypeDef hal_status =
+      HAL_I2C_Slave_Seq_Transmit_DMA(i2c_handle_, data_buffer_ + data_address, max_size, I2C_FIRST_AND_LAST_FRAME);
 
   if (hal_status == HAL_OK) {
-    DEBUG_INFO("Start read (addr: 0x%04X) [OK]", address);
+    DEBUG_INFO("Start transmit (addr: 0x%04X) [OK]", data_address);
   } else {
-    DEBUG_ERROR("Start read (addr: 0x%04X) [FAILED]", address);
+    DEBUG_ERROR("Start transmit (addr: 0x%04X) [FAILED]", data_address);
   }
 }
 
 void I2cSlave::writeCompleteCb() {
-  //
-  DEBUG_INFO("writeCompleteCb [OK]");
+  size_t rx_cnt = DMA_RX_MEM_WRITE_POS - sizeof(uint16_t);
+  size_t data_address = getDataAddress();
+
+  ETL_ASSERT((data_address + rx_cnt) <= sizeof(data_buffer_), ETL_ERROR(0));
+  DEBUG_INFO("writeCompleteCb (addr: 0x%04X, cnt: %d) [OK]", data_address, rx_cnt);
+
+  if (rx_cnt > 0) {
+    memcpy(data_buffer_ + data_address, temp_buffer_ + sizeof(uint16_t), rx_cnt);
+
+    /*
+    RequestSlot* access_slot = notifyAccessRequest(rx_cnt, data_address, 0, 0);
+    if (access_slot != nullptr) {
+      DEBUG_INFO("Notify write-access (access: %d) [OK]", access_slot->request.access_id);
+    }
+    */
+  }
 }
 
 void I2cSlave::readCompleteCb() {
-  //
-  DEBUG_INFO("readCompleteCb [OK]");
+  size_t tx_cnt = DMA_TX_MEM_READ_POS - 9;  // TODO: Why -9?
+  size_t data_address = getDataAddress();
+  DEBUG_INFO("readCompleteCb (addr: 0x%04X, cnt: %d) [OK]", data_address, tx_cnt);
+
+  /*
+  RequestSlot* access_slot = notifyAccessRequest(0, 0, tx_cnt, data_address);
+  if (access_slot != nullptr) {
+    DEBUG_INFO("Notify read-access (access: %d) [OK]", access_slot->request.access_id);
+  }
+  */
+}
+
+I2cSlave::RequestSlot* I2cSlave::notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size,
+                                                     size_t read_addr) {
+  // Increment access id
+  access_id_++;
+
+  uint32_t free_slots = 0;
+  uint32_t sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
+  ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
+
+  // Check request queue space
+  if (free_slots == 0) {
+    DEBUG_ERROR("Queue overflow (access: %d)", access_id_);
+    return nullptr;
+  }
+
+  Request request = {
+    .request_id = 0,
+    .access_id = access_id_,
+    .status_code = RequestStatus::Pending,
+    .write_size = static_cast<uint16_t>(write_size),
+    .read_size = static_cast<uint16_t>(read_size),
+    .write_addr = write_addr,
+    .read_addr = read_addr,
+  };
+  RequestSlot* access_slot = setupRequestSlot(&request);
+  ETL_ASSERT(access_slot != nullptr, ETL_ERROR(0));
+
+  // Add request to request_queue
+  QueueItem queue_item = { .slot = access_slot };
+  sts = tx_queue_send(&request_queue_, &queue_item, 0);
+  ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
+
+  // Trigger i2c task
+  os::msg::BaseMsg msg = {};
+  msg.id = os::msg::MsgId::TriggerThread;
+  os::msg::send_msg(os::msg::MsgQueueId::I2cThreadQueue, &msg);
+
+  return access_slot;
 }
 
 Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max_size) {
   Status_t status = Status_t::Ok;
 
-  QueueItem queue_item;
+  QueueItem queue_item = {};
   if (tx_queue_receive(&request_queue_, &queue_item, 0) != TX_SUCCESS) {
     DEBUG_ERROR("No requests to service [FAILED]");
     status = Status_t::Error;
@@ -246,9 +320,8 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max
     }
   }
 
-  uint32_t sts;
-  uint32_t free_slots;
-  sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
+  uint32_t free_slots = 0;
+  uint32_t sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
   info->queue_space = static_cast<uint16_t>(free_slots);
 

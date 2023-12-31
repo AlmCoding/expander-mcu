@@ -39,16 +39,19 @@ class I2cIrq {
   I2cSlave* getSlave(I2C_HandleTypeDef* hi2c);
   void enableSlaveListen(I2C_HandleTypeDef* hi2c);
   void disableSlaveListen(I2C_HandleTypeDef* hi2c);
-  void slaveMatchWriteCb(I2C_HandleTypeDef* hi2c, uint16_t addr);
-  void slaveMatchReadCb(I2C_HandleTypeDef* hi2c, uint16_t addr);
-  void slaveWriteCpltCb(I2C_HandleTypeDef* hi2c);
-  void slaveReadCpltCb(I2C_HandleTypeDef* hi2c);
+  void slaveMatchMasterWriteCb(I2C_HandleTypeDef* hi2c);
+  void slaveMatchMasterReadCb(I2C_HandleTypeDef* hi2c);
+  void slaveListenCpltCb(I2C_HandleTypeDef* hi2c);
+
+  // void slaveMasterWriteCpltCb(I2C_HandleTypeDef* hi2c);
+  // void slaveMasterReadCpltCb(I2C_HandleTypeDef* hi2c);
 
  private:
   I2cIrq() = default;
 
   I2cMaster* i2c_master_[I2cCount] = {};
   I2cSlave* i2c_slave_[I2cCount] = {};
+  bool slave_match_master_write = true;
 };
 
 }  // namespace hal::i2c

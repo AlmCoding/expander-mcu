@@ -93,33 +93,49 @@ void I2cIrq::disableSlaveListen(I2C_HandleTypeDef* hi2c) {
   ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
 }
 
-void I2cIrq::slaveMatchWriteCb(I2C_HandleTypeDef* hi2c, uint16_t addr) {
+void I2cIrq::slaveMatchMasterWriteCb(I2C_HandleTypeDef* hi2c) {
   I2cSlave* slave = getSlave(hi2c);
   if (slave != nullptr) {
-    slave->addressMatchWriteCb(addr);
+    slave->slaveMatchMasterWriteCb();
+    slave_match_master_write = true;
   }
 }
 
-void I2cIrq::slaveMatchReadCb(I2C_HandleTypeDef* hi2c, uint16_t addr) {
+void I2cIrq::slaveMatchMasterReadCb(I2C_HandleTypeDef* hi2c) {
   I2cSlave* slave = getSlave(hi2c);
   if (slave != nullptr) {
-    slave->addressMatchReadCb(addr);
+    slave->slaveMatchMasterReadCb();
+    slave_match_master_write = false;
   }
 }
 
-void I2cIrq::slaveWriteCpltCb(I2C_HandleTypeDef* hi2c) {
+void I2cIrq::slaveListenCpltCb(I2C_HandleTypeDef* hi2c) {
+  I2cSlave* slave = getSlave(hi2c);
+  if (slave != nullptr) {
+    if (slave_match_master_write == true) {
+      slave->writeCompleteCb();
+    } else {
+      slave->readCompleteCb();
+    }
+    enableSlaveListen(hi2c);
+  }
+}
+
+/*
+void I2cIrq::slaveMasterWriteCpltCb(I2C_HandleTypeDef* hi2c) {
   I2cSlave* slave = getSlave(hi2c);
   if (slave != nullptr) {
     slave->writeCompleteCb();
   }
 }
 
-void I2cIrq::slaveReadCpltCb(I2C_HandleTypeDef* hi2c) {
+void I2cIrq::slaveMasterReadCpltCb(I2C_HandleTypeDef* hi2c) {
   I2cSlave* slave = getSlave(hi2c);
   if (slave != nullptr) {
     slave->readCompleteCb();
   }
 }
+*/
 
 extern "C" {
 
@@ -139,26 +155,28 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef* hi2c) {
   I2cIrq::getInstance().masterReadCpltCb(hi2c);
 }
 
-void HAL_I2C_AddrCallback(I2C_HandleTypeDef* hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode) {
+void HAL_I2C_AddrCallback(I2C_HandleTypeDef* hi2c, uint8_t TransferDirection, uint16_t /*AddrMatchCode*/) {
   if (TransferDirection == I2C_DIRECTION_TRANSMIT) {
     // Master TX slave RX
-    I2cIrq::getInstance().slaveMatchReadCb(hi2c, AddrMatchCode);
+    I2cIrq::getInstance().slaveMatchMasterWriteCb(hi2c);
   } else {
     // Master RX slave TX
-    I2cIrq::getInstance().slaveMatchWriteCb(hi2c, AddrMatchCode);
+    I2cIrq::getInstance().slaveMatchMasterReadCb(hi2c);
   }
 }
 
 void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef* hi2c) {
-  I2cIrq::getInstance().enableSlaveListen(hi2c);
+  I2cIrq::getInstance().slaveListenCpltCb(hi2c);
 }
 
 void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* hi2c) {
-  I2cIrq::getInstance().slaveWriteCpltCb(hi2c);
+  (void)hi2c;
+  // I2cIrq::getInstance().slaveMasterWriteCpltCb(hi2c);
 }
 
 void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* hi2c) {
-  I2cIrq::getInstance().slaveReadCpltCb(hi2c);
+  (void)hi2c;
+  // I2cIrq::getInstance().slaveMasterReadCpltCb(hi2c);
 }
 
 }  // extern "C"

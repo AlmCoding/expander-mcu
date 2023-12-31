@@ -79,13 +79,13 @@ Status_t I2cMaster::init() {
 
 uint32_t I2cMaster::poll() {
   uint32_t service_requests = 0;
-  uint32_t sts, free_slots;
 
 #if (START_I2_REQUEST_IMMEDIATELY == false)
   startRequest();
 #endif
 
-  sts = tx_queue_info_get(&complete_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
+  uint32_t free_slots = 0;
+  uint32_t sts = tx_queue_info_get(&complete_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
   if (free_slots < RequestQueue_MaxItemCnt) {
@@ -123,8 +123,8 @@ I2cMaster::Space I2cMaster::getFreeSpace() {
 
 Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num) {
   uint32_t sts = TX_SUCCESS;
-  uint32_t free_slots = 0;
 
+  uint32_t free_slots = 0;
   sts = tx_queue_info_get(&pending_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
@@ -393,6 +393,7 @@ Status_t I2cMaster::startReadReg() {
   Status_t status;
   HAL_StatusTypeDef hal_status;
   uint16_t reg_addr = *(uint16_t*)(data_buffer_ + request_->write_start);
+  reg_addr = __builtin_bswap16(reg_addr);  // Swap bytes
 
   hal_status = HAL_I2C_Mem_Read_DMA(i2c_handle_,                          // Handle
                                     request_->slave_addr,                 // Slave addr
@@ -500,7 +501,7 @@ void I2cMaster::complete() {
 Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t max_size) {
   Status_t status = Status_t::Ok;
 
-  QueueItem queue_item;
+  QueueItem queue_item = {};
   if (tx_queue_receive(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
     DEBUG_ERROR("No cplt. requests to service [FAILED]");
     status = Status_t::Error;

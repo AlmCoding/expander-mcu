@@ -72,10 +72,12 @@ class I2cSlave {
 
   RequestSlot* setupRequestSlot(Request* request);
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
-  void addressMatchWriteCb(size_t address);
-  void addressMatchReadCb(size_t address);
+  size_t getDataAddress();
+  void slaveMatchMasterWriteCb();
+  void slaveMatchMasterReadCb();
   void writeCompleteCb();
   void readCompleteCb();
+  RequestSlot* notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size, size_t read_addr);
 
   I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
@@ -86,7 +88,9 @@ class I2cSlave {
   size_t request_buffer_idx_ = 0;
 
   uint8_t data_buffer_[DataBufferSize];
+  uint8_t temp_buffer_[DataBufferSize];
 
+  uint32_t access_id_ = 0;
   uint32_t seqence_number_ = 0;
 
   friend class I2cIrq;
