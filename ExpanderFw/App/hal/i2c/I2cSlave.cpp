@@ -229,12 +229,10 @@ void I2cSlave::writeCompleteCb() {
   if (rx_cnt > 0) {
     memcpy(data_buffer_ + data_address, temp_buffer_ + sizeof(uint16_t), rx_cnt);
 
-    /*
     RequestSlot* access_slot = notifyAccessRequest(rx_cnt, data_address, 0, 0);
     if (access_slot != nullptr) {
       DEBUG_INFO("Notify write-access (access: %d) [OK]", access_slot->request.access_id);
     }
-    */
   }
 }
 
@@ -243,12 +241,10 @@ void I2cSlave::readCompleteCb() {
   size_t data_address = getDataAddress();
   DEBUG_INFO("readCompleteCb (addr: 0x%04X, cnt: %d) [OK]", data_address, tx_cnt);
 
-  /*
   RequestSlot* access_slot = notifyAccessRequest(0, 0, tx_cnt, data_address);
   if (access_slot != nullptr) {
     DEBUG_INFO("Notify read-access (access: %d) [OK]", access_slot->request.access_id);
   }
-  */
 }
 
 I2cSlave::RequestSlot* I2cSlave::notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size,

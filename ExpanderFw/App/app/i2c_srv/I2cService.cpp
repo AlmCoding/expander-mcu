@@ -34,27 +34,17 @@ void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
   // i2c_config0_.init();
   // i2c_config1_.init();
 
-  i2c_master0_.config();
-  i2c_master1_.config();
-
   i2c_slave0_.config();
   i2c_slave1_.config();
+
+  i2c_master0_.config();
+  i2c_master1_.config();
 
   request_service_cb_ = request_service_cb;
 }
 
 void I2cService::poll() {
   uint32_t request_cnt = 0;
-
-  if (i2c_master0_.poll() > 0) {
-    srv_info_.service_master0 = true;
-    request_cnt++;
-  }
-
-  if (i2c_master1_.poll() > 0) {
-    srv_info_.service_master1 = true;
-    request_cnt++;
-  }
 
   if (i2c_slave0_.poll() > 0) {
     srv_info_.service_slave0 = true;
@@ -63,6 +53,16 @@ void I2cService::poll() {
 
   if (i2c_slave1_.poll() > 0) {
     srv_info_.service_slave1 = true;
+    request_cnt++;
+  }
+
+  if (i2c_master0_.poll() > 0) {
+    srv_info_.service_master0 = true;
+    request_cnt++;
+  }
+
+  if (i2c_master1_.poll() > 0) {
+    srv_info_.service_master1 = true;
     request_cnt++;
   }
 
@@ -191,17 +191,7 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_size) {
   /* Create a stream that will write to our buffer. */
   pb_ostream_t stream = pb_ostream_from_buffer(data, max_size);
 
-  if (srv_info_.service_master0 == true) {
-    i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
-    sts = serviceMasterRequest(&i2c_master0_, &i2c_msg, max_size);
-    srv_info_.service_master0 = false;
-
-  } else if (srv_info_.service_master1 == true) {
-    i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
-    sts = serviceMasterRequest(&i2c_master1_, &i2c_msg, max_size);
-    srv_info_.service_master1 = false;
-
-  } else if (srv_info_.service_slave0 == true) {
+  if (srv_info_.service_slave0 == true) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
     sts = serviceSlaveRequest(&i2c_slave0_, &i2c_msg, max_size);
     srv_info_.service_slave0 = false;
@@ -210,6 +200,16 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_size) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
     sts = serviceSlaveRequest(&i2c_slave1_, &i2c_msg, max_size);
     srv_info_.service_slave1 = false;
+
+  } else if (srv_info_.service_master0 == true) {
+    i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
+    sts = serviceMasterRequest(&i2c_master0_, &i2c_msg, max_size);
+    srv_info_.service_master0 = false;
+
+  } else if (srv_info_.service_master1 == true) {
+    i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
+    sts = serviceMasterRequest(&i2c_master1_, &i2c_msg, max_size);
+    srv_info_.service_master1 = false;
 
   } else {
     DEBUG_ERROR("Nothing to service (return 0)");
