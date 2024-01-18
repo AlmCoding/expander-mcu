@@ -504,7 +504,7 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
   QueueItem queue_item = {};
   if (tx_queue_receive(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
     DEBUG_ERROR("No cplt. requests to service [FAILED]");
-    status = Status_t::Error;
+    return Status_t::Error;
   }
 
   Request* request = &queue_item.slot->request;

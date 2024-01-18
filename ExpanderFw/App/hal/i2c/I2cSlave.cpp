@@ -229,9 +229,13 @@ void I2cSlave::writeCompleteCb() {
   if (rx_cnt > 0) {
     memcpy(data_buffer_ + data_address, temp_buffer_ + sizeof(uint16_t), rx_cnt);
 
+    // return; // Suppress notification
+
     RequestSlot* access_slot = notifyAccessRequest(rx_cnt, data_address, 0, 0);
     if (access_slot != nullptr) {
       DEBUG_INFO("Notify write-access (access: %d) [OK]", access_slot->request.access_id);
+    } else {
+      DEBUG_ERROR("Notify write-access (access: %d) [FAILED]", access_slot->request.access_id);
     }
   }
 }
@@ -241,9 +245,13 @@ void I2cSlave::readCompleteCb() {
   size_t data_address = getDataAddress();
   DEBUG_INFO("readCompleteCb (addr: 0x%04X, cnt: %d) [OK]", data_address, tx_cnt);
 
+  // return; // Suppress notification
+
   RequestSlot* access_slot = notifyAccessRequest(0, 0, tx_cnt, data_address);
   if (access_slot != nullptr) {
     DEBUG_INFO("Notify read-access (access: %d) [OK]", access_slot->request.access_id);
+  } else {
+    DEBUG_ERROR("Notify read-access (access: %d) [FAILED]", access_slot->request.access_id);
   }
 }
 
@@ -265,7 +273,7 @@ I2cSlave::RequestSlot* I2cSlave::notifyAccessRequest(size_t write_size, size_t w
   Request request = {
     .request_id = 0,
     .access_id = access_id_,
-    .status_code = RequestStatus::Pending,
+    .status_code = RequestStatus::Complete,
     .write_size = static_cast<uint16_t>(write_size),
     .read_size = static_cast<uint16_t>(read_size),
     .write_addr = write_addr,
@@ -292,8 +300,8 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max
 
   QueueItem queue_item = {};
   if (tx_queue_receive(&request_queue_, &queue_item, 0) != TX_SUCCESS) {
-    DEBUG_ERROR("No requests to service [FAILED]");
-    status = Status_t::Error;
+    DEBUG_ERROR("No requests/notifications to service [FAILED]");
+    return Status_t::Error;
   }
 
   Request* request = &queue_item.slot->request;
@@ -303,17 +311,20 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max
 
   if (request->status_code == RequestStatus::Complete) {
     if ((request->request_id > 0) && (request->read_size > 0)) {
-      // Feedback on read request
+      // Feedback on read request from PC
       ETL_ASSERT(request->read_size <= max_size, ETL_ERROR(0));
       std::memcpy(mem_data, data_buffer_ + request->read_addr, request->read_size);
       info->size = request->read_size;
 
     } else if ((request->access_id > 0) && (request->write_size > 0)) {
-      // Report slave access
-      ETL_ASSERT(request->read_size <= max_size, ETL_ERROR(0));
+      // Report slave write access notification to PC
+      ETL_ASSERT(request->write_size <= max_size, ETL_ERROR(0));
       std::memcpy(mem_data, data_buffer_ + request->write_addr, request->write_size);
       info->size = request->write_size;
     }
+
+  } else {
+    // TODO
   }
 
   uint32_t free_slots = 0;
@@ -323,7 +334,7 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max
 
   // Release slot
   queue_item.slot->used = false;
-  return status;
+  return Status_t::Ok;
 }
 
 } /* namespace i2c */
