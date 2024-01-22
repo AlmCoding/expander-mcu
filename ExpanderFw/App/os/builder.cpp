@@ -9,6 +9,7 @@
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "os/queue.hpp"
 #include "os/thread.hpp"
+#include "os/trace.hpp"
 #include "util/debug.hpp"
 
 #define DEBUG_ENABLE_BUILDER
@@ -30,7 +31,11 @@ void enterOs() {
 
 UINT buildOs(VOID* memory_ptr) {
   /* Init scheduler */
-  UINT status;
+  UINT status = TX_SUCCESS;
+
+  // Enable event tracing
+  status = enableTracing();
+  ETL_ASSERT(status == TX_SUCCESS, ETL_ERROR(0));
 
   // Create threads
   status = createThreads(memory_ptr);

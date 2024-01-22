@@ -28,16 +28,18 @@ namespace hal::i2c {
 
 I2cMaster::I2cMaster(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_id }, i2c_handle_{ i2c_handle } {
   uint32_t sts = TX_SUCCESS;
-  sts = tx_queue_create(&pending_queue_,                           //
-                        const_cast<char*>("I2cMasterPendQ"),       //
-                        sizeof(QueueItem), pending_queue_buffer_,  //
-                        RequestQueue_MaxItemCnt * sizeof(QueueItem) * sizeof(ULONG));
+  sts = tx_queue_create(&pending_queue_,                       //
+                        const_cast<char*>("I2cMasterPendQ"),   //
+                        sizeof(QueueItem) / sizeof(uint32_t),  //
+                        pending_queue_buffer_,                 //
+                        sizeof(pending_queue_buffer_));
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
-  sts = tx_queue_create(&complete_queue_,                           //
-                        const_cast<char*>("I2cMasterCpltQ"),        //
-                        sizeof(QueueItem), complete_queue_buffer_,  //
-                        RequestQueue_MaxItemCnt * sizeof(QueueItem) * sizeof(ULONG));
+  sts = tx_queue_create(&complete_queue_,                      //
+                        const_cast<char*>("I2cMasterCpltQ"),   //
+                        sizeof(QueueItem) / sizeof(uint32_t),  //
+                        complete_queue_buffer_,                //
+                        sizeof(complete_queue_buffer_));
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 }
 
@@ -63,7 +65,7 @@ Status_t I2cMaster::init() {
   tx_queue_flush(&pending_queue_);
   tx_queue_flush(&complete_queue_);
 
-  memset(request_buffer_, 0, sizeof(request_buffer_));
+  memset(static_cast<void*>(request_buffer_), 0, sizeof(request_buffer_));
   request_buffer_idx_ = 0;
 
   data_start_ = 0;
@@ -154,7 +156,7 @@ Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint3
 
   // Add request to pending_queue
   QueueItem queue_item = { .slot = request_slot };
-  sts = tx_queue_send(&pending_queue_, &queue_item, 0);
+  sts = tx_queue_send(&pending_queue_, &queue_item, TX_NO_WAIT);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
   return exitScheduleRequest(request, seq_num);
@@ -254,7 +256,7 @@ Status_t I2cMaster::exitScheduleRequest(Request* request, uint32_t seq_num) {
     RequestSlot* request_slot = setupRequestSlot(request);
     if (request_slot != nullptr) {
       QueueItem queue_item = { .slot = request_slot };
-      sts = tx_queue_send(&complete_queue_, &queue_item, 0);
+      sts = tx_queue_send(&complete_queue_, &queue_item, TX_NO_WAIT);
     }
 
     if (sts != TX_SUCCESS) {
@@ -299,17 +301,13 @@ bool I2cMaster::readyForNewStart() {
 
 Status_t I2cMaster::startRequest() {
   Status_t status = Status_t::Ok;
-  uint32_t sts = TX_SUCCESS;
-  uint32_t free_slots = 0;
-  (void)sts;
-  (void)free_slots;
 
   if (readyForNewStart() == false) {
     return Status_t::Busy;
   }
 
   QueueItem queue_item;
-  if (tx_queue_receive(&pending_queue_, &queue_item, 0) == TX_SUCCESS) {
+  if (tx_queue_receive(&pending_queue_, &queue_item, TX_NO_WAIT) == TX_SUCCESS) {
     request_slot_ = queue_item.slot;
     request_ = &request_slot_->request;
     request_->status_code = RequestStatus::Ongoing;
@@ -372,10 +370,10 @@ Status_t I2cMaster::startWrite() {
     }
   }
 
-  hal_status = HAL_I2C_Master_Seq_Transmit_DMA(i2c_handle_,                           // Handle
-                                               request_->slave_addr,                  // Addr
-                                               data_buffer_ + request_->write_start,  // Data
-                                               request_->write_size,                  // Length
+  hal_status = HAL_I2C_Master_Seq_Transmit_DMA(i2c_handle_,                                  // Handle
+                                               static_cast<uint16_t>(request_->slave_addr),  // Addr
+                                               data_buffer_ + request_->write_start,         // Data
+                                               request_->write_size,                         // Length
                                                xfer_options);
   if (hal_status == HAL_OK) {
     DEBUG_INFO("Start write (req: %d) [OK]", request_->request_id);
@@ -395,11 +393,11 @@ Status_t I2cMaster::startReadReg() {
   uint16_t reg_addr = *(uint16_t*)(data_buffer_ + request_->write_start);
   reg_addr = __builtin_bswap16(reg_addr);  // Swap bytes
 
-  hal_status = HAL_I2C_Mem_Read_DMA(i2c_handle_,                          // Handle
-                                    request_->slave_addr,                 // Slave addr
-                                    reg_addr,                             // Register addr
-                                    request_->write_size,                 // Addr size
-                                    data_buffer_ + request_->read_start,  // Ptr
+  hal_status = HAL_I2C_Mem_Read_DMA(i2c_handle_,                                  // Handle
+                                    static_cast<uint16_t>(request_->slave_addr),  // Slave addr
+                                    reg_addr,                                     // Register addr
+                                    request_->write_size,                         // Addr size
+                                    data_buffer_ + request_->read_start,          // Ptr
                                     request_->read_size);
 
   if (hal_status == HAL_OK) {
@@ -439,10 +437,10 @@ Status_t I2cMaster::startRead() {
     }
   }
 
-  hal_status = HAL_I2C_Master_Seq_Receive_DMA(i2c_handle_,                          // Handle
-                                              request_->slave_addr,                 // Addr
-                                              data_buffer_ + request_->read_start,  // Data
-                                              request_->read_size,                  // Length
+  hal_status = HAL_I2C_Master_Seq_Receive_DMA(i2c_handle_,                                  // Handle
+                                              static_cast<uint16_t>(request_->slave_addr),  // Addr
+                                              data_buffer_ + request_->read_start,          // Data
+                                              request_->read_size,                          // Length
                                               xfer_options);
 
   if (hal_status == HAL_OK) {
@@ -478,7 +476,7 @@ void I2cMaster::complete() {
 
   // Add request to complete_queue
   QueueItem queue_item = { .slot = request_slot_ };
-  if (tx_queue_send(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
+  if (tx_queue_send(&complete_queue_, &queue_item, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Cplt queue put (req: %d) [FAILED]", request_->request_id);
   } else {
     DEBUG_INFO("Cplt queue put (req: %d) [OK]", request_->request_id);
@@ -502,7 +500,7 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
   Status_t status = Status_t::Ok;
 
   QueueItem queue_item = {};
-  if (tx_queue_receive(&complete_queue_, &queue_item, 0) != TX_SUCCESS) {
+  if (tx_queue_receive(&complete_queue_, &queue_item, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("No cplt. requests to service [FAILED]");
     return Status_t::Error;
   }

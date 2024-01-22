@@ -12,7 +12,7 @@
 
 namespace os::msg {
 
-enum class MsgQueueId : uint8_t {
+enum class MsgQueueId {
   UsbReadThreadQueue = 0,
   UsbWriteThreadQueue,
   CtrlThreadQueue,
@@ -21,7 +21,7 @@ enum class MsgQueueId : uint8_t {
   I2cThreadQueue,
 };
 
-enum class MsgId : uint8_t {
+enum class MsgId {
   TriggerThread = 0,
   UsbDeviceActivate,
   UsbDeviceDeactivate,
@@ -36,6 +36,10 @@ typedef struct {
   RequestCnt cnt;
   void* ptr;
 } BaseMsg;
+static_assert((sizeof(BaseMsg) % sizeof(uint32_t)) == 0, "ThreadX queue messages must be a multiple of 4 bytes!");
+static_assert(((sizeof(BaseMsg) == 4) || (sizeof(BaseMsg) == 8) || (sizeof(BaseMsg) == 16) || (sizeof(BaseMsg) == 32) ||
+               (sizeof(BaseMsg) == 64)),
+              "ThreadX queue messages must be of size 4, 8, 16, 32 or 64 bytes!");
 
 }  // namespace os::msg
 

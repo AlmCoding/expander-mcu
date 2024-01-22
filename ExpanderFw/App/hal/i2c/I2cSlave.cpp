@@ -32,10 +32,11 @@ namespace i2c {
 
 I2cSlave::I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_id }, i2c_handle_{ i2c_handle } {
   uint32_t sts = TX_SUCCESS;
-  sts = tx_queue_create(&request_queue_,                           //
-                        const_cast<char*>("I2cSlaveRequestQ"),     //
-                        sizeof(QueueItem), request_queue_buffer_,  //
-                        RequestQueue_MaxItemCnt * sizeof(QueueItem) * sizeof(ULONG));
+  sts = tx_queue_create(&request_queue_,                        //
+                        const_cast<char*>("I2cSlaveRequestQ"),  //
+                        sizeof(Request) / sizeof(uint32_t),     //
+                        request_queue_buffer_,                  //
+                        sizeof(request_queue_buffer_));
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 }
 
@@ -59,9 +60,6 @@ Status_t I2cSlave::init() {
   Status_t status = Status_t::Ok;
 
   tx_queue_flush(&request_queue_);
-
-  memset(request_buffer_, 0, sizeof(request_buffer_));
-  request_buffer_idx_ = 0;
 
   memset(data_buffer_, 0, sizeof(data_buffer_));
   memset(temp_buffer_, 0, sizeof(temp_buffer_));
@@ -116,38 +114,11 @@ Status_t I2cSlave::scheduleRequest(Request* request, uint8_t* mem_data, uint32_t
   // Set request status to complete
   request->status_code = RequestStatus::Complete;
 
-  RequestSlot* request_slot = setupRequestSlot(request);
-  ETL_ASSERT(request_slot != nullptr, ETL_ERROR(0));
-
   // Add request to request_queue
-  QueueItem queue_item = { .slot = request_slot };
-  sts = tx_queue_send(&request_queue_, &queue_item, 0);
+  sts = tx_queue_send(&request_queue_, request, TX_NO_WAIT);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
   return exitScheduleRequest(request, seq_num);
-}
-
-I2cSlave::RequestSlot* I2cSlave::setupRequestSlot(Request* request) {
-  RequestSlot* slot = nullptr;
-
-  // Search for free slot
-  size_t counter = RequestBufferSize;
-  while ((request_buffer_[request_buffer_idx_].used == true) && (counter > 0)) {
-    request_buffer_idx_++;
-    if (request_buffer_idx_ >= RequestBufferSize) {
-      request_buffer_idx_ = 0;
-    }
-    counter--;
-  }
-
-  // Copy request into slot
-  if (request_buffer_[request_buffer_idx_].used == false) {
-    slot = &request_buffer_[request_buffer_idx_];
-    slot->request = *request;
-    slot->used = true;
-  }
-
-  return slot;
 }
 
 Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
@@ -160,14 +131,11 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
   } else if (request->status_code == RequestStatus::NoSpace) {
     DEBUG_ERROR("Sched. request (req: %d) [FAILED]", request->request_id);
     DEBUG_ERROR("Rejected request (req: %d) is NOT reported!", request->request_id);
+    status = Status_t::Error;
 
   } else if (request->status_code == RequestStatus::BadRequest) {
     DEBUG_ERROR("Sched. request (req: %d) [FAILED]", request->request_id);
-    RequestSlot* request_slot = setupRequestSlot(request);
-    ETL_ASSERT(request_slot != nullptr, ETL_ERROR(0));
-
-    QueueItem queue_item = { .slot = request_slot };
-    uint32_t sts = tx_queue_send(&request_queue_, &queue_item, 0);
+    uint32_t sts = tx_queue_send(&request_queue_, request, TX_NO_WAIT);
     ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
     status = Status_t::Error;
 
@@ -231,11 +199,10 @@ void I2cSlave::writeCompleteCb() {
 
     // return; // Suppress notification
 
-    RequestSlot* access_slot = notifyAccessRequest(rx_cnt, data_address, 0, 0);
-    if (access_slot != nullptr) {
-      DEBUG_INFO("Notify write-access (access: %d) [OK]", access_slot->request.access_id);
+    if (notifyAccessRequest(rx_cnt, data_address, 0, 0) == Status_t::Ok) {
+      DEBUG_INFO("Notify write-access (access: %d) [OK]", access_id_);
     } else {
-      DEBUG_ERROR("Notify write-access (access: %d) [FAILED]", access_slot->request.access_id);
+      DEBUG_ERROR("Notify write-access (access: %d) [FAILED]", access_id_);
     }
   }
 }
@@ -245,18 +212,17 @@ void I2cSlave::readCompleteCb() {
   size_t data_address = getDataAddress();
   DEBUG_INFO("readCompleteCb (addr: 0x%04X, cnt: %d) [OK]", data_address, tx_cnt);
 
-  // return; // Suppress notification
+  // return; // Suppress notification (for testing only)
 
-  RequestSlot* access_slot = notifyAccessRequest(0, 0, tx_cnt, data_address);
-  if (access_slot != nullptr) {
-    DEBUG_INFO("Notify read-access (access: %d) [OK]", access_slot->request.access_id);
+  if (notifyAccessRequest(0, 0, tx_cnt, data_address) == Status_t::Ok) {
+    DEBUG_INFO("Notify read-access (access: %d) [OK]", access_id_);
   } else {
-    DEBUG_ERROR("Notify read-access (access: %d) [FAILED]", access_slot->request.access_id);
+    DEBUG_ERROR("Notify read-access (access: %d) [FAILED]", access_id_);
   }
 }
 
-I2cSlave::RequestSlot* I2cSlave::notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size,
-                                                     size_t read_addr) {
+Status_t I2cSlave::notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size, size_t read_addr) {
+  Status_t status = Status_t::Ok;
   // Increment access id
   access_id_++;
 
@@ -267,7 +233,7 @@ I2cSlave::RequestSlot* I2cSlave::notifyAccessRequest(size_t write_size, size_t w
   // Check request queue space
   if (free_slots == 0) {
     DEBUG_ERROR("Queue overflow (access: %d)", access_id_);
-    return nullptr;
+    return Status_t::Error;
   }
 
   Request request = {
@@ -279,12 +245,9 @@ I2cSlave::RequestSlot* I2cSlave::notifyAccessRequest(size_t write_size, size_t w
     .write_addr = write_addr,
     .read_addr = read_addr,
   };
-  RequestSlot* access_slot = setupRequestSlot(&request);
-  ETL_ASSERT(access_slot != nullptr, ETL_ERROR(0));
 
   // Add request to request_queue
-  QueueItem queue_item = { .slot = access_slot };
-  sts = tx_queue_send(&request_queue_, &queue_item, 0);
+  sts = tx_queue_send(&request_queue_, &request, TX_NO_WAIT);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
   // Trigger i2c task
@@ -292,26 +255,24 @@ I2cSlave::RequestSlot* I2cSlave::notifyAccessRequest(size_t write_size, size_t w
   msg.id = os::msg::MsgId::TriggerThread;
   os::msg::send_msg(os::msg::MsgQueueId::I2cThreadQueue, &msg);
 
-  return access_slot;
+  return status;
 }
 
 Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max_size) {
   Status_t status = Status_t::Ok;
 
-  QueueItem queue_item = {};
-  if (tx_queue_receive(&request_queue_, &queue_item, 0) != TX_SUCCESS) {
+  Request* request = &info->request;
+  if (tx_queue_receive(&request_queue_, request, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("No requests/notifications to service [FAILED]");
     return Status_t::Error;
   }
 
-  Request* request = &queue_item.slot->request;
   info->sequence_number = seqence_number_;
-  info->request = *request;
   info->size = 0;
 
   if (request->status_code == RequestStatus::Complete) {
     if ((request->request_id > 0) && (request->read_size > 0)) {
-      // Feedback on read request from PC
+      // Feedback on read/write request from PC
       ETL_ASSERT(request->read_size <= max_size, ETL_ERROR(0));
       std::memcpy(mem_data, data_buffer_ + request->read_addr, request->read_size);
       info->size = request->read_size;
@@ -322,9 +283,6 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max
       std::memcpy(mem_data, data_buffer_ + request->write_addr, request->write_size);
       info->size = request->write_size;
     }
-
-  } else {
-    // TODO
   }
 
   uint32_t free_slots = 0;
@@ -332,9 +290,7 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
   info->queue_space = static_cast<uint16_t>(free_slots);
 
-  // Release slot
-  queue_item.slot->used = false;
-  return Status_t::Ok;
+  return status;
 }
 
 } /* namespace i2c */

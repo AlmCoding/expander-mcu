@@ -41,7 +41,13 @@ class I2cSlave {
     uint16_t read_size;
     size_t write_addr;
     size_t read_addr;
+    uint32_t place_holder_word7 = 0;
+    uint32_t place_holder_word8 = 0;
   } Request;
+  static_assert((sizeof(Request) % sizeof(uint32_t)) == 0, "ThreadX queue messages must be a multiple of 4 bytes!");
+  static_assert(((sizeof(Request) == 4) || (sizeof(Request) == 8) || (sizeof(Request) == 16) ||
+                 (sizeof(Request) == 32) || (sizeof(Request) == 64)),
+                "ThreadX queue messages must be of size 4, 8, 16, 32 or 64 bytes!");
 
   typedef struct {
     uint32_t sequence_number;
@@ -61,31 +67,18 @@ class I2cSlave {
   Status_t serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max_size);
 
  private:
-  typedef struct {
-    Request request;
-    bool used;
-  } RequestSlot;
-
-  typedef struct {
-    RequestSlot* slot;
-  } QueueItem;
-
-  RequestSlot* setupRequestSlot(Request* request);
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   size_t getDataAddress();
   void slaveMatchMasterWriteCb();
   void slaveMatchMasterReadCb();
   void writeCompleteCb();
   void readCompleteCb();
-  RequestSlot* notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size, size_t read_addr);
+  Status_t notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size, size_t read_addr);
 
   I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
   TX_QUEUE request_queue_;
-
-  uint8_t request_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem) * sizeof(ULONG)];
-  RequestSlot request_buffer_[RequestBufferSize];
-  size_t request_buffer_idx_ = 0;
+  uint32_t request_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(Request) / sizeof(uint32_t))];
 
   uint8_t data_buffer_[DataBufferSize];
   uint8_t temp_buffer_[DataBufferSize];

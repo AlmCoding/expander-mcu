@@ -35,96 +35,92 @@ UINT createQueues(VOID* memory_ptr) {
 
   //*************************************************************************************************
   // Allocate the stack for UsbReadQueue
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UsbReadQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG),
-                       TX_NO_WAIT) != TX_SUCCESS) {
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UsbReadQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) !=
+      TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", UsbReadQueue_Name);
     return TX_POOL_ERROR;
   }
   /* Create UsbReadQueue */
-  if (tx_queue_create(&usb_read_queue_,                      //
-                      const_cast<char*>(UsbReadQueue_Name),  //
-                      QueueMessageSize, pointer,             //
-                      UsbReadQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG)) != TX_SUCCESS) {
+  if (tx_queue_create(&usb_read_queue_,                              //
+                      const_cast<char*>(UsbReadQueue_Name),          //
+                      QueueMessageSize / sizeof(uint32_t), pointer,  //
+                      UsbReadQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
     DEBUG_ERROR("Create %s [FAILED]", UsbReadQueue_Name);
     return TX_QUEUE_ERROR;
   }
 
   //*************************************************************************************************
   // Allocate the stack for UsbWriteQueue
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UsbWriteQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG),
-                       TX_NO_WAIT) != TX_SUCCESS) {
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UsbWriteQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) !=
+      TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", UsbWriteQueue_Name);
     return TX_POOL_ERROR;
   }
   /* Create UsbReadQueue */
-  if (tx_queue_create(&usb_write_queue_,                      //
-                      const_cast<char*>(UsbWriteQueue_Name),  //
-                      QueueMessageSize, pointer,              //
-                      UsbWriteQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG)) != TX_SUCCESS) {
+  if (tx_queue_create(&usb_write_queue_,                             //
+                      const_cast<char*>(UsbWriteQueue_Name),         //
+                      QueueMessageSize / sizeof(uint32_t), pointer,  //
+                      UsbWriteQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
     DEBUG_ERROR("Create %s [FAILED]", UsbWriteQueue_Name);
     return TX_QUEUE_ERROR;
   }
 
   //*************************************************************************************************
   // Allocate the stack for CtrlQueue
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, CtrlQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG),
-                       TX_NO_WAIT) != TX_SUCCESS) {
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, CtrlQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", CtrlQueue_Name);
     return TX_POOL_ERROR;
   }
   /* Create CtrlQueue */
-  if (tx_queue_create(&ctrl_queue_,                       //
-                      const_cast<char*>(CtrlQueue_Name),  //
-                      QueueMessageSize, pointer,          //
-                      CtrlQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG)) != TX_SUCCESS) {
+  if (tx_queue_create(&ctrl_queue_,                                  //
+                      const_cast<char*>(CtrlQueue_Name),             //
+                      QueueMessageSize / sizeof(uint32_t), pointer,  //
+                      CtrlQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
     DEBUG_ERROR("Create %s [FAILED]", CtrlQueue_Name);
     return TX_QUEUE_ERROR;
   }
 
   //*************************************************************************************************
   // Allocate the stack for UartQueue
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UartQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG),
-                       TX_NO_WAIT) != TX_SUCCESS) {
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UartQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", UartQueue_Name);
     return TX_POOL_ERROR;
   }
   // Create UartQueue
-  if (tx_queue_create(&uart_queue_,                       //
-                      const_cast<char*>(UartQueue_Name),  //
-                      QueueMessageSize, pointer,          //
-                      UartQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG)) != TX_SUCCESS) {
+  if (tx_queue_create(&uart_queue_,                                  //
+                      const_cast<char*>(UartQueue_Name),             //
+                      QueueMessageSize / sizeof(uint32_t), pointer,  //
+                      UartQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
     DEBUG_ERROR("Create %s [FAILED]", UartQueue_Name);
     return TX_QUEUE_ERROR;
   }
 
   //*************************************************************************************************
   // Allocate the stack for GpioQueue
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, GpioQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG),
-                       TX_NO_WAIT) != TX_SUCCESS) {
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, GpioQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", GpioQueue_Name);
     return TX_POOL_ERROR;
   }
   // Create GpioQueue
-  if (tx_queue_create(&gpio_queue_,                       //
-                      const_cast<char*>(GpioQueue_Name),  //
-                      QueueMessageSize, pointer,          //
-                      GpioQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG)) != TX_SUCCESS) {
+  if (tx_queue_create(&gpio_queue_,                                  //
+                      const_cast<char*>(GpioQueue_Name),             //
+                      QueueMessageSize / sizeof(uint32_t), pointer,  //
+                      GpioQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
     DEBUG_ERROR("Create %s [FAILED]", GpioQueue_Name);
     return TX_QUEUE_ERROR;
   }
 
   //*************************************************************************************************
   // Allocate the stack for I2cQueue
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, I2cQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG),
-                       TX_NO_WAIT) != TX_SUCCESS) {
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, I2cQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", I2cQueue_Name);
     return TX_POOL_ERROR;
   }
   // Create I2cQueue
-  if (tx_queue_create(&i2c_queue_,                       //
-                      const_cast<char*>(I2cQueue_Name),  //
-                      QueueMessageSize, pointer,         //
-                      I2cQueue_MaxMsgCnt * QueueMessageSize * sizeof(ULONG)) != TX_SUCCESS) {
+  if (tx_queue_create(&i2c_queue_,                                   //
+                      const_cast<char*>(I2cQueue_Name),              //
+                      QueueMessageSize / sizeof(uint32_t), pointer,  //
+                      I2cQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
     DEBUG_ERROR("Create %s [FAILED]", I2cQueue_Name);
     return TX_QUEUE_ERROR;
   }

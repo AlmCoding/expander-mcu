@@ -114,7 +114,7 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
-
+  
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 

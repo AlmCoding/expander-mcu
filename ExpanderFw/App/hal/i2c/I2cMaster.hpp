@@ -37,14 +37,19 @@ class I2cMaster {
   typedef struct {
     uint32_t request_id;
     RequestStatus status_code;
-    uint16_t slave_addr;
+    uint32_t slave_addr;
     uint16_t write_size;
     uint16_t read_size;
     size_t write_start;     // Start position of write data in data buffer
     size_t read_start;      // Start position of read section in data buffer
     uint16_t sequence_id;   // Sequence of read/writes with restart
     uint16_t sequence_idx;  // Index of current request in sequence
+    uint32_t place_holder_word8 = 0;
   } Request;
+  static_assert((sizeof(Request) % sizeof(uint32_t)) == 0, "ThreadX queue messages must be a multiple of 4 bytes!");
+  static_assert(((sizeof(Request) == 4) || (sizeof(Request) == 8) || (sizeof(Request) == 16) ||
+                 (sizeof(Request) == 32) || (sizeof(Request) == 64)),
+                "ThreadX queue messages must be of size 4, 8, 16, 32 or 64 bytes!");
 
   typedef struct {
     uint32_t sequence_number;
@@ -86,6 +91,7 @@ class I2cMaster {
   typedef struct {
     RequestSlot* slot;
   } QueueItem;
+  static_assert((sizeof(QueueItem) % sizeof(uint32_t)) == 0, "ThreadX queue messages must be a multiple of 4 bytes!");
 
   Space getFreeSpace();
   Status_t allocateBufferSpace(Request* request);
@@ -106,8 +112,8 @@ class I2cMaster {
   TX_QUEUE pending_queue_;
   TX_QUEUE complete_queue_;
 
-  uint8_t pending_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem) * sizeof(ULONG)];
-  uint8_t complete_queue_buffer_[RequestQueue_MaxItemCnt * sizeof(QueueItem) * sizeof(ULONG)];
+  uint32_t pending_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(QueueItem) / sizeof(uint32_t))];
+  uint32_t complete_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(QueueItem) / sizeof(uint32_t))];
   RequestSlot request_buffer_[RequestBufferSize];
   size_t request_buffer_idx_ = 0;
 

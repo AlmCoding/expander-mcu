@@ -24,15 +24,17 @@
 
 namespace app::i2c_srv {
 
-app::i2c_srv::I2cService I2cThread::i2c_service_{};
+app::i2c_srv::I2cService* I2cThread::i2c_service_ = nullptr;
 bool I2cThread::ongoing_service_ = false;
 uint32_t I2cThread::msg_count_ = 0;
 
 void I2cThread::execute(uint32_t /*thread_input*/) {
+  app::i2c_srv::I2cService i2c_service{};
   os::msg::BaseMsg msg = {};
 
   // Initialize service with notification callback
-  i2c_service_.init(requestService_cb);
+  i2c_service_ = &i2c_service;
+  i2c_service_->init(requestService_cb);
 
   // Register callback for incoming msg
   driver::tf::FrameDriver::getInstance().registerRxCallback(I2cThread::ThreadTfMsgType, postRequest_cb);
@@ -47,7 +49,7 @@ void I2cThread::execute(uint32_t /*thread_input*/) {
     if (os::msg::receive_msg(os::msg::MsgQueueId::I2cThreadQueue, &msg, os::I2cThread_CycleTicks) == true) {
       // process msg
     }
-    i2c_service_.poll();
+    i2c_service_->poll();
   }
 }
 
@@ -73,12 +75,12 @@ void I2cThread::requestService_cb(os::msg::RequestCnt cnt) {
 }
 
 int32_t I2cThread::postRequest_cb(const uint8_t* data, size_t size) {
-  return i2c_service_.postRequest(data, size);
+  return i2c_service_->postRequest(data, size);
 }
 
 int32_t I2cThread::serviceRequest_cb(uint8_t* data, size_t max_size) {
   ongoing_service_ = false;
-  int32_t size = i2c_service_.serviceRequest(data, max_size);
+  int32_t size = i2c_service_->serviceRequest(data, max_size);
 
   if (size > 0) {
     DEBUG_INFO("Service request (not: %d, size: %d) [OK]", msg_count_, size);

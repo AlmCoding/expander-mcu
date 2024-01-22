@@ -114,6 +114,12 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >RAM
+  
+  .trace (NOLOAD):
+  {
+    . = ALIGN(4);
+    *(.trace)
+  } > RAM_D1
 
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
