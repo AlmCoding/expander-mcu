@@ -8,8 +8,8 @@
 #include "hal/i2c/I2cConfig.hpp"
 #include "util/debug.hpp"
 
-#define DEBUG_ENABLE_I2C_CONFIG
-#ifdef DEBUG_ENABLE_I2C_CONFIG
+#define DEBUG_ENABLE_I2C_CONFIG 1
+#if ((DEBUG_ENABLE_I2C_CONFIG == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][I2cCfg]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][I2cCfg]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][I2cCfg]: " f "\n", ##__VA_ARGS__)

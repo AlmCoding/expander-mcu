@@ -10,8 +10,8 @@
 #include "util/Stopwatch.hpp"
 #include "util/debug.hpp"
 
-#define DEBUG_ENABLE_FRAME_DRIVER
-#ifdef DEBUG_ENABLE_FRAME_DRIVER
+#define DEBUG_ENABLE_FRAME_DRIVER 1
+#if ((DEBUG_ENABLE_FRAME_DRIVER == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][FrmDrv]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][FrmDrv]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][FrmDrv]: " f "\n", ##__VA_ARGS__)

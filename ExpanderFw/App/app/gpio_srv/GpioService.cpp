@@ -14,8 +14,8 @@
 #include "proto_c/gpio.pb.h"
 #include "util/debug.hpp"
 
-#define DEBUG_ENABLE_GPIO_SERVICE
-#ifdef DEBUG_ENABLE_GPIO_SERVICE
+#define DEBUG_ENABLE_GPIO_SERVICE 1
+#if ((DEBUG_ENABLE_GPIO_SERVICE == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][GpioSrv]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][GpioSrv]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][GpioSrv]: " f "\n", ##__VA_ARGS__)

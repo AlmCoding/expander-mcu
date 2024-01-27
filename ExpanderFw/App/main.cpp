@@ -11,8 +11,8 @@
 #include "util/debug.hpp"
 #include "util/time.hpp"
 
-#define DEBUG_ENABLE_MAIN
-#ifdef DEBUG_ENABLE_MAIN
+#define DEBUG_ENABLE_MAIN 1
+#if ((DEBUG_ENABLE_MAIN == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][main]: " f "\n", ##__VA_ARGS__);
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][main]: " f "\n", ##__VA_ARGS__);
 #define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][main]: " f "\n", ##__VA_ARGS__);

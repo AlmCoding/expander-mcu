@@ -14,8 +14,8 @@
 #include "app/usb_com/UsbWriteThread.hpp"
 #include "util/debug.hpp"
 
-#define DEBUG_ENABLE_TRACE
-#ifdef DEBUG_ENABLE_TRACE
+#define DEBUG_ENABLE_TRACE 1
+#if ((DEBUG_ENABLE_TRACE == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][trace]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][trace]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][trace]: " f "\n", ##__VA_ARGS__)

@@ -73,7 +73,11 @@ typedef uint8_t TF_COUNT;
 #define TF_USE_MUTEX 0
 
 // Error reporting function. To disable debug, change to empty define
+#if (ENABLE_RTT_DEBUG_OUTPUT == 1)
 #define TF_Error(f, ...) print(TERM0, "[ERR][TF] " f "\n", ##__VA_ARGS__)
+#else
+#define TF_Error(f, ...)
+#endif
 
 //------------------------- End of user config ------------------------------
 

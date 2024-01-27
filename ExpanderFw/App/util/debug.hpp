@@ -23,7 +23,9 @@ extern "C" {
 #endif
 
 void initDebug();
+#if (ENABLE_RTT_DEBUG_OUTPUT == 1)
 void print(uint8_t term, const char* format, ...);
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

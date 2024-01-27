@@ -10,8 +10,8 @@
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "util/debug.hpp"
 
-#define DEBUG_ENABLE_I2C_IRQ
-#ifdef DEBUG_ENABLE_I2C_IRQ
+#define DEBUG_ENABLE_I2C_IRQ 1
+#if ((DEBUG_ENABLE_I2C_IRQ == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][I2cIrq]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][I2cIrq]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][I2cIrq]: " f "\n", ##__VA_ARGS__)

@@ -17,16 +17,13 @@ void initDebug() {
 #endif
 }
 
-void print(uint8_t term, const char* format, ...) {
 #if (ENABLE_RTT_DEBUG_OUTPUT == 1)
+void print(uint8_t term, const char* format, ...) {
   va_list args;
   va_start(args, format);
   SEGGER_RTT_vprintf(term, format, &args);
   va_end(args);
-#else
-  (void)term;
-  (void)format;
-#endif
 }
+#endif
 
 }  // namespace util::dbg

@@ -13,8 +13,8 @@
 #include "util/Stopwatch.hpp"
 #include "util/debug.hpp"
 
-#define DEBUG_ENABLE_USB_READ_THREAD
-#ifdef DEBUG_ENABLE_USB_READ_THREAD
+#define DEBUG_ENABLE_USB_READ_THREAD 1
+#if ((DEBUG_ENABLE_USB_READ_THREAD == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][UsbReadThread]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][UsbReadThread]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_ERROR(f, ...) util::dbg::print(util::dbg::TERM0, "[ERR][UsbReadThread]: " f "\n", ##__VA_ARGS__)
