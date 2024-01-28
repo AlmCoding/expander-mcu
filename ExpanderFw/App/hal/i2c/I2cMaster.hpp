@@ -20,7 +20,6 @@ namespace hal::i2c {
 class I2cMaster {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
-  constexpr static size_t RequestBufferSize = RequestQueue_MaxItemCnt * 2;
   constexpr static size_t DataBufferSize = 64 + 1;
 
  public:
@@ -73,7 +72,7 @@ class I2cMaster {
 
  private:
   typedef struct {
-    size_t end_to_back;     // [data_end_ to end[
+    size_t end_to_back;     // [data_end_ to buffer end[
     size_t front_to_start;  // [0 to data_start_[
   } Space;
 
@@ -85,6 +84,8 @@ class I2cMaster {
 
   Space getFreeSpace();
   Status_t allocateBufferSpace(Request* request);
+  Status_t allocateBufferSection(size_t* front_offset, size_t* back_offset, Space* space, size_t* section_start,
+                                 size_t section_size);
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   bool readyForNewStart();
   Status_t startRequest();
@@ -105,6 +106,7 @@ class I2cMaster {
   uint32_t complete_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(Request) / sizeof(uint32_t))];
 
   uint8_t data_buffer_[DataBufferSize];
+  size_t data_buffer_end_ = DataBufferSize - 1;
   size_t data_start_ = 0;
   size_t data_end_ = 0;
 

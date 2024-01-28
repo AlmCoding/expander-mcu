@@ -197,7 +197,7 @@ void I2cSlave::writeCompleteCb() {
   if (rx_cnt > 0) {
     memcpy(data_buffer_ + data_address, temp_buffer_ + sizeof(uint16_t), rx_cnt);
 
-    // return; // Suppress notification
+    return;  // Suppress notification (for testing only)
 
     if (notifyAccessRequest(rx_cnt, data_address, 0, 0) == Status_t::Ok) {
       DEBUG_INFO("Notify write-access (access: %d) [OK]", access_id_);
@@ -212,7 +212,7 @@ void I2cSlave::readCompleteCb() {
   size_t data_address = getDataAddress();
   DEBUG_INFO("readCompleteCb (addr: 0x%04X, cnt: %d) [OK]", data_address, tx_cnt);
 
-  // return; // Suppress notification (for testing only)
+  return;  // Suppress notification (for testing only)
 
   if (notifyAccessRequest(0, 0, tx_cnt, data_address) == Status_t::Ok) {
     DEBUG_INFO("Notify read-access (access: %d) [OK]", access_id_);
