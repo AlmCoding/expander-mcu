@@ -64,6 +64,7 @@ Status_t I2cSlave::init() {
   memset(data_buffer_, 0, sizeof(data_buffer_));
   memset(temp_buffer_, 0, sizeof(temp_buffer_));
 
+  mem_addr_size_ = MemAddrSize::TwoBytes;
   access_id_ = 0;
   seqence_number_ = 0;
 
@@ -155,15 +156,26 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
 }
 
 size_t I2cSlave::getDataAddress() {
-  uint16_t data_address = *(uint16_t*)temp_buffer_;
-  data_address = __builtin_bswap16(data_address);  // Swap bytes
+  uint16_t data_address = 0;
+
+  if (mem_addr_size_ == MemAddrSize::OneByte) {
+    data_address = *(uint8_t*)temp_buffer_;
+  } else {
+    data_address = *(uint16_t*)temp_buffer_;
+    data_address = __builtin_bswap16(data_address);  // Swap bytes
+  }
+
+  ETL_ASSERT(data_address < sizeof(temp_buffer_), ETL_ERROR(0));
   return static_cast<size_t>(data_address);
 }
 
 void I2cSlave::slaveMatchMasterWriteCb() {
   // Slave read, master write
+  // HAL_StatusTypeDef hal_status =
+  //    HAL_I2C_Slave_Seq_Receive_DMA(i2c_handle_, temp_buffer_, sizeof(temp_buffer_), I2C_FIRST_AND_LAST_FRAME);
+
   HAL_StatusTypeDef hal_status =
-      HAL_I2C_Slave_Seq_Receive_DMA(i2c_handle_, temp_buffer_, sizeof(temp_buffer_), I2C_FIRST_AND_LAST_FRAME);
+      HAL_I2C_Slave_Seq_Receive_IT(i2c_handle_, temp_buffer_, sizeof(temp_buffer_), I2C_FIRST_FRAME);
 
   if (hal_status == HAL_OK) {
     DEBUG_INFO("Start receive [OK]");
@@ -175,10 +187,16 @@ void I2cSlave::slaveMatchMasterWriteCb() {
 void I2cSlave::slaveMatchMasterReadCb() {
   // Slave write, master read
   size_t data_address = getDataAddress();
-  uint16_t max_size = static_cast<uint16_t>(sizeof(data_buffer_) - data_address);
+  size_t max_size = sizeof(data_buffer_) - data_address;
 
-  HAL_StatusTypeDef hal_status =
-      HAL_I2C_Slave_Seq_Transmit_DMA(i2c_handle_, data_buffer_ + data_address, max_size, I2C_FIRST_AND_LAST_FRAME);
+  // HAL_StatusTypeDef hal_status = HAL_I2C_Slave_Seq_Transmit_DMA(i2c_handle_, data_buffer_ + data_address,
+  //                                                              static_cast<uint16_t>(max_size), I2C_LAST_FRAME);
+
+  HAL_StatusTypeDef hal_status = HAL_I2C_Slave_Seq_Transmit_IT(i2c_handle_, data_buffer_ + data_address,
+                                                               static_cast<uint16_t>(max_size), I2C_LAST_FRAME);
+
+  // HAL_StatusTypeDef hal_status =
+  //     HAL_I2C_Slave_Transmit_IT(i2c_handle_, data_buffer_ + data_address, static_cast<uint16_t>(max_size));
 
   if (hal_status == HAL_OK) {
     DEBUG_INFO("Start transmit (addr: 0x%04X) [OK]", data_address);
@@ -188,47 +206,55 @@ void I2cSlave::slaveMatchMasterReadCb() {
 }
 
 void I2cSlave::writeCompleteCb() {
-  size_t rx_cnt = DMA_RX_MEM_WRITE_POS - sizeof(uint16_t);
+  // size_t rx_cnt = DMA_RX_MEM_WRITE_POS - sizeof(uint16_t);
+
   size_t data_address = getDataAddress();
+  size_t rx_cnt = sizeof(temp_buffer_) - i2c_handle_->XferSize - static_cast<size_t>(mem_addr_size_);
 
   ETL_ASSERT((data_address + rx_cnt) <= sizeof(data_buffer_), ETL_ERROR(0));
-  DEBUG_INFO("writeCompleteCb (addr: 0x%04X, cnt: %d) [OK]", data_address, rx_cnt);
+  DEBUG_INFO("writeCompleteCb (addr: 0x%04X, size: %d) [OK]", data_address, rx_cnt);
 
   if (rx_cnt > 0) {
-    memcpy(data_buffer_ + data_address, temp_buffer_ + sizeof(uint16_t), rx_cnt);
+    memcpy(data_buffer_ + data_address, temp_buffer_ + static_cast<size_t>(mem_addr_size_), rx_cnt);
 
-    return;  // Suppress notification (for testing only)
+    // return;  // Suppress notification (for testing only)
 
     if (notifyAccessRequest(rx_cnt, data_address, 0, 0) == Status_t::Ok) {
-      DEBUG_INFO("Notify write-access (access: %d) [OK]", access_id_);
+      DEBUG_INFO("Notify write-access (access id: %d, size: %d) [OK]", access_id_, rx_cnt);
     } else {
-      DEBUG_ERROR("Notify write-access (access: %d) [FAILED]", access_id_);
+      DEBUG_ERROR("Notify write-access (access id: %d, size: %d) [FAILED]", access_id_, rx_cnt);
     }
   }
 }
 
 void I2cSlave::readCompleteCb() {
-  size_t tx_cnt = DMA_TX_MEM_READ_POS - 9;  // TODO: Why -9?
-  size_t data_address = getDataAddress();
-  DEBUG_INFO("readCompleteCb (addr: 0x%04X, cnt: %d) [OK]", data_address, tx_cnt);
+  // int32_t tx_cnt = DMA_TX_MEM_READ_POS - 9;  // TODO: Why -9?
 
-  return;  // Suppress notification (for testing only)
+  size_t data_address = getDataAddress();
+  size_t max_size = sizeof(data_buffer_) - data_address;
+  int32_t tx_cnt = max_size - i2c_handle_->XferSize - 1;
+
+  ETL_ASSERT(tx_cnt >= 0, ETL_ERROR(0));
+  DEBUG_INFO("readCompleteCb (addr: 0x%04X, size: %d) [OK]", data_address, tx_cnt);
+
+  // return;  // Suppress notification (for testing only)
 
   if (notifyAccessRequest(0, 0, tx_cnt, data_address) == Status_t::Ok) {
-    DEBUG_INFO("Notify read-access (access: %d) [OK]", access_id_);
+    DEBUG_INFO("Notify read-access (access id: %d, size: %d) [OK]", access_id_, tx_cnt);
   } else {
-    DEBUG_ERROR("Notify read-access (access: %d) [FAILED]", access_id_);
+    DEBUG_ERROR("Notify read-access (access id: %d, size: %d) [FAILED]", access_id_, tx_cnt);
   }
 }
 
 Status_t I2cSlave::notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size, size_t read_addr) {
   Status_t status = Status_t::Ok;
-  // Increment access id
-  access_id_++;
 
   uint32_t free_slots = 0;
   uint32_t sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
+
+  // Increment access id
+  access_id_++;
 
   // Check request queue space
   if (free_slots == 0) {

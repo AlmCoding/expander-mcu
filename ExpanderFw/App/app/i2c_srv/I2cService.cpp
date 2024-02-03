@@ -251,11 +251,11 @@ Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_p
     msg->msg.master_status.buffer_space1 = info.buffer_space1;
     msg->msg.master_status.buffer_space2 = info.buffer_space2;
 
-    DEBUG_INFO("Srv master(%d) status (req: %d) [OK]", master_id, info.request_id);
+    DEBUG_INFO("Srv master(%d) status (request id: %d) [OK]", master_id, info.request_id);
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Srv master(%d) status (req: UNKNOWN) [FAILED]", master_id);
+    DEBUG_ERROR("Srv master(%d) status (request id: UNKNOWN) [FAILED]", master_id);
     status = Status_t::Error;
   }
 
@@ -287,11 +287,16 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
     msg->msg.slave_status.queue_space = info.queue_space;
     msg->msg.slave_status.mem_data.size = info.size;
 
-    DEBUG_INFO("Srv slave(%d) status (req: %d) [OK]", slave_id, info.request.request_id);
+    if (info.request.request_id != 0) {
+      DEBUG_INFO("Srv slave(%d) status (request id: %d) [OK]", slave_id, info.request.request_id);
+    } else {
+      DEBUG_INFO("Srv slave(%d) status (access id: %d) [OK]", slave_id, info.request.access_id);
+    }
+
     status = Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Srv slave(%d) status (req: UNKNOWN) [FAILED]", slave_id);
+    DEBUG_ERROR("Srv slave(%d) status (request/access id: UNKNOWN) [FAILED]", slave_id);
     status = Status_t::Error;
   }
 

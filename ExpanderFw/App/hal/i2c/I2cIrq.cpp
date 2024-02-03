@@ -96,16 +96,16 @@ void I2cIrq::disableSlaveListen(I2C_HandleTypeDef* hi2c) {
 void I2cIrq::slaveMatchMasterWriteCb(I2C_HandleTypeDef* hi2c) {
   I2cSlave* slave = getSlave(hi2c);
   if (slave != nullptr) {
-    slave->slaveMatchMasterWriteCb();
     slave_match_master_write = true;
+    slave->slaveMatchMasterWriteCb();
   }
 }
 
 void I2cIrq::slaveMatchMasterReadCb(I2C_HandleTypeDef* hi2c) {
   I2cSlave* slave = getSlave(hi2c);
   if (slave != nullptr) {
-    slave->slaveMatchMasterReadCb();
     slave_match_master_write = false;
+    slave->slaveMatchMasterReadCb();
   }
 }
 
@@ -169,14 +169,39 @@ void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef* hi2c) {
   I2cIrq::getInstance().slaveListenCpltCb(hi2c);
 }
 
-void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* hi2c) {
-  (void)hi2c;
+void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* /*hi2c*/) {
   // I2cIrq::getInstance().slaveMasterWriteCpltCb(hi2c);
 }
 
-void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* hi2c) {
-  (void)hi2c;
+void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* /*hi2c*/) {
   // I2cIrq::getInstance().slaveMasterReadCpltCb(hi2c);
+}
+
+void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef* hi2c) {
+  (void*)hi2c;
+}
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef* hi2c) {
+  uint32_t error = HAL_I2C_GetError(hi2c);
+
+  if (error == HAL_I2C_ERROR_AF) {
+    return;
+  }
+
+  switch (error) {
+    case HAL_I2C_ERROR_NONE:
+      break;
+    case HAL_I2C_ERROR_BERR:
+    case HAL_I2C_ERROR_ARLO:
+    case HAL_I2C_ERROR_AF:
+    case HAL_I2C_ERROR_OVR:
+    case HAL_I2C_ERROR_DMA:
+    case HAL_I2C_ERROR_TIMEOUT:
+    case HAL_I2C_ERROR_SIZE:
+    case HAL_I2C_ERROR_DMA_PARAM:
+    case HAL_I2C_ERROR_INVALID_PARAM:
+    default:
+      break;
+  }
 }
 
 }  // extern "C"

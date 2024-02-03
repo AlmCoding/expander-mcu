@@ -23,6 +23,8 @@ class I2cSlave {
   constexpr static size_t DataBufferSize = 512;
 
  public:
+  enum class MemAddrSize { OneByte = 1, TwoBytes = 2 };
+
   enum class RequestStatus {
     NotInit = 0,
     NoSpace,
@@ -77,12 +79,14 @@ class I2cSlave {
 
   I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
+
   TX_QUEUE request_queue_;
   uint32_t request_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(Request) / sizeof(uint32_t))];
 
   uint8_t data_buffer_[DataBufferSize];
   uint8_t temp_buffer_[DataBufferSize];
 
+  MemAddrSize mem_addr_size_ = MemAddrSize::TwoBytes;
   uint32_t access_id_ = 0;
   uint32_t seqence_number_ = 0;
 

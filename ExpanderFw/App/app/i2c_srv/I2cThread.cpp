@@ -7,6 +7,7 @@
 
 #include "app/i2c_srv/I2cThread.hpp"
 #include "driver/tf/FrameDriver.hpp"
+#include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "os/msg/msg_broker.hpp"
 #include "os/thread.hpp"
 #include "util/debug.hpp"
@@ -25,7 +26,7 @@
 namespace app::i2c_srv {
 
 app::i2c_srv::I2cService* I2cThread::i2c_service_ = nullptr;
-bool I2cThread::ongoing_service_ = false;
+os::msg::RequestCnt I2cThread::ongoing_service_cnt_ = 0;
 uint32_t I2cThread::msg_count_ = 0;
 
 void I2cThread::execute(uint32_t /*thread_input*/) {
@@ -54,10 +55,10 @@ void I2cThread::execute(uint32_t /*thread_input*/) {
 }
 
 void I2cThread::requestService_cb(os::msg::RequestCnt cnt) {
-  if (ongoing_service_ == true) {
+  if (ongoing_service_cnt_ > 0) {
     return;
   }
-  ongoing_service_ = true;
+  ongoing_service_cnt_ = cnt;
 
   os::msg::BaseMsg req_msg = {
     .id = os::msg::MsgId::ServiceUpstreamRequest,
@@ -79,7 +80,9 @@ int32_t I2cThread::postRequest_cb(const uint8_t* data, size_t size) {
 }
 
 int32_t I2cThread::serviceRequest_cb(uint8_t* data, size_t max_size) {
-  ongoing_service_ = false;
+  ETL_ASSERT(ongoing_service_cnt_ > 0, ETL_ERROR(0));
+  ongoing_service_cnt_--;
+
   int32_t size = i2c_service_->serviceRequest(data, max_size);
 
   if (size > 0) {

@@ -25,7 +25,7 @@ class I2cThread {
   static int32_t serviceRequest_cb(uint8_t* data, size_t max_size);
 
   static app::i2c_srv::I2cService* i2c_service_;
-  static bool ongoing_service_;
+  static os::msg::RequestCnt ongoing_service_cnt_;
   static uint32_t msg_count_;
 
   I2cThread() = delete;
