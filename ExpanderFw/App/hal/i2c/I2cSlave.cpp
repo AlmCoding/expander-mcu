@@ -195,9 +195,6 @@ void I2cSlave::slaveMatchMasterReadCb() {
   HAL_StatusTypeDef hal_status = HAL_I2C_Slave_Seq_Transmit_IT(i2c_handle_, data_buffer_ + data_address,
                                                                static_cast<uint16_t>(max_size), I2C_LAST_FRAME);
 
-  // HAL_StatusTypeDef hal_status =
-  //     HAL_I2C_Slave_Transmit_IT(i2c_handle_, data_buffer_ + data_address, static_cast<uint16_t>(max_size));
-
   if (hal_status == HAL_OK) {
     DEBUG_INFO("Start transmit (addr: 0x%04X) [OK]", data_address);
   } else {
@@ -232,7 +229,7 @@ void I2cSlave::readCompleteCb() {
 
   size_t data_address = getDataAddress();
   size_t max_size = sizeof(data_buffer_) - data_address;
-  int32_t tx_cnt = max_size - i2c_handle_->XferSize - 1;
+  int32_t tx_cnt = max_size - i2c_handle_->XferSize - 1;  // TODO: Why -1?
 
   ETL_ASSERT(tx_cnt >= 0, ETL_ERROR(0));
   DEBUG_INFO("readCompleteCb (addr: 0x%04X, size: %d) [OK]", data_address, tx_cnt);

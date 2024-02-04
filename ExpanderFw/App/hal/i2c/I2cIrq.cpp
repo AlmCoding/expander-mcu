@@ -169,17 +169,12 @@ void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef* hi2c) {
   I2cIrq::getInstance().slaveListenCpltCb(hi2c);
 }
 
-void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* /*hi2c*/) {
-  // I2cIrq::getInstance().slaveMasterWriteCpltCb(hi2c);
-}
+void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* /*hi2c*/) {}
 
-void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* /*hi2c*/) {
-  // I2cIrq::getInstance().slaveMasterReadCpltCb(hi2c);
-}
+void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* /*hi2c*/) {}
 
-void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef* hi2c) {
-  (void*)hi2c;
-}
+void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef* /*hi2c*/) {}
+
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef* hi2c) {
   uint32_t error = HAL_I2C_GetError(hi2c);
 
@@ -189,7 +184,6 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef* hi2c) {
 
   switch (error) {
     case HAL_I2C_ERROR_NONE:
-      break;
     case HAL_I2C_ERROR_BERR:
     case HAL_I2C_ERROR_ARLO:
     case HAL_I2C_ERROR_AF:
