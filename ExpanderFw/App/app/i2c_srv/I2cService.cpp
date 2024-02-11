@@ -46,13 +46,8 @@ void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
 void I2cService::poll() {
   uint32_t request_cnt = 0;
 
-  if (i2c_slave0_.poll() > 0) {
-    srv_info_.service_slave0 = true;
-    request_cnt++;
-  }
-
-  if (i2c_slave1_.poll() > 0) {
-    srv_info_.service_slave1 = true;
+  if (i2c_master1_.poll() > 0) {
+    srv_info_.service_master1 = true;
     request_cnt++;
   }
 
@@ -61,8 +56,13 @@ void I2cService::poll() {
     request_cnt++;
   }
 
-  if (i2c_master1_.poll() > 0) {
-    srv_info_.service_master1 = true;
+  if (i2c_slave1_.poll() > 0) {
+    srv_info_.service_slave1 = true;
+    request_cnt++;
+  }
+
+  if (i2c_slave0_.poll() > 0) {
+    srv_info_.service_slave0 = true;
     request_cnt++;
   }
 

@@ -13,7 +13,7 @@
 #include "os/msg/msg_broker.hpp"
 #include "util/debug.hpp"
 
-#define DEBUG_ENABLE_I2C_SLAVE 1
+#define DEBUG_ENABLE_I2C_SLAVE 0
 #if ((DEBUG_ENABLE_I2C_SLAVE == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][I2cSlv]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][I2cSlv]: " f "\n", ##__VA_ARGS__)
@@ -24,8 +24,8 @@
 #define DEBUG_ERROR(...)
 #endif
 
-#define DMA_RX_MEM_WRITE_POS (sizeof(temp_buffer_) - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmarx))
-#define DMA_TX_MEM_READ_POS (sizeof(data_buffer_) - getDataAddress() - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmatx))
+// #define DMA_RX_MEM_WRITE_POS (sizeof(temp_buffer_) - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmarx))
+// #define DMA_TX_MEM_READ_POS (sizeof(data_buffer_) - getDataAddress() - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmatx))
 
 namespace hal {
 namespace i2c {
