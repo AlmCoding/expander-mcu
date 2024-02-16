@@ -70,7 +70,7 @@ class I2cSlave {
 
  private:
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
-  size_t getDataAddress();
+  int32_t getDataAddress();
   void slaveMatchMasterWriteCb();
   void slaveMatchMasterReadCb();
   void writeCompleteCb();
@@ -87,6 +87,8 @@ class I2cSlave {
   uint8_t temp_buffer_[DataBufferSize];
 
   MemAddrSize mem_addr_size_ = MemAddrSize::TwoBytes;
+  int32_t mem_address_ = -1;
+
   uint32_t access_id_ = 0;
   uint32_t seqence_number_ = 0;
 

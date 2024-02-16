@@ -13,7 +13,7 @@
 #include "os/msg/msg_broker.hpp"
 #include "util/debug.hpp"
 
-#define DEBUG_ENABLE_I2C_SLAVE 0
+#define DEBUG_ENABLE_I2C_SLAVE 1
 #if ((DEBUG_ENABLE_I2C_SLAVE == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
 #define DEBUG_INFO(f, ...) util::dbg::print(util::dbg::TERM0, "[INF][I2cSlv]: " f "\n", ##__VA_ARGS__)
 #define DEBUG_WARN(f, ...) util::dbg::print(util::dbg::TERM0, "[WRN][I2cSlv]: " f "\n", ##__VA_ARGS__)
@@ -155,7 +155,7 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
   return status;
 }
 
-size_t I2cSlave::getDataAddress() {
+int32_t I2cSlave::getDataAddress() {
   uint16_t data_address = 0;
 
   if (mem_addr_size_ == MemAddrSize::OneByte) {
@@ -166,7 +166,7 @@ size_t I2cSlave::getDataAddress() {
   }
 
   ETL_ASSERT(data_address < sizeof(temp_buffer_), ETL_ERROR(0));
-  return static_cast<size_t>(data_address);
+  return static_cast<int32_t>(data_address);
 }
 
 void I2cSlave::slaveMatchMasterWriteCb() {
@@ -205,18 +205,25 @@ void I2cSlave::slaveMatchMasterReadCb() {
 void I2cSlave::writeCompleteCb() {
   // size_t rx_cnt = DMA_RX_MEM_WRITE_POS - sizeof(uint16_t);
 
-  size_t data_address = getDataAddress();
-  size_t rx_cnt = sizeof(temp_buffer_) - i2c_handle_->XferSize - static_cast<size_t>(mem_addr_size_);
+  int32_t rx_total = sizeof(temp_buffer_) - i2c_handle_->XferSize;
+  int32_t rx_cnt = rx_total - static_cast<int32_t>(mem_addr_size_);
 
-  ETL_ASSERT((data_address + rx_cnt) <= sizeof(data_buffer_), ETL_ERROR(0));
-  DEBUG_INFO("writeCompleteCb (addr: 0x%04X, size: %d) [OK]", data_address, rx_cnt);
+  if (rx_total >= static_cast<int32_t>(mem_addr_size_)) {
+    mem_address_ = getDataAddress();
+  } else {
+    mem_address_ = -1;
+    ETL_ASSERT(false, ETL_ERROR(0));  // TODO: Remove assert and handle such case properly
+  }
+
+  ETL_ASSERT(static_cast<size_t>(mem_address_ + rx_cnt) <= sizeof(data_buffer_), ETL_ERROR(0));
+  DEBUG_INFO("writeCompleteCb (addr: 0x%04X, size: %d) [OK]", mem_address_, rx_cnt);
 
   if (rx_cnt > 0) {
-    memcpy(data_buffer_ + data_address, temp_buffer_ + static_cast<size_t>(mem_addr_size_), rx_cnt);
+    memcpy(data_buffer_ + mem_address_, temp_buffer_ + static_cast<size_t>(mem_addr_size_), rx_cnt);
 
     // return;  // Suppress notification (for testing only)
 
-    if (notifyAccessRequest(rx_cnt, data_address, 0, 0) == Status_t::Ok) {
+    if (notifyAccessRequest(rx_cnt, mem_address_, 0, 0) == Status_t::Ok) {
       DEBUG_INFO("Notify write-access (access id: %d, size: %d) [OK]", access_id_, rx_cnt);
     } else {
       DEBUG_ERROR("Notify write-access (access id: %d, size: %d) [FAILED]", access_id_, rx_cnt);
@@ -227,20 +234,28 @@ void I2cSlave::writeCompleteCb() {
 void I2cSlave::readCompleteCb() {
   // int32_t tx_cnt = DMA_TX_MEM_READ_POS - 9;  // TODO: Why -9?
 
-  size_t data_address = getDataAddress();
-  size_t max_size = sizeof(data_buffer_) - data_address;
+  if (mem_address_ < 0) {
+    DEBUG_ERROR("Duplicate read-access (access id: %d) [DUPLICATE]", access_id_);
+    return;
+  }
+
+  // ETL_ASSERT(mem_address_ >= 0, ETL_ERROR(0));
+  size_t max_size = sizeof(data_buffer_) - mem_address_;
   int32_t tx_cnt = max_size - i2c_handle_->XferSize - 1;  // TODO: Why -1?
 
   ETL_ASSERT(tx_cnt >= 0, ETL_ERROR(0));
-  DEBUG_INFO("readCompleteCb (addr: 0x%04X, size: %d) [OK]", data_address, tx_cnt);
+  DEBUG_INFO("readCompleteCb (addr: 0x%04X, size: %d) [OK]", mem_address_, tx_cnt);
 
   // return;  // Suppress notification (for testing only)
 
-  if (notifyAccessRequest(0, 0, tx_cnt, data_address) == Status_t::Ok) {
+  if (notifyAccessRequest(0, 0, tx_cnt, mem_address_) == Status_t::Ok) {
     DEBUG_INFO("Notify read-access (access id: %d, size: %d) [OK]", access_id_, tx_cnt);
   } else {
     DEBUG_ERROR("Notify read-access (access id: %d, size: %d) [FAILED]", access_id_, tx_cnt);
   }
+
+  // Reset memory address
+  mem_address_ = -1;
 }
 
 Status_t I2cSlave::notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size, size_t read_addr) {
