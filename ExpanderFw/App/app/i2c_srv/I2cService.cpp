@@ -26,10 +26,6 @@
 
 namespace app::i2c_srv {
 
-I2cService::I2cService() {}
-
-I2cService::~I2cService() {}
-
 void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
   // i2c_config0_.init();
   // i2c_config1_.init();

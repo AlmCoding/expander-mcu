@@ -6,10 +6,10 @@
  */
 
 #include "os/trace.hpp"
-#include "app/ctrl/CtrlThread.hpp"
-#include "app/gpio_srv/GpioThread.hpp"
-#include "app/i2c_srv/I2cThread.hpp"
-#include "app/uart_srv/UartThread.hpp"
+// #include "app/ctrl_srv/CtrlThread.hpp"
+// #include "app/gpio_srv/GpioThread.hpp"
+// #include "app/i2c_srv/I2cThread.hpp"
+// #include "app/uart_srv/UartThread.hpp"
 #include "app/usb_com/UsbReadThread.hpp"
 #include "app/usb_com/UsbWriteThread.hpp"
 #include "util/debug.hpp"

@@ -18,13 +18,13 @@ namespace driver::tf {
 
 enum class TfMsgType : uint8_t {
   EchoMsg = 0,
-  UartMsg,
+  CtrlMsg,
   I2cMsg,
   SpiMsg,
   CanMsg,
   GpioMsg,
   PwmMsg,
-  AdcMsg,
+  UartMsg,
   // Keep this at the end
   NumValues,
 };

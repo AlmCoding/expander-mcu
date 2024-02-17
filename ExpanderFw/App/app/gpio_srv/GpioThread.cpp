@@ -8,6 +8,7 @@
 #include "app/gpio_srv/GpioThread.hpp"
 
 #include "driver/tf/FrameDriver.hpp"
+#include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "os/msg/msg_broker.hpp"
 #include "os/thread.hpp"
 #include "util/debug.hpp"
@@ -25,15 +26,17 @@
 
 namespace app::gpio_srv {
 
-app::gpio_srv::GpioService GpioThread::gpio_service_{};
-bool GpioThread::ongoing_service_ = false;
+app::gpio_srv::GpioService* GpioThread::gpio_service_ = nullptr;
+os::msg::RequestCnt GpioThread::ongoing_service_cnt_ = 0;
 uint32_t GpioThread::msg_count_ = 0;
 
 void GpioThread::execute(uint32_t /*thread_input*/) {
+  app::gpio_srv::GpioService gpio_service{};
   os::msg::BaseMsg msg = {};
 
   // Initialize service with notification callback
-  gpio_service_.init(requestService_cb);
+  gpio_service_ = &gpio_service;
+  gpio_service_->init(requestService_cb);
 
   // Register callback for incoming msg
   driver::tf::FrameDriver::getInstance().registerRxCallback(GpioThread::ThreadTfMsgType, postRequest_cb);
@@ -52,10 +55,10 @@ void GpioThread::execute(uint32_t /*thread_input*/) {
 }
 
 void GpioThread::requestService_cb(os::msg::RequestCnt cnt) {
-  if (ongoing_service_ == true) {
+  if (ongoing_service_cnt_ > 0) {
     return;
   }
-  ongoing_service_ = true;
+  ongoing_service_cnt_ = cnt;
 
   os::msg::BaseMsg req_msg = {
     .id = os::msg::MsgId::ServiceUpstreamRequest,
@@ -72,12 +75,14 @@ void GpioThread::requestService_cb(os::msg::RequestCnt cnt) {
 }
 
 int32_t GpioThread::postRequest_cb(const uint8_t* data, size_t size) {
-  return gpio_service_.postRequest(data, size);
+  return gpio_service_->postRequest(data, size);
 }
 
 int32_t GpioThread::serviceRequest_cb(uint8_t* data, size_t max_size) {
-  ongoing_service_ = false;
-  int32_t size = gpio_service_.serviceRequest(data, max_size);
+  ETL_ASSERT(ongoing_service_cnt_ > 0, ETL_ERROR(0));
+  ongoing_service_cnt_--;
+
+  int32_t size = gpio_service_->serviceRequest(data, max_size);
 
   if (size > 0) {
     DEBUG_INFO("Service request (not: %d, size: %d) [OK]", msg_count_, size);

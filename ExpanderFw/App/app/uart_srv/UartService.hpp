@@ -8,7 +8,7 @@
 #ifndef APP_UART_SRV_UARTSERVICE_HPP_
 #define APP_UART_SRV_UARTSERVICE_HPP_
 
-#include "app/ctrl/ctrlTypes.hpp"
+#include "app/ctrl_srv/ctrlTypes.hpp"
 #include "hal/uart/Uart.hpp"
 #include "proto_c/uart.pb.h"
 #include "usart.h"

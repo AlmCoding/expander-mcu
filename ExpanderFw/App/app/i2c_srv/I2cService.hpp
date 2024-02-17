@@ -8,7 +8,7 @@
 #ifndef APP_I2C_SRV_I2CSERVICE_HPP_
 #define APP_I2C_SRV_I2CSERVICE_HPP_
 
-#include "app/ctrl/ctrlTypes.hpp"
+#include "app/ctrl_srv/ctrlTypes.hpp"
 #include "hal/i2c/I2cConfig.hpp"
 #include "hal/i2c/I2cMaster.hpp"
 #include "hal/i2c/I2cSlave.hpp"
@@ -28,8 +28,8 @@ class I2cService {
     bool service_slave1;
   } ServiceInfo;
 
-  I2cService();
-  virtual ~I2cService();
+  I2cService() = default;
+  virtual ~I2cService() = default;
 
   void init(app::ctrl::RequestSrvCallback request_service_cb);
   void poll();

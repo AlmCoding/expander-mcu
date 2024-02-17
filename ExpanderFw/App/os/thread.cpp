@@ -6,7 +6,7 @@
  */
 
 #include "os/thread.hpp"
-#include "app/ctrl/CtrlThread.hpp"
+#include "app/ctrl_srv/CtrlThread.hpp"
 #include "app/gpio_srv/GpioThread.hpp"
 #include "app/i2c_srv/I2cThread.hpp"
 #include "app/uart_srv/UartThread.hpp"
@@ -83,13 +83,13 @@ UINT createThreads(VOID* memory_ptr) {
     return TX_POOL_ERROR;
   }
   // Create ctrl thread
-  if (tx_thread_create(&ctrl_thread_,                               //
-                       const_cast<char*>(CtrlThread_Name),          //
-                       app::ctrl::CtrlThread::execute, 0, pointer,  //
-                       CtrlThread_StackSize,                        //
-                       CtrlThread_Priority,                         //
-                       CtrlThread_PreemptionThreshold,              //
-                       CtrlThread_TimeSlice,                        //
+  if (tx_thread_create(&ctrl_thread_,                                   //
+                       const_cast<char*>(CtrlThread_Name),              //
+                       app::ctrl_srv::CtrlThread::execute, 0, pointer,  //
+                       CtrlThread_StackSize,                            //
+                       CtrlThread_Priority,                             //
+                       CtrlThread_PreemptionThreshold,                  //
+                       CtrlThread_TimeSlice,                            //
                        CtrlThread_AutoStart) != TX_SUCCESS) {
     DEBUG_ERROR("Create %s [FAILED]", CtrlThread_Name);
     return TX_THREAD_ERROR;

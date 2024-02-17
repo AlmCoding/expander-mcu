@@ -27,10 +27,6 @@
 
 namespace app::gpio_srv {
 
-GpioService::GpioService() {}
-
-GpioService::~GpioService() {}
-
 void GpioService::init(app::ctrl::RequestSrvCallback request_service_cb) {
   gpio0_.config(hal::gpio::Gpio::Mode::InputPullDown);
   gpio1_.config(hal::gpio::Gpio::Mode::InputPullDown);

@@ -8,8 +8,7 @@
 #ifndef APP_GPIO_SRV_GPIOSERVICE_HPP_
 #define APP_GPIO_SRV_GPIOSERVICE_HPP_
 
-// #include "app/ctrl/CtrlThread.hpp"
-#include "app/ctrl/ctrlTypes.hpp"
+#include "app/ctrl_srv/ctrlTypes.hpp"
 #include "gpio.h"
 #include "hal/gpio/Gpio.hpp"
 #include "proto_c/uart.pb.h"
@@ -18,8 +17,8 @@ namespace app::gpio_srv {
 
 class GpioService {
  public:
-  GpioService();
-  virtual ~GpioService();
+  GpioService() = default;
+  virtual ~GpioService() = default;
 
   void init(app::ctrl::RequestSrvCallback request_service_cb);
 
