@@ -40,7 +40,9 @@ I2cSlave::I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_i
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 }
 
-Status_t I2cSlave::config() {
+Status_t I2cSlave::config(MemAddrWidth mem_addr_width) {
+  mem_addr_width_ = mem_addr_width;
+
   Status_t status = init();
 
   if (status == Status_t::Ok) {
@@ -64,7 +66,6 @@ Status_t I2cSlave::init() {
   memset(data_buffer_, 0, sizeof(data_buffer_));
   memset(temp_buffer_, 0, sizeof(temp_buffer_));
 
-  mem_addr_size_ = MemAddrSize::TwoBytes;
   access_id_ = 0;
   seqence_number_ = 0;
 
@@ -158,7 +159,7 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
 int32_t I2cSlave::getDataAddress() {
   uint16_t data_address = 0;
 
-  if (mem_addr_size_ == MemAddrSize::OneByte) {
+  if (mem_addr_width_ == MemAddrWidth::OneByte) {
     data_address = *(uint8_t*)temp_buffer_;
   } else {
     data_address = *(uint16_t*)temp_buffer_;
@@ -206,9 +207,9 @@ void I2cSlave::writeCompleteCb() {
   // size_t rx_cnt = DMA_RX_MEM_WRITE_POS - sizeof(uint16_t);
 
   int32_t rx_total = sizeof(temp_buffer_) - i2c_handle_->XferSize;
-  int32_t rx_cnt = rx_total - static_cast<int32_t>(mem_addr_size_);
+  int32_t rx_cnt = rx_total - static_cast<int32_t>(mem_addr_width_);
 
-  if (rx_total >= static_cast<int32_t>(mem_addr_size_)) {
+  if (rx_total >= static_cast<int32_t>(mem_addr_width_)) {
     mem_address_ = getDataAddress();
   } else {
     mem_address_ = -1;
@@ -219,7 +220,7 @@ void I2cSlave::writeCompleteCb() {
   DEBUG_INFO("writeCompleteCb (addr: 0x%04X, size: %d) [OK]", mem_address_, rx_cnt);
 
   if (rx_cnt > 0) {
-    memcpy(data_buffer_ + mem_address_, temp_buffer_ + static_cast<size_t>(mem_addr_size_), rx_cnt);
+    memcpy(data_buffer_ + mem_address_, temp_buffer_ + static_cast<size_t>(mem_addr_width_), rx_cnt);
 
     // return;  // Suppress notification (for testing only)
 

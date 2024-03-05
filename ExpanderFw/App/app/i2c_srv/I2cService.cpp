@@ -27,11 +27,11 @@
 namespace app::i2c_srv {
 
 void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
-  // i2c_config0_.init();
-  // i2c_config1_.init();
+  i2c_config0_.config(400000, 0x001, hal::i2c::SlaveAddrWidth::SevenBit, true);
+  i2c_config1_.config(400000, 0x002, hal::i2c::SlaveAddrWidth::SevenBit, true);
 
-  i2c_slave0_.config();
-  i2c_slave1_.config();
+  i2c_slave0_.config(hal::i2c::I2cSlave::MemAddrWidth::TwoByte);
+  i2c_slave1_.config(hal::i2c::I2cSlave::MemAddrWidth::TwoByte);
 
   i2c_master0_.config();
   i2c_master1_.config();
@@ -99,8 +99,8 @@ int32_t I2cService::postRequest(const uint8_t* data, size_t size) {
 
 int32_t I2cService::postMasterRequest(i2c_proto_I2cMsg* msg) {
   int32_t status = -1;
-  hal::i2c::I2cMaster* i2c_master;
-  hal::i2c::I2cMaster::Request request;
+  hal::i2c::I2cMaster* i2c_master = nullptr;
+  hal::i2c::I2cMaster::Request request = {};
 
   request.request_id = msg->msg.master_request.request_id;
   request.status_code = hal::i2c::I2cMaster::RequestStatus::NotInit;
@@ -128,8 +128,8 @@ int32_t I2cService::postMasterRequest(i2c_proto_I2cMsg* msg) {
 
 int32_t I2cService::postSlaveRequest(i2c_proto_I2cMsg* msg) {
   int32_t status = -1;
-  hal::i2c::I2cSlave* i2c_slave;
-  hal::i2c::I2cSlave::Request request;
+  hal::i2c::I2cSlave* i2c_slave = nullptr;
+  hal::i2c::I2cSlave::Request request = {};
 
   request.request_id = msg->msg.slave_request.request_id;
   request.access_id = 0;
@@ -155,26 +155,53 @@ int32_t I2cService::postSlaveRequest(i2c_proto_I2cMsg* msg) {
   return status;
 }
 
-int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* /*msg*/) {
+int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
   int32_t status = -1;
-  /*
-  hal::i2c::I2cConfig* i2c_config;
-  hal::i2c::I2cConfig::Request request;
+
+  hal::i2c::I2cConfig* i2c_config = nullptr;
+  hal::i2c::I2cSlave* i2c_slave = nullptr;
+  hal::i2c::I2cMaster* i2c_master = nullptr;
 
   if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
-    DEBUG_INFO("Post config(0) request (req: %d)", request.request_id);
+    DEBUG_INFO("Post config(0) request (req: x)");
     i2c_config = &i2c_config0_;
+    i2c_slave = &i2c_slave0_;
+    i2c_master = &i2c_master0_;
   } else {
-    DEBUG_INFO("Post config(1) request (req: %d)", request.request_id);
+    DEBUG_INFO("Post config(1) request (req: x)");
     i2c_config = &i2c_config1_;
+    i2c_slave = &i2c_slave1_;
+    i2c_master = &i2c_master1_;
   }
 
+  uint32_t clock_freq = msg->msg.cfg.clock_freq;
+  uint32_t slave_addr = msg->msg.cfg.slave_addr;
+  bool pullups_enabled = msg->msg.cfg.pullups_enabled;
 
-  if (i2c_slave->scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.slave_request.write_data.bytes),
-                                 msg->sequence_number) == Status_t::Ok) {
-    status = 0;
+  hal::i2c::SlaveAddrWidth slave_addr_width;
+  if (msg->msg.cfg.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits7) {
+    slave_addr_width = hal::i2c::SlaveAddrWidth::SevenBit;
+  } else if (msg->msg.cfg.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits10) {
+    slave_addr_width = hal::i2c::SlaveAddrWidth::TenBit;
+  } else {
+    DEBUG_ERROR("Invalid SlaveAddrWidth configuration!");
+    return -1;
   }
-  */
+
+  hal::i2c::I2cSlave::MemAddrWidth mem_addr_width = hal::i2c::I2cSlave::MemAddrWidth::OneByte;
+  if (msg->msg.cfg.mem_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits8) {
+    mem_addr_width = hal::i2c::I2cSlave::MemAddrWidth::OneByte;
+  } else if (msg->msg.cfg.mem_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits16) {
+    mem_addr_width = hal::i2c::I2cSlave::MemAddrWidth::TwoByte;
+  } else {
+    DEBUG_ERROR("Invalid SlaveAddrWidth configuration!");
+    return -1;
+  }
+
+  i2c_config->config(clock_freq, slave_addr, slave_addr_width, pullups_enabled);
+  i2c_slave->config(mem_addr_width);
+  i2c_master->config();
+  status = 0;
 
   return status;
 }

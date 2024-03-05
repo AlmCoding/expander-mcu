@@ -20,12 +20,22 @@ enum class I2cId {
   I2c1,
 };
 
+enum class SlaveAddrWidth {
+  SevenBit = 0,
+  TenBit,
+};
+
 class I2cConfig {
  public:
-  I2cConfig(I2C_HandleTypeDef* i2c_handle);
+  I2cConfig(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
   virtual ~I2cConfig() = default;
 
+  void config(uint32_t clock_freq, uint32_t slave_addr, SlaveAddrWidth addr_width, bool pullups_enabled);
+
  private:
+  void config_pullups(bool pullups_enabled);
+
+  I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
 };
 
