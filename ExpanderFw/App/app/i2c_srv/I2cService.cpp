@@ -27,8 +27,8 @@
 namespace app::i2c_srv {
 
 void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
-  i2c_config0_.config(400000, 0x001, hal::i2c::SlaveAddrWidth::SevenBit, true);
-  i2c_config1_.config(400000, 0x002, hal::i2c::SlaveAddrWidth::SevenBit, true);
+  // i2c_config0_.config(400000, 0x001, hal::i2c::SlaveAddrWidth::SevenBit, true);
+  // i2c_config1_.config(400000, 0x002, hal::i2c::SlaveAddrWidth::SevenBit, true);
 
   i2c_slave0_.config(hal::i2c::I2cSlave::MemAddrWidth::TwoByte);
   i2c_slave1_.config(hal::i2c::I2cSlave::MemAddrWidth::TwoByte);

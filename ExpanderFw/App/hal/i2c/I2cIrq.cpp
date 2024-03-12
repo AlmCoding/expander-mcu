@@ -29,6 +29,7 @@ void I2cIrq::registerI2cMaster(I2cMaster* i2c_master) {
 
   // Check if already registered
   if (i2c_master_[idx] == i2c_master) {
+    DEBUG_INFO("Register I2cMaster(%d) [SKIPPED]", idx);
     return;
   }
 
@@ -66,6 +67,7 @@ void I2cIrq::registerI2cSlave(I2cSlave* i2c_slave) {
 
   // Check if already registered
   if (i2c_slave_[idx] == i2c_slave) {
+    DEBUG_INFO("Register I2cSlave(%d) [SKIPPED]", idx);
     return;
   }
 
@@ -85,12 +87,18 @@ I2cSlave* I2cIrq::getSlave(I2C_HandleTypeDef* hi2c) {
 
 void I2cIrq::enableSlaveListen(I2C_HandleTypeDef* hi2c) {
   HAL_StatusTypeDef hal_status = HAL_I2C_EnableListen_IT(hi2c);
-  ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
+  if (hal_status != HAL_OK) {
+    DEBUG_ERROR("Enable I2cSlave(x) listen [FAILED]");
+  }
+  // ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
 }
 
 void I2cIrq::disableSlaveListen(I2C_HandleTypeDef* hi2c) {
   HAL_StatusTypeDef hal_status = HAL_I2C_DisableListen_IT(hi2c);
-  ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
+  if (hal_status != HAL_OK) {
+    DEBUG_ERROR("Disable I2cSlave(x) listen [FAILED]");
+  }
+  // ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
 }
 
 void I2cIrq::slaveMatchMasterWriteCb(I2C_HandleTypeDef* hi2c) {

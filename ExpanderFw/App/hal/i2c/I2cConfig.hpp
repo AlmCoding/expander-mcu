@@ -33,8 +33,6 @@ class I2cConfig {
   void config(uint32_t clock_freq, uint32_t slave_addr, SlaveAddrWidth addr_width, bool pullups_enabled);
 
  private:
-  void config_pullups(bool pullups_enabled);
-
   I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
 };
