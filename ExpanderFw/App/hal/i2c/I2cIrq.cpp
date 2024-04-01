@@ -190,6 +190,8 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef* hi2c) {
     return;
   }
 
+  DEBUG_ERROR("Error callback (error: %d)", error);
+
   switch (error) {
     case HAL_I2C_ERROR_NONE:
     case HAL_I2C_ERROR_BERR:
