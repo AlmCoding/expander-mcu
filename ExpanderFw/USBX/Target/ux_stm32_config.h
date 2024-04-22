@@ -7,7 +7,7 @@
   ******************************************************************************
     * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2024 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -34,8 +34,8 @@ extern "C" {
 
 /* Private defines -----------------------------------------------------------*/
 
-#define UX_DCD_STM32_MAX_ED                   9
-#define UX_HCD_STM32_MAX_NB_CHANNELS          16
+#define UX_DCD_STM32_MAX_ED                   8
+#define UX_HCD_STM32_MAX_NB_CHANNELS          8
 
 /* USER CODE BEGIN Private defines */
 

@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file    app_usbx_device.h
- * @author  MCD Application Team
- * @brief   USBX Device applicative header file
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file    app_usbx_device.h
+  * @author  MCD Application Team
+  * @brief   USBX Device applicative header file
+  ******************************************************************************
+   * @attention
+  *
+  * Copyright (c) 2024 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __APP_USBX_DEVICE_H__
@@ -61,13 +61,14 @@ extern "C" {
 UINT MX_USBX_Device_Init(VOID *memory_ptr);
 
 /* USER CODE BEGIN EFP */
-VOID USBX_APP_Device_Init(VOID);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
 /* USER CODE END PD */
+
 #ifndef UX_DEVICE_APP_THREAD_NAME
 #define UX_DEVICE_APP_THREAD_NAME  "USBX Device App Main Thread"
 #endif

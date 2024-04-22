@@ -34,6 +34,8 @@ void I2cConfig::config(uint32_t clock_freq, uint32_t slave_addr, SlaveAddrWidth 
   DEBUG_INFO("Config I2c(%d) pullups_enabled: %d", magic_enum::enum_integer(i2c_id_), pullups_enabled);
 
   uint32_t timing = 0;
+  uint32_t address_mode = (addr_width == SlaveAddrWidth::SevenBit) ? I2C_ADDRESSINGMODE_7BIT : I2C_ADDRESSINGMODE_10BIT;
+
   if (clock_freq == 100000) {  // 100 kHz
     timing = 0x30909DEC;
   } else if (clock_freq == 400000) {  // 400 kHz
@@ -45,15 +47,14 @@ void I2cConfig::config(uint32_t clock_freq, uint32_t slave_addr, SlaveAddrWidth 
     DEBUG_ERROR("Invalid clock_freq (%d) configuration. Fallback to 400 kHz!", clock_freq);
   }
 
-  uint32_t address_mode = (addr_width == SlaveAddrWidth::SevenBit) ? I2C_ADDRESSINGMODE_7BIT : I2C_ADDRESSINGMODE_10BIT;
-
   // DeInitialize I2c
   HAL_I2C_DeInit(i2c_handle_);
 
+  // ReInitialize I2c
   if (i2c_id_ == I2cId::I2c0) {
     MX_I2C1_ReInit(timing, address_mode, pullups_enabled);
   } else {
-    MX_I2C2_ReInit(timing, address_mode, pullups_enabled);
+    MX_I2C3_ReInit(timing, address_mode, pullups_enabled);
   }
 };
 

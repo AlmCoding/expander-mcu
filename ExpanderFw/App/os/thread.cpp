@@ -7,9 +7,9 @@
 
 #include "os/thread.hpp"
 #include "app/ctrl_srv/CtrlThread.hpp"
-#include "app/gpio_srv/GpioThread.hpp"
+// #include "app/gpio_srv/GpioThread.hpp"
 #include "app/i2c_srv/I2cThread.hpp"
-#include "app/uart_srv/UartThread.hpp"
+// #include "app/uart_srv/UartThread.hpp"
 #include "app/usb_com/UsbReadThread.hpp"
 #include "app/usb_com/UsbWriteThread.hpp"
 #include "util/debug.hpp"
@@ -30,8 +30,8 @@ namespace os {
 static TX_THREAD usb_read_thread_;
 static TX_THREAD usb_write_thread_;
 static TX_THREAD ctrl_thread_;
-static TX_THREAD uart_thread_;
-static TX_THREAD gpio_thread_;
+// static TX_THREAD uart_thread_;
+// static TX_THREAD gpio_thread_;
 static TX_THREAD i2c_thread_;
 
 UINT createThreads(VOID* memory_ptr) {
@@ -97,6 +97,7 @@ UINT createThreads(VOID* memory_ptr) {
 
   //*************************************************************************************************
   // Allocate uart stack
+  /*
   if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UartThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", UartThread_Name);
     return TX_POOL_ERROR;
@@ -113,9 +114,11 @@ UINT createThreads(VOID* memory_ptr) {
     DEBUG_ERROR("Create %s [FAILED]", UartThread_Name);
     return TX_THREAD_ERROR;
   }
+  */
 
   //*************************************************************************************************
   // Allocate gpio stack
+  /*
   if (tx_byte_allocate(byte_pool, (VOID**)&pointer, GpioThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", GpioThread_Name);
     return TX_POOL_ERROR;
@@ -132,6 +135,7 @@ UINT createThreads(VOID* memory_ptr) {
     DEBUG_ERROR("Create %s [FAILED]", GpioThread_Name);
     return TX_THREAD_ERROR;
   }
+  */
 
   //*************************************************************************************************
   // Allocate i2c stack

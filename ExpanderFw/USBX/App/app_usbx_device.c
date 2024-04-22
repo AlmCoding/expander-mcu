@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file    app_usbx_device.c
- * @author  MCD Application Team
- * @brief   USBX Device applicative file
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file    app_usbx_device.c
+  * @author  MCD Application Team
+  * @brief   USBX Device applicative file
+  ******************************************************************************
+    * @attention
+  *
+  * Copyright (c) 2024 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -23,8 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usb_otg.h"
-
+#include "usb_drd_fs.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,20 +42,19 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
 static ULONG cdc_acm_interface_number;
 static ULONG cdc_acm_configuration_number;
 static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
 static TX_THREAD ux_device_app_thread;
 
 /* USER CODE BEGIN PV */
-extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
+extern PCD_HandleTypeDef hpcd_USB_DRD_FS;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 static VOID app_ux_device_thread_entry(ULONG thread_input);
 /* USER CODE BEGIN PFP */
-
+static VOID USBX_APP_Device_Init(VOID);
 /* USER CODE END PFP */
 
 /**
@@ -195,44 +193,43 @@ static VOID app_ux_device_thread_entry(ULONG thread_input)
   /* Initialization of USB device */
   USBX_APP_Device_Init();
 
-  /* Start device USB */
-  HAL_PCD_Start(&hpcd_USB_OTG_HS);
-
-  /* Suspend thread indefinitely */
-  // tx_thread_suspend(&ux_device_app_thread);
-
-  while (1) {
-    tx_thread_sleep(100);
-  }
   /* USER CODE END app_ux_device_thread_entry */
 }
 
 /* USER CODE BEGIN 1 */
 
 /**
- * @brief  USBX_APP_Device_Init
- *         Initialization of USB device.
- * @param  none
- * @retval none
- */
-VOID USBX_APP_Device_Init(VOID) {
+  * @brief  USBX_APP_Device_Init
+  *         Initialization of USB device.
+  * @param  none
+  * @retval none
+  */
+static VOID USBX_APP_Device_Init(VOID)
+{
   /* USER CODE BEGIN USB_Device_Init_PreTreatment_0 */
+
   /* USER CODE END USB_Device_Init_PreTreatment_0 */
 
-  /* USB_OTG_HS init function */
-  MX_USB_OTG_HS_PCD_Init();
+  /* initialize the device controller HAL driver */
+  MX_USB_DRD_FS_PCD_Init();
 
   /* USER CODE BEGIN USB_Device_Init_PreTreatment_1 */
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_HS, 0x100);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 0, 0x10);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 1, 0x20);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_HS, 2, 0x10);
+  HAL_PCDEx_PMAConfig(&hpcd_USB_DRD_FS, 0x00, PCD_SNG_BUF, 0x14);
+  HAL_PCDEx_PMAConfig(&hpcd_USB_DRD_FS, 0x80, PCD_SNG_BUF, 0x54);
+  HAL_PCDEx_PMAConfig(&hpcd_USB_DRD_FS, 0x81, PCD_SNG_BUF, 0x94);
+  HAL_PCDEx_PMAConfig(&hpcd_USB_DRD_FS, 0x01, PCD_SNG_BUF, 0xD4);
+  HAL_PCDEx_PMAConfig(&hpcd_USB_DRD_FS, 0x82, PCD_SNG_BUF, 0x114);
+
   /* USER CODE END USB_Device_Init_PreTreatment_1 */
 
-  /* initialize the device controller driver*/
-  _ux_dcd_stm32_initialize((ULONG)USB_OTG_HS, (ULONG)&hpcd_USB_OTG_HS);
+  /* Initialize and link controller HAL driver */
+  ux_dcd_stm32_initialize((ULONG)USB_DRD_FS, (ULONG)&hpcd_USB_DRD_FS);
+
+  /* Start the USB device */
+  HAL_PCD_Start(&hpcd_USB_DRD_FS);
 
   /* USER CODE BEGIN USB_Device_Init_PostTreatment */
+
   /* USER CODE END USB_Device_Init_PostTreatment */
 }
 

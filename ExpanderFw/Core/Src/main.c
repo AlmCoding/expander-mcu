@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2024 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "app_threadx.h"
@@ -24,8 +24,6 @@
 #include "icache.h"
 #include "memorymap.h"
 #include "tim.h"
-#include "usart.h"
-#include "usb_otg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -74,6 +72,7 @@ void initPeripherals() {
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 #endif
   /* USER CODE END 1 */
@@ -100,13 +99,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
-  MX_USB_OTG_HS_PCD_Init();
-  MX_MEMORYMAP_Init();
-  MX_I2C2_Init();
   MX_ICACHE_Init();
-  MX_TIM2_Init();
-  MX_USART2_UART_Init();
   MX_I2C1_Init();
+  MX_I2C3_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 #ifdef RENAME_CUBEMX_MAIN
   return;
@@ -116,6 +112,7 @@ int main(void)
   MX_ThreadX_Init();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
@@ -145,17 +142,19 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLMBOOST = RCC_PLLMBOOST_DIV1;
-  RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 20;
-  RCC_OscInitStruct.PLL.PLLP = 10;
+  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLN = 80;
+  RCC_OscInitStruct.PLL.PLLP = 2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLLVCIRANGE_1;
+  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLLVCIRANGE_0;
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -185,12 +184,6 @@ void SystemClock_Config(void)
   */
 static void SystemPower_Config(void)
 {
-  HAL_PWREx_EnableVddIO2();
-
-  /*
-   * Disable the internal Pull-Up in Dead Battery pins of UCPD peripheral
-   */
-  HAL_PWREx_DisableUCPDDeadBattery();
 
   /*
    * Switch to SMPS regulator instead of LDO

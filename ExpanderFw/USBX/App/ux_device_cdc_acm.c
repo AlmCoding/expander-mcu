@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file    ux_device_cdc_acm.c
- * @author  MCD Application Team
- * @brief   USBX Device applicative file
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file    ux_device_cdc_acm.c
+  * @author  MCD Application Team
+  * @brief   USBX Device applicative file
+  ******************************************************************************
+    * @attention
+  *
+  * Copyright (c) 2024 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -53,11 +53,7 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/*
-UINT usb_cdc_write_callback(struct UX_SLAVE_CLASS_CDC_ACM_STRUCT* cdc_acm, UINT status, ULONG length) {
-  return 0;
-}
-*/
+
 /* USER CODE END 0 */
 
 /**
@@ -69,20 +65,8 @@ UINT usb_cdc_write_callback(struct UX_SLAVE_CLASS_CDC_ACM_STRUCT* cdc_acm, UINT 
 VOID USBD_CDC_ACM_Activate(VOID *cdc_acm_instance)
 {
   /* USER CODE BEGIN USBD_CDC_ACM_Activate */
+  UX_PARAMETER_NOT_USED(cdc_acm_instance);
   notifyUsbDeviceActivate(cdc_acm_instance);
-
-  /*
-  UX_SLAVE_CLASS_CDC_ACM_CALLBACK_PARAMETER callback_info = {
-    .ux_device_class_cdc_acm_parameter_write_callback = usb_cdc_write_callback,
-    .ux_device_class_cdc_acm_parameter_read_callback = NULL,
-  };
-
-  if (ux_device_class_cdc_acm_ioctl(cdc_acm_instance, UX_SLAVE_CLASS_CDC_ACM_IOCTL_TRANSMISSION_STOP, &callback_info) ==
-      UX_SUCCESS) {
-    notifyUsbDeviceActivate(cdc_acm_instance);
-  }
-  */
-
   /* USER CODE END USBD_CDC_ACM_Activate */
 
   return;

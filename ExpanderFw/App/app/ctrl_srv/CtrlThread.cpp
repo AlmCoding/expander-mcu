@@ -53,7 +53,7 @@ void CtrlThread::execute(uint32_t /*thread_input*/) {
     }
 
     // Heart beat led
-    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    HAL_GPIO_TogglePin(LED_HRTB_GPIO_Port, LED_HRTB_Pin);
   }
 }
 

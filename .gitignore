@@ -1,13 +1,10 @@
 ExpanderFw/Debug
+ExpanderFw/Release/
+ExpanderFw/TraceX/
 
 .$FirmwareArchitecturedrawio.drawio.bkp
 .$UartCom.drawio.bkp
 .$I2cCom.drawio.bkp
 
 *.dtmp
-
 *.odt#
-
-ExpanderFw/TraceX/
-
-ExpanderFw/Release/

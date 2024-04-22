@@ -45,11 +45,11 @@ class I2cService {
   Status_t serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_size);
 
   hal::i2c::I2cConfig i2c_config0_{ hal::i2c::I2cId::I2c0, &hi2c1 };
-  hal::i2c::I2cConfig i2c_config1_{ hal::i2c::I2cId::I2c1, &hi2c2 };
+  hal::i2c::I2cConfig i2c_config1_{ hal::i2c::I2cId::I2c1, &hi2c3 };
   hal::i2c::I2cSlave i2c_slave0_{ hal::i2c::I2cId::I2c0, &hi2c1 };
-  hal::i2c::I2cSlave i2c_slave1_{ hal::i2c::I2cId::I2c1, &hi2c2 };
+  hal::i2c::I2cSlave i2c_slave1_{ hal::i2c::I2cId::I2c1, &hi2c3 };
   hal::i2c::I2cMaster i2c_master0_{ hal::i2c::I2cId::I2c0, &hi2c1 };
-  hal::i2c::I2cMaster i2c_master1_{ hal::i2c::I2cId::I2c1, &hi2c2 };
+  hal::i2c::I2cMaster i2c_master1_{ hal::i2c::I2cId::I2c1, &hi2c3 };
 
   ServiceInfo srv_info_ = {};
 

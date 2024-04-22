@@ -25,8 +25,8 @@ namespace os {
 static TX_QUEUE usb_read_queue_;
 static TX_QUEUE usb_write_queue_;
 static TX_QUEUE ctrl_queue_;
-static TX_QUEUE uart_queue_;
-static TX_QUEUE gpio_queue_;
+// static TX_QUEUE uart_queue_;
+// static TX_QUEUE gpio_queue_;
 static TX_QUEUE i2c_queue_;
 
 UINT createQueues(VOID* memory_ptr) {
@@ -82,6 +82,7 @@ UINT createQueues(VOID* memory_ptr) {
 
   //*************************************************************************************************
   // Allocate the stack for UartQueue
+  /*
   if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UartQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", UartQueue_Name);
     return TX_POOL_ERROR;
@@ -94,9 +95,11 @@ UINT createQueues(VOID* memory_ptr) {
     DEBUG_ERROR("Create %s [FAILED]", UartQueue_Name);
     return TX_QUEUE_ERROR;
   }
+  */
 
   //*************************************************************************************************
   // Allocate the stack for GpioQueue
+  /*
   if (tx_byte_allocate(byte_pool, (VOID**)&pointer, GpioQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
     DEBUG_ERROR("Allocate %s stack [FAILED]", GpioQueue_Name);
     return TX_POOL_ERROR;
@@ -109,6 +112,7 @@ UINT createQueues(VOID* memory_ptr) {
     DEBUG_ERROR("Create %s [FAILED]", GpioQueue_Name);
     return TX_QUEUE_ERROR;
   }
+  */
 
   //*************************************************************************************************
   // Allocate the stack for I2cQueue
@@ -146,11 +150,11 @@ TX_QUEUE* getQueue(msg::MsgQueueId queue) {
       break;
     }
     case msg::MsgQueueId::UartThreadQueue: {
-      qhdl = &uart_queue_;
+      // qhdl = &uart_queue_;
       break;
     }
     case msg::MsgQueueId::GpioThreadQueue: {
-      qhdl = &gpio_queue_;
+      // qhdl = &gpio_queue_;
       break;
     }
     case msg::MsgQueueId::I2cThreadQueue: {

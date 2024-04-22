@@ -5,8 +5,8 @@
 **
 **  Author      : STM32CubeIDE
 **
-**  Abstract    : Linker script for STM32U5A5xJ Device from STM32U5 series
-**                      2512Kbytes RAM
+**  Abstract    : Linker script for STM32U545xx Device from STM32U5 series
+**                      272Kbytes RAM
 **
 **                Set heap size, stack size and stack location according
 **                to application requirements.
@@ -21,7 +21,7 @@
 *****************************************************************************
 ** @attention
 **
-** Copyright (c) 2023 STMicroelectronics.
+** Copyright (c) 2024 STMicroelectronics.
 ** All rights reserved.
 **
 ** This software is licensed under terms that can be found in the LICENSE file
@@ -35,16 +35,16 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_estack = ORIGIN(RAM) + LENGTH(RAM); /* end of "RAM" Ram type memory */
+_estack = ORIGIN(RAM) + LENGTH(RAM);	/* end of "RAM" Ram type memory */
 
-_Min_Heap_Size = 0x200; /* required amount of heap */
-_Min_Stack_Size = 0x400; /* required amount of stack */
+_Min_Heap_Size = 0x200;	/* required amount of heap  */
+_Min_Stack_Size = 0x400;	/* required amount of stack */
 
 /* Memories definition */
 MEMORY
 {
-  RAM (xrw)   : ORIGIN = 0x20000000, LENGTH = 2496K
-  SRAM4 (xrw) : ORIGIN = 0x28000000, LENGTH = 16K
+  RAM	(xrw)	: ORIGIN = 0x20000000,	LENGTH = 256K
+  SRAM4	(xrw)	: ORIGIN = 0x28000000,	LENGTH = 16K
 }
 
 /* Sections */
@@ -80,26 +80,25 @@ SECTIONS
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
   } >RAM
 
-  .ARM.extab :
+  .ARM.extab (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     *(.ARM.extab* .gnu.linkonce.armextab.*)
   } >RAM
-
-  .ARM :
+  .ARM (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
   } >RAM
 
-  .preinit_array :
+  .preinit_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
   } >RAM
 
-  .init_array :
+  .init_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT(.init_array.*)))
@@ -107,7 +106,7 @@ SECTIONS
     PROVIDE_HIDDEN (__init_array_end = .);
   } >RAM
 
-  .fini_array :
+  .fini_array (READONLY) : /* The READONLY keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     PROVIDE_HIDDEN (__fini_array_start = .);
     KEEP (*(SORT(.fini_array.*)))
