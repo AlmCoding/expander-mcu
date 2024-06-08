@@ -1,5 +1,5 @@
 /*
- * usbComTypes.hpp
+ * tfMsgTypes.hpp
  *
  *  Created on: 27 May 2023
  *      Author: Alexander L.

@@ -32,7 +32,7 @@ FrameDriver::FrameDriver() {
 }
 
 Status_t FrameDriver::registerTxCallback(TfMsgType type, TxCallback callback) {
-  auto callback_slot = &tx_callbacks_[static_cast<uint8_t>(type)];
+  auto callback_slot = &tx_callbacks_[static_cast<size_t>(type)];
   ETL_ASSERT(*callback_slot == nullptr, ETL_ERROR(0));
   *callback_slot = callback;
   return Status_t::Ok;
@@ -42,7 +42,7 @@ void FrameDriver::callTxCallback(TfMsgType type, uint8_t* buffer, size_t max_siz
   TF_Msg msg = {};
 
   msg.type = static_cast<TF_TYPE>(type);
-  msg.len = static_cast<TF_LEN>(tx_callbacks_[static_cast<uint8_t>(type)](buffer, max_size));
+  msg.len = static_cast<TF_LEN>(tx_callbacks_[static_cast<size_t>(type)](buffer, max_size));
   msg.data = buffer;
 
   if (msg.len > 0) {
@@ -57,8 +57,8 @@ void FrameDriver::callTxCallback(TfMsgType type, uint8_t* buffer, size_t max_siz
 Status_t FrameDriver::registerRxCallback(TfMsgType type, RxCallback callback) {
   Status_t status = Status_t::Error;
 
-  if (TF_AddTypeListener(&tf_, static_cast<uint8_t>(type), typeCallback) == true) {
-    rx_callbacks_[static_cast<uint8_t>(type)] = callback;
+  if (TF_AddTypeListener(&tf_, static_cast<TF_TYPE>(type), typeCallback) == true) {
+    rx_callbacks_[static_cast<size_t>(type)] = callback;
     status = Status_t::Ok;
   }
 
@@ -66,21 +66,28 @@ Status_t FrameDriver::registerRxCallback(TfMsgType type, RxCallback callback) {
 }
 
 void FrameDriver::callRxCallback(TfMsgType type, const uint8_t* data, size_t size) {
-  auto callback = rx_callbacks_[static_cast<uint8_t>(type)];
+  auto callback = rx_callbacks_[static_cast<size_t>(type)];
   ETL_ASSERT(callback != nullptr, ETL_ERROR(0));
   callback(data, size);
 }
 
-void FrameDriver::receiveData(const uint8_t* data, size_t size) {
-  TF_Accept(&tf_, data, size);
+void FrameDriver::registerSendDataCallback(SendCallback callback) {
+  send_callback_ = callback;
 }
 
-void FrameDriver_receiveData(const uint8_t* data, size_t size) {
+void FrameDriver::sendData(const uint8_t* data, size_t size) {
+  if (send_callback_ != nullptr) {
+    send_callback_(data, size);
+  } else {
+    DEBUG_ERROR("No send callback registered!");
+  }
+}
+
+void FrameDriver::receiveData(const uint8_t* data, size_t size) {
   util::Stopwatch stopwatch{};
   stopwatch.start();
 
-  auto& tf_driver = driver::tf::FrameDriver::getInstance();
-  tf_driver.receiveData(data, size);
+  TF_Accept(&tf_, data, size);
 
   stopwatch.stop();
   DEBUG_INFO("USB rx: %d us", stopwatch.time());

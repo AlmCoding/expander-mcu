@@ -10,8 +10,6 @@ set(${PROJECT_NAME}_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/utilities/payload_parser.c
 )
 
-include_directories(demo/simple)
-
 add_library(${PROJECT_NAME} STATIC ${${PROJECT_NAME}_SOURCES})
 
 # Set the include directories for the hal_driver library

@@ -21,7 +21,7 @@ class UsbWriteThread {
   constexpr static driver::tf::TfMsgType ThreadTfMsgType = driver::tf::TfMsgType::EchoMsg;
 
   static void execute(uint32_t thread_input);
-  static void sendData(const uint8_t* data, uint32_t size);
+  static void sendData(const uint8_t* data, size_t size);
 
  private:
   static void processMsg(os::msg::BaseMsg* msg);

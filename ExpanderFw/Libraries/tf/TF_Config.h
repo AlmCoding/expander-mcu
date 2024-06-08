@@ -8,7 +8,9 @@
 #define TF_CONFIG_H
 
 #include <stdint.h>
+#if (ENABLE_RTT_DEBUG_OUTPUT == 1)
 #include "util/debug.hpp"
+#endif
 
 //----------------------------- FRAME FORMAT ---------------------------------
 // The format can be adjusted to fit your particular application needs
