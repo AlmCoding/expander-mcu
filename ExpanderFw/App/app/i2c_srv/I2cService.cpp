@@ -87,7 +87,7 @@ int32_t I2cService::postRequest(const uint8_t* data, size_t size) {
   } else if (i2c_msg.which_msg == i2c_proto_I2cMsg_slave_request_tag) {
     status = postSlaveRequest(&i2c_msg);
 
-  } else if (i2c_msg.which_msg == i2c_proto_I2cMsg_cfg_tag) {
+  } else if (i2c_msg.which_msg == i2c_proto_I2cMsg_config_request_tag) {
     status = postConfigRequest(&i2c_msg);
 
   } else {
@@ -174,14 +174,14 @@ int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
     i2c_master = &i2c_master1_;
   }
 
-  uint32_t clock_freq = msg->msg.cfg.clock_freq;
-  uint32_t slave_addr = msg->msg.cfg.slave_addr;
-  bool pullups_enabled = msg->msg.cfg.pullups_enabled;
+  uint32_t clock_freq = msg->msg.config_request.clock_freq;
+  uint32_t slave_addr = msg->msg.config_request.slave_addr;
+  bool pullups_enabled = msg->msg.config_request.pullups_enabled;
 
   hal::i2c::SlaveAddrWidth slave_addr_width;
-  if (msg->msg.cfg.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits7) {
+  if (msg->msg.config_request.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits7) {
     slave_addr_width = hal::i2c::SlaveAddrWidth::SevenBit;
-  } else if (msg->msg.cfg.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits10) {
+  } else if (msg->msg.config_request.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits10) {
     slave_addr_width = hal::i2c::SlaveAddrWidth::TenBit;
   } else {
     DEBUG_ERROR("Invalid SlaveAddrWidth configuration!");
@@ -189,9 +189,9 @@ int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
   }
 
   hal::i2c::I2cSlave::MemAddrWidth mem_addr_width = hal::i2c::I2cSlave::MemAddrWidth::OneByte;
-  if (msg->msg.cfg.mem_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits8) {
+  if (msg->msg.config_request.mem_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits8) {
     mem_addr_width = hal::i2c::I2cSlave::MemAddrWidth::OneByte;
-  } else if (msg->msg.cfg.mem_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits16) {
+  } else if (msg->msg.config_request.mem_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits16) {
     mem_addr_width = hal::i2c::I2cSlave::MemAddrWidth::TwoByte;
   } else {
     DEBUG_ERROR("Invalid SlaveAddrWidth configuration!");
