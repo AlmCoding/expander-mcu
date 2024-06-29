@@ -62,6 +62,16 @@ void I2cService::poll() {
     request_cnt++;
   }
 
+  if (i2c_config1_.poll() > 0) {
+    srv_info_.service_config1 = true;
+    request_cnt++;
+  }
+
+  if (i2c_config0_.poll() > 0) {
+    srv_info_.service_config0 = true;
+    request_cnt++;
+  }
+
   if (request_cnt > 0) {
     request_service_cb_(request_cnt);
   }
@@ -157,10 +167,10 @@ int32_t I2cService::postSlaveRequest(i2c_proto_I2cMsg* msg) {
 
 int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
   int32_t status = -1;
-
   hal::i2c::I2cConfig* i2c_config = nullptr;
   hal::i2c::I2cSlave* i2c_slave = nullptr;
   hal::i2c::I2cMaster* i2c_master = nullptr;
+  hal::i2c::I2cConfig::Request request = {};
 
   if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
     DEBUG_INFO("Post config(0) request (req: x)");
@@ -174,15 +184,14 @@ int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
     i2c_master = &i2c_master1_;
   }
 
-  uint32_t clock_freq = msg->msg.config_request.clock_freq;
-  uint32_t slave_addr = msg->msg.config_request.slave_addr;
-  bool pullups_enabled = msg->msg.config_request.pullups_enabled;
+  request.clock_freq = msg->msg.config_request.clock_freq;
+  request.slave_addr = msg->msg.config_request.slave_addr;
+  request.pullups_enabled = msg->msg.config_request.pullups_enabled;
 
-  hal::i2c::SlaveAddrWidth slave_addr_width;
   if (msg->msg.config_request.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits7) {
-    slave_addr_width = hal::i2c::SlaveAddrWidth::SevenBit;
+    request.slave_addr_width = hal::i2c::I2cConfig::SlaveAddrWidth::SevenBit;
   } else if (msg->msg.config_request.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits10) {
-    slave_addr_width = hal::i2c::SlaveAddrWidth::TenBit;
+    request.slave_addr_width = hal::i2c::I2cConfig::SlaveAddrWidth::TenBit;
   } else {
     DEBUG_ERROR("Invalid SlaveAddrWidth configuration!");
     return -1;
@@ -194,14 +203,16 @@ int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
   } else if (msg->msg.config_request.mem_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits16) {
     mem_addr_width = hal::i2c::I2cSlave::MemAddrWidth::TwoByte;
   } else {
-    DEBUG_ERROR("Invalid SlaveAddrWidth configuration!");
+    DEBUG_ERROR("Invalid MemAddrWidth configuration!");
     return -1;
   }
 
-  i2c_config->config(clock_freq, slave_addr, slave_addr_width, pullups_enabled);
-  i2c_slave->config(mem_addr_width);
-  i2c_master->config();
-  status = 0;
+  if (i2c_config->scheduleRequest(&request) == Status_t::Ok) {
+    DEBUG_INFO("Config request [OK]");
+    i2c_slave->config(mem_addr_width);
+    i2c_master->config();
+    status = 0;
+  }
 
   return status;
 }
@@ -233,6 +244,16 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_size) {
     i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
     sts = serviceMasterRequest(&i2c_master1_, &i2c_msg, max_size);
     srv_info_.service_master1 = false;
+
+  } else if (srv_info_.service_config0 == true) {
+    i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C0;
+    sts = serviceConfigRequest(&i2c_config0_, &i2c_msg, max_size);
+    srv_info_.service_config0 = false;
+
+  } else if (srv_info_.service_config1 == true) {
+    i2c_msg.i2c_id = i2c_proto_I2cId::i2c_proto_I2cId_I2C1;
+    sts = serviceConfigRequest(&i2c_config1_, &i2c_msg, max_size);
+    srv_info_.service_config1 = false;
 
   } else {
     DEBUG_ERROR("Nothing to service (return 0)");
@@ -320,6 +341,35 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
 
   } else {
     DEBUG_ERROR("Srv slave(%d) status (request/access id: UNKNOWN) [FAILED]", slave_id);
+    status = Status_t::Error;
+  }
+
+  return status;
+}
+
+Status_t I2cService::serviceConfigRequest(hal::i2c::I2cConfig* i2c_config, i2c_proto_I2cMsg* msg, size_t /*max_size*/) {
+  Status_t status;
+  size_t config_id;
+  hal::i2c::I2cConfig::StatusInfo info;
+
+  if (i2c_config == &i2c_config0_) {
+    config_id = 0;
+  } else {
+    config_id = 1;
+  }
+
+  if (i2c_config->serviceStatus(&info) == Status_t::Ok) {
+    msg->sequence_number = info.sequence_number;
+    msg->which_msg = i2c_proto_I2cMsg_config_status_tag;
+
+    msg->msg.config_status.request_id = info.request_id;
+    msg->msg.config_status.status_code = static_cast<i2c_proto_I2cConfigStatusCode>(info.status_code);
+
+    DEBUG_INFO("Srv config(%d) status [OK]", config_id);
+    status = Status_t::Ok;
+
+  } else {
+    DEBUG_ERROR("Srv config(%d) status [FAILED]", config_id);
     status = Status_t::Error;
   }
 

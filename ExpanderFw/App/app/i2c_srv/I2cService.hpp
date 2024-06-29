@@ -26,6 +26,8 @@ class I2cService {
     bool service_master1;
     bool service_slave0;
     bool service_slave1;
+    bool service_config0;
+    bool service_config1;
   } ServiceInfo;
 
   I2cService() = default;
@@ -41,8 +43,10 @@ class I2cService {
   int32_t postMasterRequest(i2c_proto_I2cMsg* msg);
   int32_t postSlaveRequest(i2c_proto_I2cMsg* msg);
   int32_t postConfigRequest(i2c_proto_I2cMsg* msg);
+
   Status_t serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg, size_t max_size);
   Status_t serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg, size_t max_size);
+  Status_t serviceConfigRequest(hal::i2c::I2cConfig* i2c_config, i2c_proto_I2cMsg* msg, size_t max_size);
 
   hal::i2c::I2cConfig i2c_config0_{ hal::i2c::I2cId::I2c0, &hi2c1 };
   hal::i2c::I2cConfig i2c_config1_{ hal::i2c::I2cId::I2c1, &hi2c3 };

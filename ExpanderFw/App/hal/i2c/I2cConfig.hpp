@@ -20,21 +20,51 @@ enum class I2cId {
   I2c1,
 };
 
-enum class SlaveAddrWidth {
-  SevenBit = 0,
-  TenBit,
-};
-
 class I2cConfig {
  public:
+  enum class RequestStatus {
+    Ok = 0,
+    InvalidClockFreq,
+    InvalidSlaveAddr,
+    InvalidSlaveAddrWidth,
+    InvalidMemAddrWidth,
+    InterfaceError,
+  };
+
+  enum class SlaveAddrWidth {
+    SevenBit = 0,
+    TenBit,
+  };
+
+  typedef struct {
+    uint32_t request_id;
+    RequestStatus status_code;
+    uint32_t clock_freq;
+    uint32_t slave_addr;
+    SlaveAddrWidth slave_addr_width;
+    bool pullups_enabled;
+  } Request;
+
+  typedef struct {
+    uint32_t sequence_number;
+    uint32_t request_id;
+    RequestStatus status_code;
+  } StatusInfo;
+
   I2cConfig(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
   virtual ~I2cConfig() = default;
 
-  void config(uint32_t clock_freq, uint32_t slave_addr, SlaveAddrWidth addr_width, bool pullups_enabled);
+  uint32_t poll();
+
+  Status_t scheduleRequest(Request* request);
+  Status_t serviceStatus(StatusInfo* info);
 
  private:
   I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
+
+  Request request_ = {};
+  bool service_status_ = false;
 };
 
 } /* namespace i2c */
