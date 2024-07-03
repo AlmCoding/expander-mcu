@@ -56,7 +56,7 @@ class I2cConfig {
 
   uint32_t poll();
 
-  Status_t scheduleRequest(Request* request);
+  Status_t scheduleRequest(Request* request, uint32_t seq_num);
   Status_t serviceStatus(StatusInfo* info);
 
  private:
@@ -65,6 +65,8 @@ class I2cConfig {
 
   Request request_ = {};
   bool service_status_ = false;
+
+  uint32_t seqence_number_ = 0;
 };
 
 } /* namespace i2c */

@@ -172,18 +172,7 @@ int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
   hal::i2c::I2cMaster* i2c_master = nullptr;
   hal::i2c::I2cConfig::Request request = {};
 
-  if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
-    DEBUG_INFO("Post config(0) request (req: x)");
-    i2c_config = &i2c_config0_;
-    i2c_slave = &i2c_slave0_;
-    i2c_master = &i2c_master0_;
-  } else {
-    DEBUG_INFO("Post config(1) request (req: x)");
-    i2c_config = &i2c_config1_;
-    i2c_slave = &i2c_slave1_;
-    i2c_master = &i2c_master1_;
-  }
-
+  request.request_id = msg->msg.config_request.request_id;
   request.clock_freq = msg->msg.config_request.clock_freq;
   request.slave_addr = msg->msg.config_request.slave_addr;
   request.pullups_enabled = msg->msg.config_request.pullups_enabled;
@@ -207,7 +196,19 @@ int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
     return -1;
   }
 
-  if (i2c_config->scheduleRequest(&request) == Status_t::Ok) {
+  if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
+    DEBUG_INFO("Post config(0) request (req: %d)", request.request_id);
+    i2c_config = &i2c_config0_;
+    i2c_slave = &i2c_slave0_;
+    i2c_master = &i2c_master0_;
+  } else {
+    DEBUG_INFO("Post config(1) request (req: %d)", request.request_id);
+    i2c_config = &i2c_config1_;
+    i2c_slave = &i2c_slave1_;
+    i2c_master = &i2c_master1_;
+  }
+
+  if (i2c_config->scheduleRequest(&request, msg->sequence_number) == Status_t::Ok) {
     DEBUG_INFO("Config request [OK]");
     i2c_slave->config(mem_addr_width);
     i2c_master->config();

@@ -26,12 +26,13 @@ namespace i2c {
 
 I2cConfig::I2cConfig(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_id }, i2c_handle_{ i2c_handle } {}
 
-uint32_t I2cConfig::poll() { 
+uint32_t I2cConfig::poll() {
   return (service_status_ == true) ? 1 : 0;
 }
 
-Status_t I2cConfig::scheduleRequest(Request* request) {
+Status_t I2cConfig::scheduleRequest(Request* request, uint32_t seq_num) {
   request_ = *request;
+  seqence_number_ = seq_num;
   service_status_ = true;
 
   DEBUG_INFO("Config I2c(%d) clock_freq: %d", magic_enum::enum_integer(i2c_id_), request_.clock_freq);
@@ -79,7 +80,7 @@ Status_t I2cConfig::scheduleRequest(Request* request) {
 };
 
 Status_t I2cConfig::serviceStatus(StatusInfo* info) {
-  info->sequence_number = 0;
+  info->sequence_number = seqence_number_;
   info->request_id = request_.request_id;
   info->status_code = request_.status_code;
 
