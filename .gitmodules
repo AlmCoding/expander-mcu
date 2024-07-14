@@ -1,0 +1,3 @@
+[submodule "ExpanderFw/Libraries/proto"]
+	path = ExpanderFw/Libraries/proto
+	url = git@github.com:AlmCoding/expander-proto.git

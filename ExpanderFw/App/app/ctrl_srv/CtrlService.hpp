@@ -9,7 +9,6 @@
 #define APP_CTRL_SRV_CTRLSERVICE_HPP_
 
 #include "app/ctrl_srv/ctrlTypes.hpp"
-#include "proto_c/uart.pb.h"
 
 namespace app::ctrl_srv {
 
