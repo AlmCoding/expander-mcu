@@ -23,7 +23,8 @@ enum class I2cId {
 class I2cConfig {
  public:
   enum class RequestStatus {
-    Ok = 0,
+    NotInit = 0,
+    Ok,
     InvalidClockFreq,
     InvalidSlaveAddr,
     InvalidSlaveAddrWidth,
