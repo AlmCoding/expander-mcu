@@ -12,8 +12,7 @@
 #include "main.h"
 #include "tx_api.h"
 
-namespace hal {
-namespace i2c {
+namespace hal::i2c {
 
 enum class I2cId {
   I2c0 = 0,
@@ -70,7 +69,6 @@ class I2cConfig {
   uint32_t seqence_number_ = 0;
 };
 
-} /* namespace i2c */
-} /* namespace hal */
+} /* namespace hal::i2c */
 
 #endif /* HAL_I2C_I2CCONFIG_HPP_ */

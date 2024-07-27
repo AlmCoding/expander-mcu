@@ -13,8 +13,7 @@
 #include "main.h"
 #include "tx_api.h"
 
-namespace hal {
-namespace i2c {
+namespace hal::i2c {
 
 class I2cSlave {
  private:
@@ -54,7 +53,6 @@ class I2cSlave {
   typedef struct {
     uint32_t sequence_number;
     Request request;
-    uint16_t size;
     uint16_t queue_space;
   } StatusInfo;
 
@@ -66,7 +64,8 @@ class I2cSlave {
   uint32_t poll();
 
   Status_t scheduleRequest(Request* request, uint8_t* mem_data, uint32_t seq_num);
-  Status_t serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max_size);
+  Status_t serviceStatus(StatusInfo* info);
+  Status_t copyData(size_t addr, uint8_t* data, size_t size);
 
  private:
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
@@ -95,7 +94,6 @@ class I2cSlave {
   friend class I2cIrq;
 };
 
-} /* namespace i2c */
-} /* namespace hal */
+} /* namespace hal::i2c */
 
 #endif /* HAL_I2C_I2CSLAVE_HPP_ */

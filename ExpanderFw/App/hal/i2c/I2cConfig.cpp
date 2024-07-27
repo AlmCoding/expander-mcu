@@ -21,8 +21,7 @@
 #define DEBUG_ERROR(...)
 #endif
 
-namespace hal {
-namespace i2c {
+namespace hal::i2c {
 
 I2cConfig::I2cConfig(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_id }, i2c_handle_{ i2c_handle } {}
 
@@ -88,5 +87,4 @@ Status_t I2cConfig::serviceStatus(StatusInfo* info) {
   return Status_t::Ok;
 }
 
-} /* namespace i2c */
-} /* namespace hal */
+} /* namespace hal::i2c */

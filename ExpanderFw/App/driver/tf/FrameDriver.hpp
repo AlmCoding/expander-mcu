@@ -23,6 +23,9 @@ typedef int32_t (*RxCallback)(const uint8_t* data, size_t size);
 
 class FrameDriver {
  public:
+ public:
+  constexpr static size_t TfSizeOverhead = TF_USE_SOF_BYTE + TF_ID_BYTES + TF_LEN_BYTES + 2 * TF_CKSUM_CUSTOM8;
+
   // Deleted copy constructor and assignment operator to enforce singleton
   FrameDriver(const FrameDriver&) = delete;
   FrameDriver& operator=(const FrameDriver&) = delete;

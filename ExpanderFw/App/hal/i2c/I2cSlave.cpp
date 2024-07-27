@@ -27,8 +27,7 @@
 // #define DMA_RX_MEM_WRITE_POS (sizeof(temp_buffer_) - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmarx))
 // #define DMA_TX_MEM_READ_POS (sizeof(data_buffer_) - getDataAddress() - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmatx))
 
-namespace hal {
-namespace i2c {
+namespace hal::i2c {
 
 I2cSlave::I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_id }, i2c_handle_{ i2c_handle } {
   uint32_t sts = TX_SUCCESS;
@@ -297,7 +296,7 @@ Status_t I2cSlave::notifyAccessRequest(size_t write_size, size_t write_addr, siz
   return status;
 }
 
-Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max_size) {
+Status_t I2cSlave::serviceStatus(StatusInfo* info) {
   Status_t status = Status_t::Ok;
 
   Request* request = &info->request;
@@ -307,22 +306,6 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max
   }
 
   info->sequence_number = seqence_number_;
-  info->size = 0;
-
-  if (request->status_code == RequestStatus::Complete) {
-    if ((request->request_id > 0) && (request->read_size > 0)) {
-      // Feedback on read/write request from PC
-      ETL_ASSERT(request->read_size <= max_size, ETL_ERROR(0));
-      std::memcpy(mem_data, data_buffer_ + request->read_addr, request->read_size);
-      info->size = request->read_size;
-
-    } else if ((request->access_id > 0) && (request->write_size > 0)) {
-      // Report slave write access notification to PC
-      ETL_ASSERT(request->write_size <= max_size, ETL_ERROR(0));
-      std::memcpy(mem_data, data_buffer_ + request->write_addr, request->write_size);
-      info->size = request->write_size;
-    }
-  }
 
   uint32_t free_slots = 0;
   uint32_t sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
@@ -332,5 +315,16 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max
   return status;
 }
 
-} /* namespace i2c */
-} /* namespace hal */
+Status_t I2cSlave::copyData(size_t addr, uint8_t* data, size_t size) {
+  Status_t status = Status_t::Ok;
+
+  if ((addr + size) > sizeof(data_buffer_)) {
+    DEBUG_ERROR("Bad request (addr: 0x%04X, size: %d)", addr, size);
+    return Status_t::Error;
+  }
+
+  std::memcpy(data, data_buffer_ + addr, size);
+  return status;
+}
+
+} /* namespace hal::i2c */
