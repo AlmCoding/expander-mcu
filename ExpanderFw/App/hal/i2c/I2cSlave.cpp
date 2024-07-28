@@ -174,6 +174,8 @@ void I2cSlave::slaveMatchMasterWriteCb() {
   // HAL_StatusTypeDef hal_status =
   //    HAL_I2C_Slave_Seq_Receive_DMA(i2c_handle_, temp_buffer_, sizeof(temp_buffer_), I2C_FIRST_AND_LAST_FRAME);
 
+  std::memset(temp_buffer_, 0, 2); // First two bytes are address
+
   HAL_StatusTypeDef hal_status =
       HAL_I2C_Slave_Seq_Receive_IT(i2c_handle_, temp_buffer_, sizeof(temp_buffer_), I2C_FIRST_FRAME);
 
@@ -212,13 +214,13 @@ void I2cSlave::writeCompleteCb() {
     mem_address_ = getDataAddress();
   } else {
     mem_address_ = -1;
-    ETL_ASSERT(false, ETL_ERROR(0));  // TODO: Remove assert and handle such case properly
+    ETL_ASSERT(false, ETL_ERROR(0));  // TODO: Remove assert and handle this case properly
   }
 
   ETL_ASSERT(static_cast<size_t>(mem_address_ + rx_cnt) <= sizeof(data_buffer_), ETL_ERROR(0));
   DEBUG_INFO("writeCompleteCb (addr: 0x%04X, size: %d) [OK]", mem_address_, rx_cnt);
 
-  if (rx_cnt > 0) {
+  if (rx_total > 0) {
     memcpy(data_buffer_ + mem_address_, temp_buffer_ + static_cast<size_t>(mem_addr_width_), rx_cnt);
 
     // return;  // Suppress notification (for testing only)

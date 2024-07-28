@@ -354,6 +354,7 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
       DEBUG_ERROR("Srv slave(%d) notification (access id: %d) [FAILED]", slave_id, info.request.request_id);
       return Status_t::Error;
     }
+    msg->msg.slave_notification.addr = (info.request.write_addr > 0) ? info.request.write_addr : info.request.read_addr;
 
     msg->msg.slave_notification.read_data.size = static_cast<uint16_t>(read_size);
     i2c_slave->copyData(info.request.read_addr, msg->msg.slave_notification.read_data.bytes, read_size);
