@@ -54,6 +54,7 @@ class I2cSlave {
     uint32_t sequence_number;
     Request request;
     uint16_t queue_space;
+    MemAddrWidth addr_width;
   } StatusInfo;
 
   I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
@@ -72,9 +73,11 @@ class I2cSlave {
   int32_t getDataAddress();
   void slaveMatchMasterWriteCb();
   void slaveMatchMasterReadCb();
+  int32_t handleMasterWrite();
+  int32_t handleMasterRead();
   void writeCompleteCb();
   void readCompleteCb();
-  Status_t notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size, size_t read_addr);
+  Status_t notifyAccessRequest();
 
   I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
@@ -87,6 +90,10 @@ class I2cSlave {
 
   MemAddrWidth mem_addr_width_ = MemAddrWidth::TwoByte;
   int32_t mem_address_ = -1;
+
+  bool master_write_ongoing_ = false;
+  bool master_read_ongoing_ = false;
+  Request request_ = {};
 
   uint32_t access_id_ = 0;
   uint32_t seqence_number_ = 0;

@@ -351,22 +351,29 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
     size_t write_size = info.request.write_size;
     if (read_size > sizeof(msg->msg.slave_notification.read_data.bytes) ||
         write_size > sizeof(msg->msg.slave_notification.write_data.bytes)) {
-      DEBUG_ERROR("Srv slave(%d) notification (access id: %d) [FAILED]", slave_id, info.request.request_id);
+      DEBUG_ERROR("Srv slave(%d) notification (access id: %d). Read/write size too big!", slave_id, info.request.request_id);
       return Status_t::Error;
     }
-    msg->msg.slave_notification.addr = (info.request.write_addr > 0) ? info.request.write_addr : info.request.read_addr;
 
     msg->msg.slave_notification.read_data.size = static_cast<uint16_t>(read_size);
     i2c_slave->copyData(info.request.read_addr, msg->msg.slave_notification.read_data.bytes, read_size);
 
+    if (info.addr_width == hal::i2c::I2cSlave::MemAddrWidth::TwoByte) {
+      msg->msg.slave_notification.write_data.bytes[0] = static_cast<uint8_t>(info.request.write_addr >> 8);
+      msg->msg.slave_notification.write_data.bytes[1] = static_cast<uint8_t>(info.request.write_addr & 0xFF);
+    } else {
+      msg->msg.slave_notification.write_data.bytes[0] = static_cast<uint8_t>(info.request.write_addr & 0xFF);
+    }
+    size_t addr_width = static_cast<size_t>(info.addr_width);
     msg->msg.slave_notification.write_data.size = static_cast<uint16_t>(write_size);
-    i2c_slave->copyData(info.request.write_addr, msg->msg.slave_notification.write_data.bytes, write_size);
+    i2c_slave->copyData(info.request.write_addr, msg->msg.slave_notification.write_data.bytes + addr_width,
+                        write_size - addr_width);
 
     DEBUG_INFO("Srv slave(%d) notification (access id: %d) [OK]", slave_id, info.request.access_id);
     return Status_t::Ok;
 
   } else {
-    DEBUG_ERROR("Srv slave(%d) status (invalid request/access id combination) [FAILED]", slave_id);
+    DEBUG_ERROR("Srv slave(%d) status/notification. Invalid request/access id combination!", slave_id);
     return Status_t::Error;
   }
 }
