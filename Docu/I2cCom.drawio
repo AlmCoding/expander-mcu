@@ -1,6 +1,6 @@
-<mxfile host="Electron" modified="2024-01-28T19:12:16.925Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/23.0.2 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="n-OmovXHYtJ-pnG4yL-V" version="23.0.2" type="device">
+<mxfile host="Electron" modified="2024-07-28T21:02:04.566Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.6.4 Chrome/124.0.6367.207 Electron/30.0.6 Safari/537.36" etag="DX3VXNLvY3s6YcSbFGYa" version="24.6.4" type="device">
   <diagram name="Page-1" id="2ZyC1kqVVPjFEnBajxi8">
-    <mxGraphModel dx="1434" dy="844" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="893" dy="593" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -366,8 +366,47 @@
         <mxCell id="uEk0Pl82Lj76Kw1FVKub-29" value="Read request" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="880" y="100" width="120" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="yJD7csdsyVme4BotSLR3-1" value="&lt;h1&gt;Master data placement in buffer&lt;/h1&gt;&lt;div&gt;Space1 is filled first with the larger section and if not possible with the smaller section (read/write) of a request.&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+        <mxCell id="yJD7csdsyVme4BotSLR3-1" value="&lt;h1&gt;Master data placement in buffer&lt;/h1&gt;&lt;div&gt;Space1 is filled first with the larger section and if not possible with the smaller section (read/write) of a request.&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="40" y="850" width="190" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-1" value="Byte" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="1080" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-2" value="Byte" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="1150" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-3" value="Byte" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" vertex="1" parent="1">
+          <mxGeometry x="1490" y="960" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-4" value="Byte" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" vertex="1" parent="1">
+          <mxGeometry x="1530" y="930" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-5" value="Slave &amp;amp; W" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="920" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-6" value="Slave &amp;amp; R" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="1040" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-7" value="Byte" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="1080" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-8" value="Byte" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="1010" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-9" value="Slave &amp;amp; W" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="1010" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-10" value="Slave &amp;amp; W" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="1080" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-11" value="Byte" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="1150" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-12" value="Byte" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="1150" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="etsOGuWaE-JSQvinEe2w-13" value="Slave &amp;amp; W" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#6a00ff;fontColor=#ffffff;strokeColor=#3700CC;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="1150" width="80" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
