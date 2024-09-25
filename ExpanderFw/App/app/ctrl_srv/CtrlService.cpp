@@ -75,7 +75,10 @@ int32_t CtrlService::postCtrlRequest(ctrl_proto_CtrlMsg* msg) {
     NVIC_SystemReset();
 
   } else if (msg->msg.ctrl_request.start_bootloader == true) {
-    // TODO: Start bootloader
+    startBootloader();
+
+  } else {
+    DEBUG_ERROR("Invalid control request!");
   }
 
   return status;
@@ -110,6 +113,68 @@ int32_t CtrlService::serviceRequest(uint8_t* data, size_t max_size) {
 
   service_device_info_ = false;
   return stream.bytes_written;
+}
+
+void CtrlService::startBootloader() {
+  // Try this if not working:
+  // https://community.st.com/t5/stm32-mcus/jump-to-bootloader-from-application-on-stm32h7-devices/ta-p/49510
+
+  void (*SysMemBootJump)(void);
+
+  /**
+   * Step: Set system memory address.
+   *       For other families, check AN2606 document table 110 with descriptions of memory addresses
+   */
+  volatile uint32_t addr = 0x0BF90000;
+
+  /**
+   * Step: Disable RCC, set it to default (after reset) settings
+   *       Internal clock, no PLL, etc.
+   */
+  HAL_RCC_DeInit();
+
+  /**
+   * Step: Disable systick timer and reset it to default values
+   */
+  SysTick->CTRL = 0;
+  SysTick->LOAD = 0;
+  SysTick->VAL = 0;
+
+  /**
+   * Step: Disable all interrupts
+   */
+  __disable_irq();
+
+  /**
+   * Step: Remap system memory to address 0x0000 0000 in address space
+   *       For each family registers may be different.
+   *       Check reference manual for each family.
+   *
+   *       For STM32F4xx, MEMRMP register in SYSCFG is used (bits[1:0])
+   *       For STM32F0xx, CFGR1 register in SYSCFG is used (bits[1:0])
+   *       For others, check family reference manual
+   */
+  //__HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+
+  /**
+   * Step: Set jump memory location for system memory
+   *       Use address with 4 bytes offset which specifies jump location where program starts
+   */
+  SysMemBootJump = (void (*)(void))(*((uint32_t*)(addr + 4)));
+
+  /**
+   * Step: Set main stack pointer.
+   *       This step must be done last otherwise local variables in this function
+   *       don't have proper value since stack pointer is located on different position
+   *
+   *       Set direct address location which specifies stack pointer in SRAM location
+   */
+  __set_MSP(*(uint32_t*)addr);
+  /**
+   * Step: Actually call our function to jump to set location
+   *       This will start system memory execution
+   */
+  SysMemBootJump();
 }
 
 }  // namespace app::ctrl_srv
