@@ -25,10 +25,6 @@ jobs:
         run: |
           docker pull xanderhendriks/stm32cubeide:13.1
 
-      - name: Prepare Build
-        run: |
-          python generate_git_info.py ExpanderFw/App/git_info.hpp
-
       - name: Build Debug
         run: |
           docker run --rm \
