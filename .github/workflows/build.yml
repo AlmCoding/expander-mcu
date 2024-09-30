@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      COMMON_BUILD_CMD: "stm32cubeide --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ./workspace -import ./ExpanderFw"
 
     steps:
       - name: Checkout code
@@ -20,11 +22,6 @@ jobs:
       - name: Prepare Docker
         run: |
           docker pull xanderhendriks/stm32cubeide:13.1
-
-      - name: Set Environment
-        env:
-          COMMON_BUILD_CMD: "stm32cubeide --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ./workspace -import ./ExpanderFw"
-        run: echo "Common build command set."
 
       - name: Build Debug
         run: |
