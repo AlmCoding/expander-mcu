@@ -32,7 +32,7 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace/expander-mcu/ExpanderFw \
             xanderhendriks/stm32cubeide:13.1 \
-            bash -c "$COMMON_CMD -cleanBuild ExpanderFw/Debug"
+            bash -c "${{ env.COMMON_BUILD_CMD }} -cleanBuild ExpanderFw/Debug"
 
       - name: Build Release
         run: |
@@ -40,7 +40,7 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace/expander-mcu/ExpanderFw \
             xanderhendriks/stm32cubeide:13.1 \
-            bash -c "$COMMON_CMD -cleanBuild ExpanderFw/Release"
+            bash -c "${{ env.COMMON_BUILD_CMD }} -cleanBuild ExpanderFw/Release"
 
       - name: Upload Debug Artifact
         uses: actions/upload-artifact@v3
