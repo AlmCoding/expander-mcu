@@ -1,0 +1,43 @@
+name: Build MCU Project
+
+on:
+  push:
+    branches:
+      - main
+      - port_hw_v2
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Prepare Docker
+        run: |
+          docker pull xanderhendriks/stm32cubeide:13.1
+
+      - name: Set Environment
+        env:
+          COMMON_BUILD_CMD: "stm32cubeide --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ./workspace -import ./ExpanderFw"
+        run: echo "Common build command set."
+
+      - name: Build Debug
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace/expander-mcu/ExpanderFw \
+            xanderhendriks/stm32cubeide:13.1 \
+            bash -c "$COMMON_CMD -cleanBuild ExpanderFw/Debug"
+
+      - name: Build Release
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace/expander-mcu/ExpanderFw \
+            xanderhendriks/stm32cubeide:13.1 \
+            bash -c "$COMMON_CMD -cleanBuild ExpanderFw/Release"
