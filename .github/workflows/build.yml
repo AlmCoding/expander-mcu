@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
 
@@ -42,7 +42,7 @@ jobs:
             bash -c "${{ env.COMMON_BUILD_CMD }} -cleanBuild ExpanderFw/Release"
 
       - name: Upload Debug Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: |
             ./ExpanderFw/Debug/ExpanderFw.hex
