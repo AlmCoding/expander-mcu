@@ -25,6 +25,11 @@ jobs:
         run: |
           docker pull xanderhendriks/stm32cubeide:13.1
 
+      - name: Print Version
+        run: |
+          python --version
+          pwd
+
       - name: Build Debug
         run: |
           docker run --rm \
