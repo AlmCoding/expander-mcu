@@ -41,3 +41,14 @@ jobs:
             -w /workspace/expander-mcu/ExpanderFw \
             xanderhendriks/stm32cubeide:13.1 \
             bash -c "$COMMON_CMD -cleanBuild ExpanderFw/Release"
+
+      - name: Upload Debug Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            expander-mcu/ExpanderFw/Debug/ExpanderFw.hex
+            expander-mcu/ExpanderFw/Debug/ExpanderFw.bin
+            expander-mcu/ExpanderFw/Debug/ExpanderFw.elf
+            expander-mcu/ExpanderFw/Release/ExpanderFw.hex
+            expander-mcu/ExpanderFw/Release/ExpanderFw.bin
+            expander-mcu/ExpanderFw/Release/ExpanderFw.elf
