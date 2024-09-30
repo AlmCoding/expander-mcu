@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          submodules: 'true'
 
       - name: Prepare Docker
         run: |
@@ -27,7 +29,7 @@ jobs:
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
-            -w /workspace/expander-mcu/ExpanderFw \
+            -w /workspace \
             xanderhendriks/stm32cubeide:13.1 \
             bash -c "${{ env.COMMON_BUILD_CMD }} -cleanBuild ExpanderFw/Debug"
 
@@ -35,7 +37,7 @@ jobs:
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
-            -w /workspace/expander-mcu/ExpanderFw \
+            -w /workspace/ \
             xanderhendriks/stm32cubeide:13.1 \
             bash -c "${{ env.COMMON_BUILD_CMD }} -cleanBuild ExpanderFw/Release"
 
@@ -43,9 +45,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           path: |
-            expander-mcu/ExpanderFw/Debug/ExpanderFw.hex
-            expander-mcu/ExpanderFw/Debug/ExpanderFw.bin
-            expander-mcu/ExpanderFw/Debug/ExpanderFw.elf
-            expander-mcu/ExpanderFw/Release/ExpanderFw.hex
-            expander-mcu/ExpanderFw/Release/ExpanderFw.bin
-            expander-mcu/ExpanderFw/Release/ExpanderFw.elf
+            ./ExpanderFw/Debug/ExpanderFw.hex
+            ./ExpanderFw/Debug/ExpanderFw.bin
+            ./ExpanderFw/Debug/ExpanderFw.elf
+            ./ExpanderFw/Release/ExpanderFw.hex
+            ./ExpanderFw/Release/ExpanderFw.bin
+            ./ExpanderFw/Release/ExpanderFw.elf
