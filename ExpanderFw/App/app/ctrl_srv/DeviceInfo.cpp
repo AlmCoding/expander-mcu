@@ -6,6 +6,7 @@
  */
 
 #include "app/ctrl_srv/DeviceInfo.hpp"
+#include "git_info.hpp"
 #include "main.h"
 
 namespace app::ctrl_srv {
@@ -17,6 +18,8 @@ void DeviceInfo::getDeviceInfo(Info* info) {
   info->firmware_version_major = FirmwareVersionMajor;
   info->firmware_version_minor = FirmwareVersionMinor;
   info->firmware_version_patch = FirmwareVersionPatch;
+
+  strncpy(info->git_hash, GIT_COMMIT_HASH, sizeof(info->git_hash));
 }
 
 uint8_t DeviceInfo::readHardwareVersion() {

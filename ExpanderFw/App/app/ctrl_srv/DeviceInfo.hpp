@@ -27,6 +27,7 @@ class DeviceInfo {
     uint8_t firmware_version_major;
     uint8_t firmware_version_minor;
     uint8_t firmware_version_patch;
+    char git_hash[42];
   };
 
   static void getDeviceInfo(Info* info);

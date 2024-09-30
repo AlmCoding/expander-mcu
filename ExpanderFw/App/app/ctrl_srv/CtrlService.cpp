@@ -101,7 +101,8 @@ int32_t CtrlService::serviceRequest(uint8_t* data, size_t max_size) {
   ctrl_msg.msg.device_info.firmware_version_major = info.firmware_version_major;
   ctrl_msg.msg.device_info.firmware_version_minor = info.firmware_version_minor;
   ctrl_msg.msg.device_info.firmware_version_patch = info.firmware_version_patch;
-
+  strncpy(ctrl_msg.msg.device_info.git_hash, info.git_hash, sizeof(ctrl_msg.msg.device_info.git_hash));
+  
   /* Create a stream that will write to our buffer. */
   pb_ostream_t stream = pb_ostream_from_buffer(data, max_size);
 
