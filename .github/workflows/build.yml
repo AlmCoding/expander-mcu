@@ -13,10 +13,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      LINK_PYTHON_CMD: "ln -s /usr/bin/python3 /usr/bin/python"
       COMMON_BUILD_CMD: "stm32cubeide --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ./workspace -import ./ExpanderFw"
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           submodules: 'true'
@@ -25,10 +26,12 @@ jobs:
         run: |
           docker pull xanderhendriks/stm32cubeide:13.1
 
-      - name: Print Version
+      - name: Prepare Build
         run: |
-          python --version
           pwd
+          ls -la
+          python --version
+          python ExpanderFw/generate_git_info.py ExpanderFw/App/git_info.hpp
 
       - name: Build Debug
         run: |
