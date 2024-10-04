@@ -1,7 +1,7 @@
 
 extern "C" {
 
-#include "app/usb_com/UsbWriteThread.hpp"
+#include "driver/tf/FrameDriver.hpp"
 #include "tf/TinyFrame.h"
 #include "util/debug.hpp"
 
@@ -26,7 +26,8 @@ extern "C" {
  * listener timeout feature.
  */
 void TF_WriteImpl(TinyFrame* /*tf*/, const uint8_t* buff, uint32_t len) {
-  app::usb_com::UsbWriteThread::sendData(buff, len);
+  auto& tf_driver = driver::tf::FrameDriver::getInstance();
+  tf_driver.sendData(buff, len);
 }
 
 // --------- Mutex callbacks ----------

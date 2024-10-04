@@ -13,8 +13,7 @@
 #include "main.h"
 #include "tx_api.h"
 
-namespace hal {
-namespace i2c {
+namespace hal::i2c {
 
 class I2cSlave {
  private:
@@ -54,8 +53,8 @@ class I2cSlave {
   typedef struct {
     uint32_t sequence_number;
     Request request;
-    uint16_t size;
     uint16_t queue_space;
+    MemAddrWidth addr_width;
   } StatusInfo;
 
   I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
@@ -66,16 +65,19 @@ class I2cSlave {
   uint32_t poll();
 
   Status_t scheduleRequest(Request* request, uint8_t* mem_data, uint32_t seq_num);
-  Status_t serviceStatus(StatusInfo* info, uint8_t* mem_data, size_t max_size);
+  Status_t serviceStatus(StatusInfo* info);
+  Status_t copyData(size_t addr, uint8_t* data, size_t size);
 
  private:
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   int32_t getDataAddress();
   void slaveMatchMasterWriteCb();
   void slaveMatchMasterReadCb();
+  int32_t handleMasterWrite();
+  int32_t handleMasterRead();
   void writeCompleteCb();
   void readCompleteCb();
-  Status_t notifyAccessRequest(size_t write_size, size_t write_addr, size_t read_size, size_t read_addr);
+  Status_t notifyAccessRequest();
 
   I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;
@@ -89,13 +91,16 @@ class I2cSlave {
   MemAddrWidth mem_addr_width_ = MemAddrWidth::TwoByte;
   int32_t mem_address_ = -1;
 
+  bool master_write_ongoing_ = false;
+  bool master_read_ongoing_ = false;
+  Request request_ = {};
+
   uint32_t access_id_ = 0;
   uint32_t seqence_number_ = 0;
 
   friend class I2cIrq;
 };
 
-} /* namespace i2c */
-} /* namespace hal */
+} /* namespace hal::i2c */
 
 #endif /* HAL_I2C_I2CSLAVE_HPP_ */

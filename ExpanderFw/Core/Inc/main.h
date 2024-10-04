@@ -57,7 +57,15 @@ void initPeripherals();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LED_HRTB_Pin GPIO_PIN_5
+#define LED_HRTB_NUCLEO_Pin GPIO_PIN_5
+#define LED_HRTB_NUCLEO_GPIO_Port GPIOA
+#define HW_VERSION_0_Pin GPIO_PIN_13
+#define HW_VERSION_0_GPIO_Port GPIOB
+#define HW_VERSION_1_Pin GPIO_PIN_14
+#define HW_VERSION_1_GPIO_Port GPIOB
+#define HW_VERSION_2_Pin GPIO_PIN_15
+#define HW_VERSION_2_GPIO_Port GPIOB
+#define LED_HRTB_Pin GPIO_PIN_9
 #define LED_HRTB_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */

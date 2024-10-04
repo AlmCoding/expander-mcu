@@ -1,0 +1,61 @@
+name: Build MCU Project
+
+on:
+  push:
+    branches:
+      - main
+      - port_hw_v2
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      LINK_PYTHON_CMD: "ln -s /usr/bin/python3 /usr/bin/python"
+      COMMON_BUILD_CMD: "stm32cubeide --launcher.suppressErrors -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild -data ./workspace -import ./ExpanderFw"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Prepare Docker
+        run: |
+          docker pull xanderhendriks/stm32cubeide:13.1
+
+      - name: Prepare Build
+        run: |
+          pwd
+          ls -la
+          python --version
+          python ExpanderFw/generate_git_info.py ExpanderFw/App/git_info.hpp
+
+      - name: Build Debug
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            xanderhendriks/stm32cubeide:13.1 \
+            bash -c "${{ env.COMMON_BUILD_CMD }} -cleanBuild ExpanderFw/Debug"
+
+      - name: Build Release
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace/ \
+            xanderhendriks/stm32cubeide:13.1 \
+            bash -c "${{ env.COMMON_BUILD_CMD }} -cleanBuild ExpanderFw/Release"
+
+      - name: Upload Debug Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            ./ExpanderFw/Debug/ExpanderFw.hex
+            ./ExpanderFw/Debug/ExpanderFw.bin
+            ./ExpanderFw/Debug/ExpanderFw.elf
+            ./ExpanderFw/Release/ExpanderFw.hex
+            ./ExpanderFw/Release/ExpanderFw.bin
+            ./ExpanderFw/Release/ExpanderFw.elf

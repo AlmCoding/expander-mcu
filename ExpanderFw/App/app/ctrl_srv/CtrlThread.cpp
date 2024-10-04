@@ -51,6 +51,7 @@ void CtrlThread::execute(uint32_t /*thread_input*/) {
     if (os::msg::receive_msg(os::msg::MsgQueueId::CtrlThreadQueue, &msg, os::CtrlThread_CycleTicks) == true) {
       // processMsg(&msg);
     }
+    ctrl_service_->poll();
 
     // Heart beat led
     HAL_GPIO_TogglePin(LED_HRTB_GPIO_Port, LED_HRTB_Pin);

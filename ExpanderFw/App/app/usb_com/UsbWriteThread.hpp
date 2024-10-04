@@ -17,11 +17,11 @@ namespace app::usb_com {
 class UsbWriteThread {
  public:
   constexpr static size_t UsbMaxWriteSize = 64;
-  constexpr static size_t UsbWriteBufferSize = UsbMaxWriteSize;
+  constexpr static size_t UsbWriteBufferSize = 256 + 64;
   constexpr static driver::tf::TfMsgType ThreadTfMsgType = driver::tf::TfMsgType::EchoMsg;
 
   static void execute(uint32_t thread_input);
-  static void sendData(const uint8_t* data, uint32_t size);
+  static void sendData(const uint8_t* data, size_t size);
 
  private:
   static void processMsg(os::msg::BaseMsg* msg);

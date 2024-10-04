@@ -36,6 +36,8 @@ size_t UsbWriteThread::echo_size_ = 0;
 void UsbWriteThread::execute(uint32_t /*thread_input*/) {
   os::msg::BaseMsg msg = {};
 
+  driver::tf::FrameDriver::getInstance().registerSendDataCallback(sendData);
+
   // Register callback for incoming msg
   driver::tf::FrameDriver::getInstance().registerRxCallback(UsbWriteThread::ThreadTfMsgType, postRequest_cb);
 
@@ -98,7 +100,7 @@ void UsbWriteThread::serviceUpstream(os::msg::BaseMsg* msg) {
   }
 }
 
-void UsbWriteThread::sendData(const uint8_t* data, uint32_t size) {
+void UsbWriteThread::sendData(const uint8_t* data, size_t size) {
   ETL_ASSERT(size <= UsbMaxWriteSize, ETL_ERROR(0));
   uint32_t actual_size = 0;
 

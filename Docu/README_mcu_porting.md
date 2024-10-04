@@ -4,7 +4,7 @@ Controller Porting
 2. Convert to C++ project
 3. Compile project
 
-4. Copy App, Proto and Libraries folders
+4. Copy App and Libraries folders
 5. Add to source folders
 6. Add include paths
 7. Add definitions

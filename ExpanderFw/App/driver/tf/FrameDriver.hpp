@@ -8,8 +8,6 @@
 #ifndef DRIVER_TF_FRAMEDRIVER_HPP_
 #define DRIVER_TF_FRAMEDRIVER_HPP_
 
-#ifdef __cplusplus
-
 #include "common.hpp"
 #include "driver/tf/tfMsgTypes.hpp"
 
@@ -19,11 +17,15 @@ extern "C" {
 
 namespace driver::tf {
 
+typedef void (*SendCallback)(const uint8_t* data, size_t size);
 typedef int32_t (*TxCallback)(uint8_t* data, size_t max_size);
 typedef int32_t (*RxCallback)(const uint8_t* data, size_t size);
 
 class FrameDriver {
  public:
+ public:
+  constexpr static size_t TfSizeOverhead = TF_USE_SOF_BYTE + TF_ID_BYTES + TF_LEN_BYTES + 2 * TF_CKSUM_CUSTOM8;
+
   // Deleted copy constructor and assignment operator to enforce singleton
   FrameDriver(const FrameDriver&) = delete;
   FrameDriver& operator=(const FrameDriver&) = delete;
@@ -39,25 +41,19 @@ class FrameDriver {
   Status_t registerRxCallback(TfMsgType type, RxCallback callback);
   void callRxCallback(TfMsgType type, const uint8_t* data, size_t size);
 
-  // Forward data to tiny frame (downstream)
-  void receiveData(const uint8_t* data, size_t size);
+  void registerSendDataCallback(SendCallback callback);
+  void sendData(const uint8_t* data, size_t size);     // Forward data to usb (upstream)
+  void receiveData(const uint8_t* data, size_t size);  // Forward data to tf (downstream)
 
  private:
   FrameDriver();
 
   TinyFrame tf_;
-  TxCallback tx_callbacks_[static_cast<uint8_t>(TfMsgType::NumValues)] = {};
-  RxCallback rx_callbacks_[static_cast<uint8_t>(TfMsgType::NumValues)] = {};
+  SendCallback send_callback_ = nullptr;
+  TxCallback tx_callbacks_[static_cast<size_t>(TfMsgType::NumValues)] = {};
+  RxCallback rx_callbacks_[static_cast<size_t>(TfMsgType::NumValues)] = {};
 };
 
-extern "C" {
-#endif
-
-void FrameDriver_receiveData(const uint8_t* data, size_t size);
-
-#ifdef __cplusplus
-}  // extern "C"
 }  // namespace driver::tf
-#endif
 
 #endif /* DRIVER_TF_FRAMEDRIVER_HPP_ */

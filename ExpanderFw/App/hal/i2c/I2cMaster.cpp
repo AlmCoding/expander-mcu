@@ -124,6 +124,8 @@ I2cMaster::Space I2cMaster::getFreeSpace() {
 Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num) {
   uint32_t sts = TX_SUCCESS;
 
+  // TODO: Check for bad request (e.g. read size not too big)
+
   uint32_t free_slots = 0;
   sts = tx_queue_info_get(&pending_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
@@ -480,7 +482,7 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
 
   Request request = {};
   if (tx_queue_receive(&complete_queue_, &request, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("No cplt. requests to service [FAILED]");
+    DEBUG_ERROR("No cplt. request to service!");
     return Status_t::Error;
   }
 
@@ -489,11 +491,14 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
   info->status_code = request.status_code;
 
   if (request.status_code == RequestStatus::Complete) {
-    info->read_size = request.read_size;
-
-    if (request.read_size > 0) {
-      ETL_ASSERT(request.read_size <= max_size, ETL_ERROR(0));
+    if (request.read_size <= max_size) {
+      info->read_size = request.read_size;
       std::memcpy(read_data, data_buffer_ + request.read_start, request.read_size);
+
+    } else {
+      info->read_size = 0;
+      DEBUG_ERROR("Read size bigger than max size!");
+      status = Status_t::Error;
     }
 
     // Free buffer space
