@@ -8,3 +8,5 @@ ExpanderFw/TraceX/
 
 *.dtmp
 *.odt#
+
+ExpanderFw/App/git_info.hpp
