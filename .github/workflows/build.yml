@@ -72,7 +72,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: build
-    #if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Debug Git Reference
         run: 'echo "Git reference: ${{ github.ref }}"'
@@ -84,11 +86,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
+          path: ./artifacts
 
-      - name: Show folder tree
+      - name: Show Folder Contents
         run: |
           pwd
           ls -la
+          ls -la artifacts
+          ls -la artifacts/Release
 
       - name: Create Release
         id: create_release
@@ -98,14 +103,12 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ExpanderFw/Release/ExpanderFw.hex
+          asset_path: ./artifacts/Release/ExpanderFw.hex
           asset_name: ExpanderFw.hex
           asset_content_type: application/octet-stream
 
@@ -113,7 +116,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ExpanderFw/Release/ExpanderFw.bin
+          asset_path: ./artifacts/Release/ExpanderFw.bin
           asset_name: ExpanderFw.bin
           asset_content_type: application/octet-stream
 
@@ -121,6 +124,6 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ExpanderFw/Release/ExpanderFw.elf
+          asset_path: ./artifacts/Release/ExpanderFw.elf
           asset_name: ExpanderFw.elf
           asset_content_type: application/octet-stream
