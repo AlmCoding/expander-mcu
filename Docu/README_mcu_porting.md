@@ -12,14 +12,14 @@ Controller Porting
 	- Core/Src/main.c
 	- Core/Src/main.h
 	- AZURE_RTOS/App/app_azure_rtos.c
-	- Core/Src/tim.c
 	- Core/Inc/tim.h
 	- Core/Inc/i2c.h
 	- USBX/App/app_usbx_device.c
 	- USBX/App/app_usbx_device.h
-	- USBX/App/app_device_cdc.c
-9. Update linker file (for TraceX)
+	- USBX/App/app_device_cdc_amc.c
+9. Set compiler versions, warning settings and build steps
+10. Update linker file (for TraceX)
 
-ENABLE_RTT_DEBUG_OUTPUT
-SEGGER_RTT_MODE_DEFAULT SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
-						SEGGER_RTT_MODE_NO_BLOCK_SKIP
+ENABLE_RTT_DEBUG_OUTPUT  
+SEGGER_RTT_MODE_DEFAULT = SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL  
+SEGGER_RTT_MODE_DEFAULT = SEGGER_RTT_MODE_NO_BLOCK_SKIP
