@@ -108,7 +108,8 @@ VOID tx_application_define(VOID *first_unused_memory)
     if (status != TX_SUCCESS)
     {
       /* USER CODE BEGIN  App_ThreadX_Init_Error */
-      while (1) {
+      while(1)
+      {
       }
       /* USER CODE END  App_ThreadX_Init_Error */
     }
@@ -144,6 +145,7 @@ VOID tx_application_define(VOID *first_unused_memory)
 
     /* USER CODE END  MX_USBX_Device_Init_Success */
   }
+
 #else
 /*
  * Using dynamic memory allocation requires to apply some changes to the linker file.

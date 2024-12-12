@@ -52,12 +52,16 @@ Status_t I2cConfig::scheduleRequest(Request* request, uint32_t seq_num) {
   }
 
   uint32_t timing = 0;
-  if (request_.clock_freq == 100000) {  // 100 kHz
-    timing = 0x30909DEC;
+  if (request_.clock_freq == 10000) {  // 10 kHz
+    timing = 0x00000000;
+  } else if (request_.clock_freq == 40000) {  // 40 kHz
+    timing = 0xE0308FFD;
+  } else if (request_.clock_freq == 100000) {  // 100 kHz
+    timing = 0x608087CA;
   } else if (request_.clock_freq == 400000) {  // 400 kHz
-    timing = 0x00F07BFF;
+    timing = 0x10B040DC;
   } else if (request_.clock_freq == 1000000) {  // 1000 kHz
-    timing = 0x00701F6B;
+    timing = 0x00B030A2;
   } else {
     DEBUG_ERROR("Invalid clock_freq (%d) configuration!", request_.clock_freq);
     request_.status_code = RequestStatus::InvalidClockFreq;
@@ -69,9 +73,9 @@ Status_t I2cConfig::scheduleRequest(Request* request, uint32_t seq_num) {
 
   // ReInitialize I2c
   if (i2c_id_ == I2cId::I2c0) {
-    MX_I2C1_ReInit(timing, address_mode, request_.pullups_enabled);
+    MX_I2C1_ReInit(address_mode, request_.slave_addr, timing, request_.pullups_enabled);
   } else {
-    MX_I2C3_ReInit(timing, address_mode, request_.pullups_enabled);
+    MX_I2C3_ReInit(address_mode, request_.slave_addr, timing, request_.pullups_enabled);
   }
 
   request_.status_code = RequestStatus::Ok;

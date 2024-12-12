@@ -5,7 +5,7 @@ Controller Porting
 3. Compile project
 
 4. Copy App and Libraries folders
-5. Add to source folders
+5. Add to source folders (for debug and release config)
 6. Add include paths
 7. Add definitions
 8. Change user code sections

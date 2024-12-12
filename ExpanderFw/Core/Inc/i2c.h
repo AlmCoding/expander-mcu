@@ -44,8 +44,8 @@ void MX_I2C1_Init(void);
 void MX_I2C3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void MX_I2C1_ReInit(uint32_t timing, uint32_t address_mode, bool pullups_enabled);
-void MX_I2C3_ReInit(uint32_t timing, uint32_t address_mode, bool pullups_enabled);
+void MX_I2C1_ReInit(uint32_t address_mode, uint32_t slave_address, uint32_t timing, bool pullups_enabled);
+void MX_I2C3_ReInit(uint32_t address_mode, uint32_t slave_address, uint32_t timing, bool pullups_enabled);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -68,13 +68,16 @@ int32_t CtrlService::postCtrlRequest(ctrl_proto_CtrlMsg* msg) {
   request_id_ = msg->msg.ctrl_request.request_id;
 
   if (msg->msg.ctrl_request.get_device_info == true) {
+    DEBUG_INFO("Post device info request");
     service_device_info_ = true;
     status = 0;
 
   } else if (msg->msg.ctrl_request.reset_system == true) {
+    DEBUG_INFO("Reset system request");
     NVIC_SystemReset();
 
   } else if (msg->msg.ctrl_request.start_bootloader == true) {
+    DEBUG_INFO("Start bootloader request");
     startBootloader();
 
   } else {
@@ -112,6 +115,7 @@ int32_t CtrlService::serviceRequest(uint8_t* data, size_t max_size) {
     return -1;
   }
 
+  DEBUG_INFO("Service device info request [OK]");
   service_device_info_ = false;
   return stream.bytes_written;
 }

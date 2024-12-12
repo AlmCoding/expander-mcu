@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usb_drd_fs.h"
+#include "usb.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,6 +42,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
 static ULONG cdc_acm_interface_number;
 static ULONG cdc_acm_configuration_number;
 static UX_SLAVE_CLASS_CDC_ACM_PARAMETER cdc_acm_parameter;
@@ -73,6 +74,7 @@ UINT MX_USBX_Device_Init(VOID *memory_ptr)
   ULONG language_id_framework_length;
   UCHAR *string_framework;
   UCHAR *language_id_framework;
+
   UCHAR *pointer;
   TX_BYTE_POOL *byte_pool = (TX_BYTE_POOL*)memory_ptr;
 
@@ -211,7 +213,7 @@ static VOID USBX_APP_Device_Init(VOID)
   /* USER CODE END USB_Device_Init_PreTreatment_0 */
 
   /* initialize the device controller HAL driver */
-  MX_USB_DRD_FS_PCD_Init();
+  MX_USB_PCD_Init();
 
   /* USER CODE BEGIN USB_Device_Init_PreTreatment_1 */
   HAL_PCDEx_PMAConfig(&hpcd_USB_DRD_FS, 0x00, PCD_SNG_BUF, 0x14);

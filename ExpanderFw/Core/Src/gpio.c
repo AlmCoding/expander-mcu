@@ -33,9 +33,9 @@
 /* USER CODE END 1 */
 
 /** Configure pins
-     PA13 (JTMS/SWDIO)   ------> DEBUG_JTMS-SWDIO
-     PA14 (JTCK/SWCLK)   ------> DEBUG_JTCK-SWCLK
-     PB3 (JTDO/TRACESWO)   ------> DEBUG_JTDO-SWO
+     PA13(JTMS/SWDIO)   ------> DEBUG_JTMS-SWDIO
+     PA14(JTCK/SWCLK)   ------> DEBUG_JTCK-SWCLK
+     PB3(JTDO/TRACESWO)   ------> DEBUG_JTDO-SWO
 */
 void MX_GPIO_Init(void)
 {
@@ -43,25 +43,25 @@ void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LED_HRTB_NUCLEO_Pin|LED_HRTB_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED_HRTB_GPIO_Port, LED_HRTB_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PAPin PAPin */
-  GPIO_InitStruct.Pin = LED_HRTB_NUCLEO_Pin|LED_HRTB_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PBPin PBPin PBPin */
+  /*Configure GPIO pins : HW_VERSION_0_Pin HW_VERSION_1_Pin HW_VERSION_2_Pin */
   GPIO_InitStruct.Pin = HW_VERSION_0_Pin|HW_VERSION_1_Pin|HW_VERSION_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LED_HRTB_Pin */
+  GPIO_InitStruct.Pin = LED_HRTB_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_HRTB_GPIO_Port, &GPIO_InitStruct);
 
 }
 
