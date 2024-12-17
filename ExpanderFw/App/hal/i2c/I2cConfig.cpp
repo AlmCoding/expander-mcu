@@ -53,15 +53,15 @@ Status_t I2cConfig::scheduleRequest(Request* request, uint32_t seq_num) {
 
   uint32_t timing = 0;
   if (request_.clock_freq == 10000) {  // 10 kHz
-    timing = 0x00000000;
+    timing = 0x6010C7FF;
   } else if (request_.clock_freq == 40000) {  // 40 kHz
-    timing = 0xE0308FFD;
+    timing = 0xC000102B;
   } else if (request_.clock_freq == 100000) {  // 100 kHz
-    timing = 0x608087CA;
+    timing = 0x00707CBB;
   } else if (request_.clock_freq == 400000) {  // 400 kHz
-    timing = 0x10B040DC;
+    timing = 0x00300F38;
   } else if (request_.clock_freq == 1000000) {  // 1000 kHz
-    timing = 0x00B030A2;
+    timing = 0x00100413;
   } else {
     DEBUG_ERROR("Invalid clock_freq (%d) configuration!", request_.clock_freq);
     request_.status_code = RequestStatus::InvalidClockFreq;
