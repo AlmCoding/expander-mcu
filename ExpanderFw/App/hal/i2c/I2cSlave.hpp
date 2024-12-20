@@ -77,7 +77,7 @@ class I2cSlave {
   int32_t handleMasterRead();
   void writeCompleteCb();
   void readCompleteCb();
-  Status_t notifyAccessRequest();
+  Status_t notifyAccessRequest(RequestStatus status_code);
 
   I2cId i2c_id_;
   I2C_HandleTypeDef* i2c_handle_;

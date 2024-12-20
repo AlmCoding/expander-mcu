@@ -65,6 +65,13 @@ Status_t I2cSlave::init() {
   memset(data_buffer_, 0, sizeof(data_buffer_));
   memset(temp_buffer_, 0, sizeof(temp_buffer_));
 
+  mem_addr_width_ = MemAddrWidth::TwoByte;
+  mem_address_ = -1;
+
+  master_write_ongoing_ = false;
+  master_read_ongoing_ = false;
+  request_ = {};
+
   access_id_ = 0;
   seqence_number_ = 0;
 
@@ -260,7 +267,7 @@ void I2cSlave::writeCompleteCb() {  // Master write, slave read
 
   // return;  // Suppress notification (for testing only)
 
-  if (notifyAccessRequest() == Status_t::Ok) {
+  if (notifyAccessRequest(RequestStatus::Complete) == Status_t::Ok) {
     DEBUG_INFO("Notify write-access (access id: %d, total size: %d) [OK]", access_id_, rx_total);
   } else {
     DEBUG_ERROR("Notify write-access (access id: %d, total size: %d) [FAILED]", access_id_, rx_total);
@@ -272,7 +279,7 @@ void I2cSlave::readCompleteCb() {  // Master read, slave write
 
   // return;  // Suppress notification (for testing only)
 
-  if (notifyAccessRequest() == Status_t::Ok) {
+  if (notifyAccessRequest(RequestStatus::Complete) == Status_t::Ok) {
     DEBUG_INFO("Notify read-access (access id: %d, size: %d) [OK]", access_id_, tx_cnt);
   } else {
     DEBUG_ERROR("Notify read-access (access id: %d, size: %d) [FAILED]", access_id_, tx_cnt);
@@ -282,16 +289,16 @@ void I2cSlave::readCompleteCb() {  // Master read, slave write
   mem_address_ = -1;
 }
 
-Status_t I2cSlave::notifyAccessRequest() {
+Status_t I2cSlave::notifyAccessRequest(RequestStatus status_code) {
   Status_t status = Status_t::Ok;
+
+  request_.status_code = status_code;
+  access_id_++;
+  request_.access_id = access_id_;
 
   uint32_t free_slots = 0;
   uint32_t sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
-
-  // Increment access id
-  access_id_++;
-  request_.access_id = access_id_;
 
   // Check request queue space
   if (free_slots == 0) {

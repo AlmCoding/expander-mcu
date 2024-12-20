@@ -70,6 +70,7 @@ Status_t I2cMaster::init() {
   data_end_ = 0;
 
   request_ = {};
+  transfer_state_ = TransferState::Write;
   request_ongoing_ = false;
   sequence_state_ = {};
 
@@ -124,7 +125,7 @@ I2cMaster::Space I2cMaster::getFreeSpace() {
 Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num) {
   uint32_t sts = TX_SUCCESS;
 
-  // TODO: Check for bad request (e.g. read size not too big)
+  // TODO: Check for bad request (e.g. read size too big)
 
   uint32_t free_slots = 0;
   sts = tx_queue_info_get(&pending_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
@@ -309,16 +310,24 @@ Status_t I2cMaster::startRequest() {
     // Request taken from queue
     if ((request_.write_size > 0) && (request_.read_size == 0)) {
       // Write only
+      transfer_state_ = TransferState::Write;
       status = startWrite();
+
     } else if ((request_.read_size > 0) && (request_.write_size == 0)) {
       // Read only
+      transfer_state_ = TransferState::Read;
       status = startRead();
-    } else if ((request_.read_size > 0) && (request_.write_size <= 2) && (sequence_state_.ongoing == false)) {
-      // Read register
-      status = startReadReg();
+      /*
+        } else if ((request_.read_size > 0) && (request_.write_size <= 2) && (sequence_state_.ongoing == false)) {
+          // Read register
+          transfer_state_ = TransferState::Write;
+          status = startReadReg();
+      */
     } else if ((request_.read_size > 0) && (request_.write_size > 0)) {
-      // Write + read
+      // Write and read
+      transfer_state_ = TransferState::Write;
       status = startWrite();
+
     } else {
       DEBUG_ERROR("Start request (req: %d) [FAILED]", request_.request_id);
       status = Status_t::Error;
@@ -358,6 +367,7 @@ Status_t I2cMaster::startWrite() {
                                                data_buffer_ + request_.write_start,         // Data
                                                request_.write_size,                         // Length
                                                xfer_options);
+
   if (hal_status == HAL_OK) {
     DEBUG_INFO("Start write (req: %d) [OK]", request_.request_id);
     status = Status_t::Ok;
@@ -444,17 +454,39 @@ void I2cMaster::writeCompleteCb() {
 
   } else {
     DEBUG_INFO("Write cplt (req: %d) [OK]", request_.request_id);
-    complete();
+    complete(RequestStatus::Complete);
   }
 }
 
 void I2cMaster::readCompleteCb() {
   DEBUG_INFO("Read cplt (req: %d) [OK]", request_.request_id);
-  complete();
+  complete(RequestStatus::Complete);
 }
 
-void I2cMaster::complete() {
-  request_.status_code = RequestStatus::Complete;
+void I2cMaster::errorCb() {
+  DEBUG_ERROR("Error detected (req: %d) [OK]", request_.request_id);
+
+  uint32_t tx_cnt = __HAL_DMA_GET_COUNTER(i2c_handle_->hdmatx);
+  uint32_t rx_cnt = __HAL_DMA_GET_COUNTER(i2c_handle_->hdmarx);
+
+  if (request_ongoing_ == false) {
+    // Ignore errors in idle state
+    return;
+  }
+
+  if (transfer_state_ == TransferState::Write) {
+    request_.nack_byte_number = request_.write_size - tx_cnt;
+
+  } else {
+    request_.nack_byte_number = request_.read_size - rx_cnt;
+    request_.nack_byte_number += request_.write_size;  // To determine if NACK occurred during write or read transfer
+  }
+
+  complete(RequestStatus::SlaveBusy);
+}
+
+void I2cMaster::complete(RequestStatus status_code) {
+  request_.status_code = status_code;
 
   // Add request to complete_queue
   if (tx_queue_send(&complete_queue_, &request_, TX_NO_WAIT) != TX_SUCCESS) {
@@ -489,23 +521,34 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
   info->sequence_number = seqence_number_;
   info->request_id = request.request_id;
   info->status_code = request.status_code;
+  info->read_size = 0;
 
-  if (request.status_code == RequestStatus::Complete) {
-    if (request.read_size <= max_size) {
-      info->read_size = request.read_size;
-      std::memcpy(read_data, data_buffer_ + request.read_start, request.read_size);
+  if (request.read_size > max_size) {
+    DEBUG_ERROR("Read size bigger than max size!");
+    status = Status_t::Error;
 
-    } else {
-      info->read_size = 0;
-      DEBUG_ERROR("Read size bigger than max size!");
-      status = Status_t::Error;
+  } else if (request.status_code == RequestStatus::Complete) {
+    info->read_size = request.read_size;
+    std::memcpy(read_data, data_buffer_ + request.read_start, request.read_size);
+
+    // Free buffer space
+    freeBufferSpace(&request);
+
+  } else if (request.status_code == RequestStatus::SlaveBusy) {
+    // Calculate actual read size (if early NACK occurred)
+    int32_t read_size = request.nack_byte_number - request.write_size;
+
+    if (read_size > 0) {
+      info->read_size = static_cast<uint16_t>(read_size);
+      std::memcpy(read_data, data_buffer_ + request.read_start, read_size);
     }
 
     // Free buffer space
     freeBufferSpace(&request);
 
   } else {
-    info->read_size = 0;
+    DEBUG_ERROR("Unhandled request status!");
+    status = Status_t::Error;
   }
 
   uint32_t sts_pend, sts_cplt;

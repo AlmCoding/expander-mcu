@@ -23,6 +23,18 @@
 
 namespace hal::i2c {
 
+I2cId I2cIrq::getId(I2C_HandleTypeDef* hi2c) {
+  for (size_t i = 0; i < I2cCount; i++) {
+    if (i2c_master_[i]->i2c_handle_ == hi2c) {
+      return i2c_master_[i]->i2c_id_;
+    }
+  }
+
+  DEBUG_ERROR("Invalid I2C handle!");
+  ETL_ASSERT(false, ETL_ERROR(0));
+  return I2cId::I2c0;
+}
+
 void I2cIrq::registerI2cMaster(I2cMaster* i2c_master) {
   ETL_ASSERT(i2c_master != nullptr, ETL_ERROR(0));
   size_t idx = magic_enum::enum_integer(i2c_master->i2c_id_);
@@ -61,6 +73,13 @@ void I2cIrq::masterReadCpltCb(I2C_HandleTypeDef* hi2c) {
   }
 }
 
+void I2cIrq::masterErrorCb(I2C_HandleTypeDef* hi2c) {
+  I2cMaster* master = getMaster(hi2c);
+  if (master != nullptr) {
+    master->errorCb();
+  }
+}
+
 void I2cIrq::registerI2cSlave(I2cSlave* i2c_slave) {
   ETL_ASSERT(i2c_slave != nullptr, ETL_ERROR(0));
   size_t idx = magic_enum::enum_integer(i2c_slave->i2c_id_);
@@ -88,7 +107,7 @@ I2cSlave* I2cIrq::getSlave(I2C_HandleTypeDef* hi2c) {
 void I2cIrq::enableSlaveListen(I2C_HandleTypeDef* hi2c) {
   HAL_StatusTypeDef hal_status = HAL_I2C_EnableListen_IT(hi2c);
   if (hal_status != HAL_OK) {
-    DEBUG_ERROR("Enable I2cSlave(x) listen [FAILED]");
+    DEBUG_ERROR("Enable I2cSlave(%d) listen [FAILED]", magic_enum::enum_integer(getId(hi2c)));
   }
   // ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
 }
@@ -96,7 +115,7 @@ void I2cIrq::enableSlaveListen(I2C_HandleTypeDef* hi2c) {
 void I2cIrq::disableSlaveListen(I2C_HandleTypeDef* hi2c) {
   HAL_StatusTypeDef hal_status = HAL_I2C_DisableListen_IT(hi2c);
   if (hal_status != HAL_OK) {
-    DEBUG_ERROR("Disable I2cSlave(x) listen [FAILED]");
+    DEBUG_ERROR("Disable I2cSlave(%d) listen [FAILED]", magic_enum::enum_integer(getId(hi2c)));
   }
   // ETL_ASSERT(hal_status == HAL_OK, ETL_ERROR(0));
 }
@@ -186,25 +205,10 @@ void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef* /*hi2c*/) {}
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef* hi2c) {
   uint32_t error = HAL_I2C_GetError(hi2c);
 
+  DEBUG_ERROR("Error callback I2c(%d) (error: %d)", magic_enum::enum_integer(I2cIrq::getInstance().getId(hi2c)), error);
+
   if (error == HAL_I2C_ERROR_AF) {
-    return;
-  }
-
-  DEBUG_ERROR("Error callback (error: %d)", error);
-
-  switch (error) {
-    case HAL_I2C_ERROR_NONE:
-    case HAL_I2C_ERROR_BERR:
-    case HAL_I2C_ERROR_ARLO:
-    case HAL_I2C_ERROR_AF:
-    case HAL_I2C_ERROR_OVR:
-    case HAL_I2C_ERROR_DMA:
-    case HAL_I2C_ERROR_TIMEOUT:
-    case HAL_I2C_ERROR_SIZE:
-    case HAL_I2C_ERROR_DMA_PARAM:
-    case HAL_I2C_ERROR_INVALID_PARAM:
-    default:
-      break;
+    I2cIrq::getInstance().masterErrorCb(hi2c);
   }
 }
 

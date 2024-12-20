@@ -30,10 +30,13 @@ class I2cIrq {
     return instance;
   }
 
+  I2cId getId(I2C_HandleTypeDef* hi2c);
+
   void registerI2cMaster(I2cMaster* i2c_master);
   I2cMaster* getMaster(I2C_HandleTypeDef* hi2c);
   void masterWriteCpltCb(I2C_HandleTypeDef* hi2c);
   void masterReadCpltCb(I2C_HandleTypeDef* hi2c);
+  void masterErrorCb(I2C_HandleTypeDef* hi2c);
 
   void registerI2cSlave(I2cSlave* i2c_slave);
   I2cSlave* getSlave(I2C_HandleTypeDef* hi2c);

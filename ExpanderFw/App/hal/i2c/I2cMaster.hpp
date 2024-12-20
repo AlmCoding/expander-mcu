@@ -40,11 +40,11 @@ class I2cMaster {
     uint32_t slave_addr;
     uint16_t write_size;
     uint16_t read_size;
-    size_t write_start;     // Start position of write data in data buffer
-    size_t read_start;      // Start position of read section in data buffer
-    uint16_t sequence_id;   // Sequence of read/writes with restart
-    uint16_t sequence_idx;  // Index of current request in sequence
-    uint32_t place_holder_word8 = 0;
+    size_t write_start;         // Start position of write data in data buffer
+    size_t read_start;          // Start position of read section in data buffer
+    uint16_t sequence_id;       // Sequence of read/writes with restart
+    uint16_t sequence_idx;      // Index of current request in sequence
+    uint32_t nack_byte_number;  // Byte number where the NACK occurred
   } Request;
   static_assert((sizeof(Request) % sizeof(uint32_t)) == 0, "ThreadX queue messages must be a multiple of 4 bytes!");
   static_assert(((sizeof(Request) == 4) || (sizeof(Request) == 8) || (sizeof(Request) == 16) ||
@@ -59,6 +59,7 @@ class I2cMaster {
     uint16_t queue_space;
     uint16_t buffer_space1;
     uint16_t buffer_space2;
+    uint32_t nack_byte_number;
   } StatusInfo;
 
   I2cMaster(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
@@ -72,6 +73,11 @@ class I2cMaster {
   Status_t serviceStatus(StatusInfo* info, uint8_t* read_data, size_t max_size);
 
  private:
+  enum class TransferState {
+    Write = 0,
+    Read,
+  };
+
   typedef struct {
     size_t end_to_back;     // [data_end_ to buffer end[
     size_t front_to_start;  // [0 to data_start_[
@@ -95,7 +101,8 @@ class I2cMaster {
   Status_t startRead();
   void writeCompleteCb();
   void readCompleteCb();
-  void complete();
+  void errorCb();
+  void complete(RequestStatus status_code);
   void freeBufferSpace(Request* request);
 
   I2cId i2c_id_;
@@ -113,6 +120,7 @@ class I2cMaster {
 
   Request request_ = {};
   bool request_ongoing_ = false;
+  TransferState transfer_state_ = TransferState::Write;
   SequenceState sequence_state_ = {};
 
   uint32_t seqence_number_ = 0;
