@@ -296,6 +296,7 @@ Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_p
   msg->msg.master_status.request_id = info.request_id;
   msg->msg.master_status.status_code = convertMasterStatus(info.status_code);
   msg->msg.master_status.read_data.size = info.read_size;
+  msg->msg.master_status.nack_idx = info.nack_byte_number;
   msg->msg.master_status.queue_space = info.queue_space;
   msg->msg.master_status.buffer_space1 = info.buffer_space1;
   msg->msg.master_status.buffer_space2 = info.buffer_space2;
@@ -351,7 +352,8 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
     size_t write_size = info.request.write_size;
     if (read_size > sizeof(msg->msg.slave_notification.read_data.bytes) ||
         write_size > sizeof(msg->msg.slave_notification.write_data.bytes)) {
-      DEBUG_ERROR("Srv slave(%d) notification (access id: %d). Read/write size too big!", slave_id, info.request.request_id);
+      DEBUG_ERROR("Srv slave(%d) notification (access id: %d). Read/write size too big!", slave_id,
+                  info.request.request_id);
       return Status_t::Error;
     }
 
@@ -412,7 +414,9 @@ i2c_proto_I2cStatusCode I2cService::convertMasterStatus(hal::i2c::I2cMaster::Req
     case hal::i2c::I2cMaster::RequestStatus::Complete:
       return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_SUCCESS;
     case hal::i2c::I2cMaster::RequestStatus::SlaveBusy:
-      return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_SLAVE_NO_ACK;
+      return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_SLAVE_BUSY;
+    case hal::i2c::I2cMaster::RequestStatus::SlaveNack:
+      return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_SLAVE_NACK;
     case hal::i2c::I2cMaster::RequestStatus::BadRequest:
       return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_BAD_REQUEST;
     case hal::i2c::I2cMaster::RequestStatus::InterfaceError:
@@ -432,7 +436,7 @@ i2c_proto_I2cStatusCode I2cService::convertSlaveStatus(hal::i2c::I2cSlave::Reque
     case hal::i2c::I2cSlave::RequestStatus::Complete:
       return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_SUCCESS;
     case hal::i2c::I2cSlave::RequestStatus::SlaveBusy:
-      return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_SLAVE_NO_ACK;
+      return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_SLAVE_BUSY;
     case hal::i2c::I2cSlave::RequestStatus::BadRequest:
       return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_BAD_REQUEST;
     case hal::i2c::I2cSlave::RequestStatus::InterfaceError:

@@ -30,6 +30,7 @@ class I2cMaster {
     Ongoing,
     Complete,
     SlaveBusy,
+    SlaveNack,
     BadRequest,
     InterfaceError,
   };
