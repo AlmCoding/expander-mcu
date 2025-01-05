@@ -998,6 +998,12 @@ void HAL_DMA_IRQHandler(DMA_HandleTypeDef *const hdma)
         /* Disable the suspend transfer interrupt */
         __HAL_DMA_DISABLE_IT(hdma, DMA_IT_SUSP);
 
+        if (hdma->XferAbortCallback != NULL)
+        {
+          /* Transfer abort callback */
+          hdma->XferAbortCallback(hdma);
+        }
+
         /* Reset the channel internal state and reset the FIFO */
         hdma->Instance->CCR |= DMA_CCR_RESET;
 
@@ -1018,11 +1024,11 @@ void HAL_DMA_IRQHandler(DMA_HandleTypeDef *const hdma)
         __HAL_UNLOCK(hdma);
 
         /* Check transfer abort callback */
-        if (hdma->XferAbortCallback != NULL)
-        {
-          /* Transfer abort callback */
-          hdma->XferAbortCallback(hdma);
-        }
+        //if (hdma->XferAbortCallback != NULL)
+        //{
+        //  /* Transfer abort callback */
+        //  hdma->XferAbortCallback(hdma);
+        //}
 
         return;
       }

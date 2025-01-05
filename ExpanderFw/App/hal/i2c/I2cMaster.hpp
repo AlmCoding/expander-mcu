@@ -41,11 +41,11 @@ class I2cMaster {
     uint32_t slave_addr;
     uint16_t write_size;
     uint16_t read_size;
-    size_t write_start;         // Start position of write data in data buffer
-    size_t read_start;          // Start position of read section in data buffer
-    uint16_t sequence_id;       // Sequence of read/writes with restart
-    uint16_t sequence_idx;      // Index of current request in sequence
-    uint32_t nack_byte_number;  // Byte number where the NACK occurred
+    size_t write_start;      // Start position of write data in data buffer
+    size_t read_start;       // Start position of read section in data buffer
+    uint16_t sequence_id;    // Sequence of read/writes with restart
+    uint16_t sequence_idx;   // Index of current request in sequence
+    uint32_t nack_byte_idx;  // Index where the NACK occurred
   } Request;
   static_assert((sizeof(Request) % sizeof(uint32_t)) == 0, "ThreadX queue messages must be a multiple of 4 bytes!");
   static_assert(((sizeof(Request) == 4) || (sizeof(Request) == 8) || (sizeof(Request) == 16) ||

@@ -2,7 +2,7 @@
 #include <avr/interrupt.h>
 
 #define SLAVE_ADDRESS 0x03
-#define NACK_AFTER_BYTES 2 // Number of bytes to ACK before sending a NACK
+#define NACK_AT_BYTE 2 // Number of bytes to ACK before sending a NACK
 
 volatile uint8_t byteCount = 0;
 bool inProgress = false;
@@ -42,12 +42,16 @@ ISR(TWI_vect) {
   switch (status) {
     case 0x60: // SLA+W received, ACK sent
       byteCount = 0; // Reset byte count on new transmission
-      TWCR = (1 << TWEN) | (1 << TWEA) | (1 << TWIE) | (1 << TWINT);
+      if (NACK_AT_BYTE == 0) {
+       TWCR = (1 << TWEN) | (1 << TWIE) | (1 << TWINT); // Disable ACK, send NACK for the next byte
+      } else {
+       TWCR = (1 << TWEN) | (1 << TWEA) | (1 << TWIE) | (1 << TWINT);
+      }
       break;
 
     case 0x80: // Data byte received, ACK sent
       byteCount++;
-      if (byteCount >= NACK_AFTER_BYTES) {
+      if (byteCount >= NACK_AT_BYTE) {
         TWCR = (1 << TWEN) | (1 << TWIE) | (1 << TWINT); // Disable ACK, send NACK for the next byte
         //Serial.println("Sending immediate NACK...");
       } else {

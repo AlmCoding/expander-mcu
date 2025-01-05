@@ -451,7 +451,6 @@ Status_t I2cMaster::startRead() {
 void I2cMaster::writeCompleteCb() {
   if (request_.read_size > 0) {
     startRead();
-
   } else {
     DEBUG_INFO("Write cplt (req: %d) [OK]", request_.request_id);
     complete(RequestStatus::Complete);
@@ -464,25 +463,34 @@ void I2cMaster::readCompleteCb() {
 }
 
 void I2cMaster::errorCb() {
-  DEBUG_ERROR("Error detected (req: %d) [OK]", request_.request_id);
-
-  uint32_t tx_cnt = __HAL_DMA_GET_COUNTER(i2c_handle_->hdmatx);
-  uint32_t rx_cnt = __HAL_DMA_GET_COUNTER(i2c_handle_->hdmarx);
+  DEBUG_INFO("Error detected (req: %d) [OK]", request_.request_id);
 
   if (request_ongoing_ == false) {
     // Ignore errors in idle state
     return;
   }
 
+  // https://www.st.com/resource/en/reference_manual/rm0481-stm32h563h573-and-stm32h562-armbased-32bit-mcus-stmicroelectronics.pdf
+
   if (transfer_state_ == TransferState::Write) {
-    request_.nack_byte_number = request_.write_size - tx_cnt;
+    uint32_t remaining_cbr = (i2c_handle_->hdmatx->Instance->CBR1 & DMA_CBR1_BNDT);
+    uint32_t remaining_fifo = (i2c_handle_->hdmatx->Instance->CSR & DMA_CSR_FIFOL_Msk) >> DMA_CSR_FIFOL_Pos;
+
+    if (remaining_cbr == request_.write_size) {
+      request_.nack_byte_idx = 0;  // Not needed
+      complete(RequestStatus::SlaveBusy);
+      return;
+    }
+
+    uint32_t tx_cnt = request_.write_size - remaining_cbr - remaining_fifo - 1;
+    request_.nack_byte_idx = tx_cnt - 1;
+    DEBUG_INFO("Byte NACK (idx: %d) by slave!", request_.nack_byte_idx);
 
   } else {
-    request_.nack_byte_number = request_.read_size - rx_cnt;
-    request_.nack_byte_number += request_.write_size;  // To determine if NACK occurred during write or read transfer
+    ETL_ASSERT(false, ETL_ERROR(0));
   }
 
-  complete(RequestStatus::SlaveBusy);
+  complete(RequestStatus::SlaveNack);
 }
 
 void I2cMaster::complete(RequestStatus status_code) {
@@ -531,24 +539,21 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
     info->read_size = request.read_size;
     std::memcpy(read_data, data_buffer_ + request.read_start, request.read_size);
 
-    // Free buffer space
-    freeBufferSpace(&request);
+  } else if (request.status_code == RequestStatus::SlaveNack) {
+    // No read data available (because write got terminated)
 
   } else if (request.status_code == RequestStatus::SlaveBusy) {
-    // Calculate actual read size (if early NACK occurred)
-    int32_t read_size = request.nack_byte_number - request.write_size;
-
-    if (read_size > 0) {
-      info->read_size = static_cast<uint16_t>(read_size);
-      std::memcpy(read_data, data_buffer_ + request.read_start, read_size);
-    }
-
-    // Free buffer space
-    freeBufferSpace(&request);
+    // No read data available (because slave is busy)
 
   } else {
     DEBUG_ERROR("Unhandled request status!");
     status = Status_t::Error;
+  }
+
+  if (request.status_code != RequestStatus::NoSpace &&  //
+      request.status_code != RequestStatus::BadRequest) {
+    // Free buffer space
+    freeBufferSpace(&request);
   }
 
   uint32_t sts_pend, sts_cplt;
