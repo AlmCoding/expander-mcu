@@ -2,7 +2,7 @@
 #include <avr/interrupt.h>
 
 #define SLAVE_ADDRESS 0x03
-#define NACK_AT_BYTE 2 // Number of bytes to ACK before sending a NACK
+#define NACK_AT_BYTE 3 // Number of bytes to ACK before sending a NACK
 
 volatile uint8_t byteCount = 0;
 bool inProgress = false;

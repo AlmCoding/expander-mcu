@@ -56,11 +56,11 @@ class I2cMaster {
     uint32_t sequence_number;
     uint32_t request_id;
     RequestStatus status_code;
+    uint32_t nack_byte_idx;
     uint16_t read_size;
     uint16_t queue_space;
     uint16_t buffer_space1;
     uint16_t buffer_space2;
-    uint32_t nack_byte_number;
   } StatusInfo;
 
   I2cMaster(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);

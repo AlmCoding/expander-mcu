@@ -295,8 +295,8 @@ Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_p
 
   msg->msg.master_status.request_id = info.request_id;
   msg->msg.master_status.status_code = convertMasterStatus(info.status_code);
+  msg->msg.master_status.nack_idx = info.nack_byte_idx;
   msg->msg.master_status.read_data.size = info.read_size;
-  msg->msg.master_status.nack_idx = info.nack_byte_number;
   msg->msg.master_status.queue_space = info.queue_space;
   msg->msg.master_status.buffer_space1 = info.buffer_space1;
   msg->msg.master_status.buffer_space2 = info.buffer_space2;

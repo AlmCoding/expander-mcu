@@ -529,6 +529,7 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
   info->sequence_number = seqence_number_;
   info->request_id = request.request_id;
   info->status_code = request.status_code;
+  info->nack_byte_idx = request.nack_byte_idx;
   info->read_size = 0;
 
   if (request.read_size > max_size) {
