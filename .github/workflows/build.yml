@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - main
-      - 'V*.*.*'
+      - 'release/v*.*.*'
     tags:
       - 'V*.*.*'
   pull_request:
     branches:
       - main
-      - 'V*.*.*'
+      - 'release/v*.*.*'
 
 permissions:
   contents: write
