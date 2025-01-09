@@ -546,6 +546,9 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
   } else if (request.status_code == RequestStatus::SlaveBusy) {
     // No read data available (because slave is busy)
 
+  } else if (request.status_code == RequestStatus::NoSpace) {
+    // No read data available (because request was not processed)
+
   } else {
     DEBUG_ERROR("Unhandled request status!");
     status = Status_t::Error;

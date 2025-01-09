@@ -20,7 +20,7 @@ namespace hal::i2c {
 class I2cMaster {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
-  constexpr static size_t DataBufferSize = 64 + 1;
+  constexpr static size_t DataBufferSize = 512 + 1;
 
  public:
   enum class RequestStatus {

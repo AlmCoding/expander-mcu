@@ -84,13 +84,7 @@ void FrameDriver::sendData(const uint8_t* data, size_t size) {
 }
 
 void FrameDriver::receiveData(const uint8_t* data, size_t size) {
-  util::Stopwatch stopwatch{};
-  stopwatch.start();
-
   TF_Accept(&tf_, data, size);
-
-  stopwatch.stop();
-  DEBUG_INFO("USB rx: %d us", stopwatch.time());
 }
 
 TF_Result typeCallback(TinyFrame* /*tf*/, TF_Msg* msg) {

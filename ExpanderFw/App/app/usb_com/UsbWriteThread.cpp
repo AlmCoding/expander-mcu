@@ -101,14 +101,26 @@ void UsbWriteThread::serviceUpstream(os::msg::BaseMsg* msg) {
 }
 
 void UsbWriteThread::sendData(const uint8_t* data, size_t size) {
-  ETL_ASSERT(size <= UsbMaxWriteSize, ETL_ERROR(0));
+  util::Stopwatch stopwatch{};
+  uint32_t total_size = size;
   uint32_t actual_size = 0;
+  stopwatch.start();
 
-  uint32_t status = ux_device_class_cdc_acm_write(cdc_acm_, const_cast<uint8_t*>(data), size, &actual_size);
+  while (total_size > 0) {
+    uint32_t chunk_size = (total_size > UsbMaxWriteSize) ? UsbMaxWriteSize : total_size;
+    uint32_t status = ux_device_class_cdc_acm_write(cdc_acm_, const_cast<uint8_t*>(data), chunk_size, &actual_size);
 
-  if ((status != UX_SUCCESS) || (actual_size != size)) {
-    DEBUG_ERROR("Usb send data (size: %d) [FAILED]", size);
+    if ((status != UX_SUCCESS) || (actual_size != chunk_size)) {
+      DEBUG_ERROR("Usb send data (size: %d) [FAILED]", chunk_size);
+      ETL_ASSERT(false, ETL_ERROR(0));
+    }
+
+    total_size -= chunk_size;
+    data += chunk_size;
   }
+
+  stopwatch.stop();
+  DEBUG_INFO("Send data upstream (size: %d, time: %d us) [OK]", size, stopwatch.time());
 }
 
 int32_t UsbWriteThread::postRequest_cb(const uint8_t* data, size_t size) {

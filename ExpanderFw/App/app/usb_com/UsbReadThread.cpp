@@ -54,6 +54,7 @@ void UsbReadThread::execute(uint32_t /*thread_input*/) {
       ux_device_class_cdc_acm_read(cdc_acm_, usb_read_buffer_, sizeof(usb_read_buffer_), &actual_length);
 
       if (actual_length > 0) {
+        DEBUG_INFO("Service downstream (size: %d) [...]", actual_length);
         stopwatch.start();
 #ifdef DIRECT_ECHO_LOOP
         UsbWriteThread::sendData(usb_read_buffer_, actual_length);
