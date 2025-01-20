@@ -8,6 +8,7 @@
 #include "main.h"
 #include "etl/error_handler.h"
 #include "os/builder.hpp"
+#include "util/boot.hpp"
 #include "util/debug.hpp"
 #include "util/time.hpp"
 
@@ -38,6 +39,12 @@ int main(void) {
   // Init timebase
   util::initTimebase();
   DEBUG_INFO("Init Timebase [OK]");
+
+  // Check if bootloader is requested
+  if (util::isBootloaderRequested() == true) {
+    DEBUG_INFO("Starting bootloader [...]");
+    util::startBootloader();
+  }
 
   // Enter operating system
   os::enterOs();

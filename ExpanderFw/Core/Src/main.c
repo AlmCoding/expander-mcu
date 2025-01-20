@@ -23,6 +23,7 @@
 #include "i2c.h"
 #include "icache.h"
 #include "memorymap.h"
+#include "ramcfg.h"
 #include "tim.h"
 #include "usb.h"
 #include "gpio.h"
@@ -100,6 +101,7 @@ int main(void)
   MX_I2C1_Init();
   MX_I2C3_Init();
   MX_TIM2_Init();
+  MX_RAMCFG_Init();
   /* USER CODE BEGIN 2 */
 #ifdef RENAME_CUBEMX_MAIN
   return;

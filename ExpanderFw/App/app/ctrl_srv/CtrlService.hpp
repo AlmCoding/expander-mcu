@@ -27,8 +27,6 @@ class CtrlService {
  private:
   int32_t postCtrlRequest(ctrl_proto_CtrlMsg* msg);
 
-  void startBootloader();
-
   app::ctrl::RequestSrvCallback request_service_cb_ = nullptr;
   uint32_t seqence_number_ = 0;
 

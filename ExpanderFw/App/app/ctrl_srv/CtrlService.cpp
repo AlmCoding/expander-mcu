@@ -13,6 +13,7 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "proto_c/ctrl.pb.h"
+#include "util/boot.hpp"
 #include "util/debug.hpp"
 
 #define DEBUG_ENABLE_CTRL_SERVICE 1
@@ -78,7 +79,8 @@ int32_t CtrlService::postCtrlRequest(ctrl_proto_CtrlMsg* msg) {
 
   } else if (msg->msg.ctrl_request.start_bootloader == true) {
     DEBUG_INFO("Start bootloader request");
-    startBootloader();
+    util::requestBootloader();
+    NVIC_SystemReset();
 
   } else {
     DEBUG_ERROR("Invalid control request!");
@@ -105,7 +107,7 @@ int32_t CtrlService::serviceRequest(uint8_t* data, size_t max_size) {
   ctrl_msg.msg.device_info.firmware_version_minor = info.firmware_version_minor;
   ctrl_msg.msg.device_info.firmware_version_patch = info.firmware_version_patch;
   strncpy(ctrl_msg.msg.device_info.git_hash, info.git_hash, sizeof(ctrl_msg.msg.device_info.git_hash));
-  
+
   /* Create a stream that will write to our buffer. */
   pb_ostream_t stream = pb_ostream_from_buffer(data, max_size);
 
@@ -118,46 +120,6 @@ int32_t CtrlService::serviceRequest(uint8_t* data, size_t max_size) {
   DEBUG_INFO("Service device info request [OK]");
   service_device_info_ = false;
   return stream.bytes_written;
-}
-
-void CtrlService::startBootloader() {
-  void (*SysMemBootJump)(void);
-
-  /* Set the address of the entry point to bootloader */
-  volatile uint32_t addr = 0x0BF90000;
-
-  /* Disable all interrupts */
-  __disable_irq();
-
-  /* Disable Systick timer */
-  SysTick->CTRL = 0;
-
-  /* Set the clock to the default state */
-  HAL_RCC_DeInit();
-
-  /* Clear Interrupt Enable Register & Interrupt Pending Register */
-  uint8_t cnt = sizeof(NVIC->ICER) / sizeof(*NVIC->ICER);
-  for (uint8_t i = 0; i < cnt; i++) {
-    NVIC->ICER[i] = 0xFFFFFFFF;
-    NVIC->ICPR[i] = 0xFFFFFFFF;
-  }
-
-  /* Re-enable all interrupts */
-  __enable_irq();
-
-  /* Set up the jump to bootloader address + 4 */
-  SysMemBootJump = (void (*)(void))(*((uint32_t*)((addr + 4))));
-
-  /* Set the main stack pointer to the bootloader stack */
-  __set_MSP(*(uint32_t*)addr);
-
-  /* Call the function to jump to bootloader location */
-  SysMemBootJump();
-
-  /* Jump is done successfully */
-  while (1) {
-    /* Code should never reach this loop */
-  }
 }
 
 }  // namespace app::ctrl_srv
