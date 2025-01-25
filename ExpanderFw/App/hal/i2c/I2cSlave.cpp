@@ -40,9 +40,11 @@ I2cSlave::I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_i
 }
 
 Status_t I2cSlave::config(MemAddrWidth mem_addr_width) {
-  mem_addr_width_ = mem_addr_width;
-
   Status_t status = init();
+
+  mem_addr_width_ = mem_addr_width;
+  DEBUG_INFO("Config I2cSlave(%d) address width: %s", magic_enum::enum_integer(i2c_id_),
+             magic_enum::enum_name(mem_addr_width).cbegin());
 
   if (status == Status_t::Ok) {
     I2cIrq::getInstance().registerI2cSlave(this);
