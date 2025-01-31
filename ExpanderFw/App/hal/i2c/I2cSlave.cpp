@@ -24,10 +24,9 @@
 #define DEBUG_ERROR(...)
 #endif
 
-// #define DMA_RX_MEM_WRITE_POS (sizeof(temp_buffer_) - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmarx))
-// #define DMA_TX_MEM_READ_POS (sizeof(data_buffer_) - getDataAddress() - __HAL_DMA_GET_COUNTER(i2c_handle_->hdmatx))
-
 namespace hal::i2c {
+
+uint8_t I2cSlave::data_buffer_[DataBufferSize] __attribute__((section(".data_buffer_section")));
 
 I2cSlave::I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle) : i2c_id_{ i2c_id }, i2c_handle_{ i2c_handle } {
   uint32_t sts = TX_SUCCESS;

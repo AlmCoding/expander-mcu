@@ -19,7 +19,8 @@ class I2cSlave {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
   constexpr static size_t RequestBufferSize = RequestQueue_MaxItemCnt;
-  constexpr static size_t DataBufferSize = 512 + 4;
+  constexpr static size_t DataBufferSize = (1024 * 64) + 4;
+  constexpr static size_t TempBufferSize = 512 + 4;
 
  public:
   enum class MemAddrWidth { OneByte = 1, TwoByte = 2 };
@@ -85,8 +86,8 @@ class I2cSlave {
   TX_QUEUE request_queue_;
   uint32_t request_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(Request) / sizeof(uint32_t))];
 
-  uint8_t data_buffer_[DataBufferSize];
-  uint8_t temp_buffer_[DataBufferSize];
+  static uint8_t data_buffer_[DataBufferSize];  // Shared buffer between slaves to save memory
+  uint8_t temp_buffer_[TempBufferSize];
 
   MemAddrWidth mem_addr_width_ = MemAddrWidth::TwoByte;
   int32_t mem_address_ = -1;

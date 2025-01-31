@@ -13,7 +13,7 @@
 
 namespace os {
 
-constexpr size_t Trace_BufferSize = 64000;
+constexpr size_t Trace_BufferSize = 1024 * 32;
 constexpr size_t Trace_MaxThreadCount = 12;
 
 UINT enableTracing();

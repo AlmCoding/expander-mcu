@@ -21,15 +21,13 @@
 
 namespace os {
 
-//static uint8_t trace_buffer[Trace_BufferSize] __attribute__((section(".trace")));
+static uint8_t trace_buffer[Trace_BufferSize] __attribute__((section(".trace")));
 
 UINT enableTracing() {
-  /*
   if (tx_trace_enable(trace_buffer, sizeof(trace_buffer), Trace_MaxThreadCount) != TX_SUCCESS) {
     DEBUG_ERROR("Enable os tracing [FAILED]");
     return TX_ACTIVATE_ERROR;
   }
-  */
 
   DEBUG_INFO("Enable os tracing [OK]");
   return TX_SUCCESS;

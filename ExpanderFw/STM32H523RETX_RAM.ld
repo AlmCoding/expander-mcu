@@ -44,7 +44,7 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 272K
+  RAM     (xrw)    : ORIGIN = 0x20000000,   LENGTH = 272K
   FLASH    (rx)    : ORIGIN = 0x08000000,   LENGTH = 512K
 }
 
@@ -131,12 +131,20 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
   } >RAM
-  
+   
+  /* Trace buffer section */
   .trace (NOLOAD):
   {
     . = ALIGN(4);
     *(.trace)
-  } > RAM_D1
+  } >RAM
+  
+   /* Data buffer section */
+  .data_buffer_section (NOLOAD):
+  {
+    . = ALIGN(4);
+    *(.data_buffer_section)
+  } >RAM
 
   /* Used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -169,7 +177,7 @@ SECTIONS
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >RAM
-
+  
   /* User_heap_stack section, used to check that there is enough "RAM" Ram  type memory left */
   ._user_heap_stack :
   {
