@@ -1,4 +1,22 @@
-# RELEASE_NOTES.md
+## Version 1.0.0 - Stable Release
+
+### Overview
+This is the first stable release of the STM32 firmware for the USB to I2C Expander device. 
+This version includes bug fixes and improvements to enhance stability and reliability.
+
+### Changes
+- **Bug Fixes**: Addressed various issues to improve USB and I2C communication stability.
+- **Enhanced Error Handling**: Improved robustness in detecting and handling communication errors.
+- **Performance Improvements**: Optimized certain operations for better response times.
+
+### Known Issues
+- None
+
+### Future Work
+- Implement additional I2C features (e.g., multi-master support).
+- Improve performance and response times.
+
+---
 
 ## Version 0.0.1 - Initial Release
 
@@ -26,9 +44,3 @@ allowing for seamless integration in various applications.
 - Implement additional I2C features (e.g., multi-master support).
 - Enhance error handling and logging.
 - Improve performance and response times.
-
-### Getting Started
-To get started with the firmware:
-1. Clone the repository: `git clone <repository-url>`
-2. Follow the setup instructions in the README.md file.
-3. Connect the USB to I2C expander device and download the firmware.

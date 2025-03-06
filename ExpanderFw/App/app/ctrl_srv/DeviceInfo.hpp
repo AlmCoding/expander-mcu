@@ -15,9 +15,9 @@ namespace app::ctrl_srv {
 class DeviceInfo {
  private:
   static constexpr uint8_t DeviceType = 1;
-  static constexpr uint8_t FirmwareVersionMajor = 0;
+  static constexpr uint8_t FirmwareVersionMajor = 1;
   static constexpr uint8_t FirmwareVersionMinor = 0;
-  static constexpr uint8_t FirmwareVersionPatch = 2;
+  static constexpr uint8_t FirmwareVersionPatch = 0;
 
  public:
   struct Info {
