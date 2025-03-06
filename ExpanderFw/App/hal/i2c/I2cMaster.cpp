@@ -463,12 +463,11 @@ void I2cMaster::readCompleteCb() {
 }
 
 void I2cMaster::errorCb() {
-  DEBUG_INFO("Error detected (req: %d) [OK]", request_.request_id);
-
   if (request_ongoing_ == false) {
-    // Ignore errors in idle state
+    DEBUG_INFO("Ignore error in idle state!");
     return;
   }
+  DEBUG_INFO("Error detected (req: %d) [OK]", request_.request_id);
 
   // https://www.st.com/resource/en/reference_manual/rm0481-stm32h563h573-and-stm32h562-armbased-32bit-mcus-stmicroelectronics.pdf
 
