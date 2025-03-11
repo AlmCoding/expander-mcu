@@ -1,3 +1,19 @@
+## Version 1.0.1 - I2C Slave Bug Fixes
+
+### Overview
+This version includes bug fixes and improvements to enhance stability and reliability.
+
+### Changes
+- **Bug Fixes**: Resolve I2C slave write size issue.
+
+### Known Issues
+- None
+
+### Future Work
+- Implement additional I2C features (e.g., multi-master support).
+
+---
+
 ## Version 1.0.0 - Stable Release
 
 ### Overview

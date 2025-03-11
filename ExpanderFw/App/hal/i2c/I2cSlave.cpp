@@ -200,6 +200,9 @@ void I2cSlave::slaveMatchMasterReadCb() {  // Slave write, master read
   handleMasterWrite();
 
   size_t max_size = sizeof(data_buffer_) - mem_address_;
+  if (max_size > ReadDataMaxSize) {
+    max_size = ReadDataMaxSize;
+  }
   HAL_StatusTypeDef hal_status = HAL_I2C_Slave_Seq_Transmit_IT(i2c_handle_, data_buffer_ + mem_address_,
                                                                static_cast<uint16_t>(max_size), I2C_LAST_FRAME);
 
@@ -252,6 +255,9 @@ int32_t I2cSlave::handleMasterRead() {  // Master read, slave write
   }
 
   size_t max_size = sizeof(data_buffer_) - mem_address_;
+  if (max_size > ReadDataMaxSize) {
+    max_size = ReadDataMaxSize;
+  }
   int32_t tx_cnt = max_size - i2c_handle_->XferSize - 1;  // TODO: Why -1?
   ETL_ASSERT(tx_cnt >= 0, ETL_ERROR(0));
   DEBUG_INFO("readCompleteCb (addr: 0x%04X, size: %d) [OK]", mem_address_, tx_cnt);
@@ -266,8 +272,6 @@ int32_t I2cSlave::handleMasterRead() {  // Master read, slave write
 void I2cSlave::writeCompleteCb() {  // Master write, slave read
   int32_t rx_total = handleMasterWrite();
 
-  // return;  // Suppress notification (for testing only)
-
   if (notifyAccessRequest(RequestStatus::Complete) == Status_t::Ok) {
     DEBUG_INFO("Notify write-access (access id: %d, total size: %d) [OK]", access_id_, rx_total);
   } else {
@@ -277,8 +281,6 @@ void I2cSlave::writeCompleteCb() {  // Master write, slave read
 
 void I2cSlave::readCompleteCb() {  // Master read, slave write
   int32_t tx_cnt = handleMasterRead();
-
-  // return;  // Suppress notification (for testing only)
 
   if (notifyAccessRequest(RequestStatus::Complete) == Status_t::Ok) {
     DEBUG_INFO("Notify read-access (access id: %d, size: %d) [OK]", access_id_, tx_cnt);

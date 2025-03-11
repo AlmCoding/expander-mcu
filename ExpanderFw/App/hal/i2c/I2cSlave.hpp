@@ -19,8 +19,11 @@ class I2cSlave {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
   constexpr static size_t RequestBufferSize = RequestQueue_MaxItemCnt;
+  constexpr static size_t WriteDataMaxSize = 1024 + 4;
+  constexpr static size_t ReadDataMaxSize = 1024 + 4;
+
   constexpr static size_t DataBufferSize = (1024 * 64) + 4;
-  constexpr static size_t TempBufferSize = 512 + 4;
+  constexpr static size_t TempBufferSize = WriteDataMaxSize;
 
  public:
   enum class MemAddrWidth { OneByte = 1, TwoByte = 2 };

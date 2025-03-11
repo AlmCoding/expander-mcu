@@ -17,7 +17,7 @@ class DeviceInfo {
   static constexpr uint8_t DeviceType = 1;
   static constexpr uint8_t FirmwareVersionMajor = 1;
   static constexpr uint8_t FirmwareVersionMinor = 0;
-  static constexpr uint8_t FirmwareVersionPatch = 0;
+  static constexpr uint8_t FirmwareVersionPatch = 1;
 
  public:
   struct Info {
