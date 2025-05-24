@@ -122,8 +122,15 @@ I2cMaster::Space I2cMaster::getFreeSpace() {
   return space;
 }
 
-Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num) {
+Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num,
+                                    uint32_t own_slave_address) {
   uint32_t sts = TX_SUCCESS;
+
+  if (request->slave_addr == own_slave_address) {
+    DEBUG_ERROR("Invalid slave address (req: %d)", request->request_id);
+    request->status_code = RequestStatus::BadRequest;
+    return exitScheduleRequest(request, seq_num);
+  }
 
   // TODO: Check for bad request (e.g. read size too big)
 
@@ -243,6 +250,15 @@ Status_t I2cMaster::exitScheduleRequest(Request* request, uint32_t seq_num) {
 
   } else if (request->status_code == RequestStatus::NoSpace) {
     DEBUG_WARN("Sched. request (req: %d) [FAILED]", request->request_id);
+    status = Status_t::Error;
+
+    uint32_t sts = tx_queue_send(&complete_queue_, request, TX_NO_WAIT);
+    if (sts != TX_SUCCESS) {
+      DEBUG_ERROR("Report rejected request (req: %d) [FAILED]", request->request_id);
+    }
+
+  } else if (request->status_code == RequestStatus::BadRequest) {
+    DEBUG_ERROR("Sched. request (req: %d) [FAILED]", request->request_id);
     status = Status_t::Error;
 
     uint32_t sts = tx_queue_send(&complete_queue_, request, TX_NO_WAIT);
@@ -546,6 +562,9 @@ Status_t I2cMaster::serviceStatus(StatusInfo* info, uint8_t* read_data, size_t m
     // No read data available (because slave is busy)
 
   } else if (request.status_code == RequestStatus::NoSpace) {
+    // No read data available (because request was not processed)
+
+  } else if (request.status_code == RequestStatus::BadRequest) {
     // No read data available (because request was not processed)
 
   } else {

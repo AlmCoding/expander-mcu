@@ -91,4 +91,8 @@ Status_t I2cConfig::serviceStatus(StatusInfo* info) {
   return Status_t::Ok;
 }
 
+uint32_t I2cConfig::getSlaveAddress() const {
+  return request_.slave_addr;
+}
+
 } /* namespace hal::i2c */

@@ -70,7 +70,7 @@ class I2cMaster {
   Status_t init();
   uint32_t poll();
 
-  Status_t scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num);
+  Status_t scheduleRequest(Request* request, uint8_t* write_data, uint32_t seq_num, uint32_t own_slave_address);
   Status_t serviceStatus(StatusInfo* info, uint8_t* read_data, size_t max_size);
 
  private:

@@ -118,16 +118,19 @@ int32_t I2cService::postMasterRequest(i2c_proto_I2cMsg* msg) {
   request.sequence_id = static_cast<uint16_t>(msg->msg.master_request.sequence_id);
   request.sequence_idx = static_cast<uint16_t>(msg->msg.master_request.sequence_idx);
 
+  uint32_t own_slave_address = 0;
   if (msg->i2c_id == i2c_proto_I2cId::i2c_proto_I2cId_I2C0) {
     DEBUG_INFO("Post master(0) request (req: %d)", request.request_id);
     i2c_master = &i2c_master0_;
+    own_slave_address = i2c_config0_.getSlaveAddress();
   } else {
     DEBUG_INFO("Post master(1) request (req: %d)", request.request_id);
     i2c_master = &i2c_master1_;
+    own_slave_address = i2c_config1_.getSlaveAddress();
   }
 
   if (i2c_master->scheduleRequest(&request, static_cast<uint8_t*>(msg->msg.master_request.write_data.bytes),
-                                  msg->sequence_number) == Status_t::Ok) {
+                                  msg->sequence_number, own_slave_address) == Status_t::Ok) {
     status = 0;
   }
 

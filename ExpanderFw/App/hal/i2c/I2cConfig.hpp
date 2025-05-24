@@ -58,6 +58,7 @@ class I2cConfig {
 
   Status_t scheduleRequest(Request* request, uint32_t seq_num);
   Status_t serviceStatus(StatusInfo* info);
+  uint32_t getSlaveAddress() const;
 
  private:
   I2cId i2c_id_;
