@@ -97,6 +97,14 @@ uint32_t I2cSlave::poll() {
 Status_t I2cSlave::scheduleRequest(Request* request, uint8_t* mem_data, uint32_t seq_num) {
   uint32_t sts = TX_SUCCESS;
 
+  // Check for invalid write and read sizes
+  if ((request->write_size == 0 && request->read_size == 0) ||  //
+      (request->write_size > I2cRequestMaxWriteSize) || (request->read_size > I2cRequestMaxReadSize)) {
+    DEBUG_ERROR("Invalid request (req: %d)", request->request_id);
+    request->status_code = RequestStatus::BadRequest;
+    return exitScheduleRequest(request, seq_num);
+  }
+
   uint32_t free_slots = 0;
   sts = tx_queue_info_get(&request_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));

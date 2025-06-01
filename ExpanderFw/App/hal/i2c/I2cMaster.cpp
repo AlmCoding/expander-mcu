@@ -126,13 +126,20 @@ Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint3
                                     uint32_t own_slave_address) {
   uint32_t sts = TX_SUCCESS;
 
+  // Check for invalid slave address
   if (request->slave_addr == own_slave_address) {
     DEBUG_ERROR("Invalid slave address (req: %d)", request->request_id);
     request->status_code = RequestStatus::BadRequest;
     return exitScheduleRequest(request, seq_num);
   }
 
-  // TODO: Check for bad request (e.g. read size too big)
+  // Check for invalid write and read sizes
+  if ((request->write_size == 0 && request->read_size == 0) ||  //
+      (request->write_size > I2cRequestMaxWriteSize) || (request->read_size > I2cRequestMaxReadSize)) {
+    DEBUG_ERROR("Invalid request (req: %d)", request->request_id);
+    request->status_code = RequestStatus::BadRequest;
+    return exitScheduleRequest(request, seq_num);
+  }
 
   uint32_t free_slots = 0;
   sts = tx_queue_info_get(&pending_queue_, nullptr, nullptr, &free_slots, nullptr, nullptr, nullptr);

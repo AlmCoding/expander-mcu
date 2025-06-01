@@ -31,6 +31,9 @@ constexpr TickNum Ticks10ms = 10 * Ticks1ms;
 constexpr TickNum Ticks100ms = 100 * Ticks1ms;
 constexpr TickNum Ticks500ms = 500 * Ticks1ms;
 
+constexpr uint32_t I2cRequestMaxWriteSize = 128;
+constexpr uint32_t I2cRequestMaxReadSize = 128;
+
 enum class Status_t {
   Error = -1,
   Ok = 0,
