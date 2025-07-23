@@ -21,10 +21,8 @@ enum class TfMsgType : uint8_t {
   CtrlMsg,
   I2cMsg,
   SpiMsg,
-  CanMsg,
+  DacMsg,
   GpioMsg,
-  PwmMsg,
-  UartMsg,
   // Keep this at the end
   NumValues,
 };

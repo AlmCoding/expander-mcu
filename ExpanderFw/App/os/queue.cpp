@@ -25,9 +25,9 @@ namespace os {
 static TX_QUEUE usb_read_queue_;
 static TX_QUEUE usb_write_queue_;
 static TX_QUEUE ctrl_queue_;
-// static TX_QUEUE uart_queue_;
-// static TX_QUEUE gpio_queue_;
 static TX_QUEUE i2c_queue_;
+static TX_QUEUE dac_queue_;
+// static TX_QUEUE gpio_queue_;
 
 UINT createQueues(VOID* memory_ptr) {
   TX_BYTE_POOL* byte_pool = (TX_BYTE_POOL*)memory_ptr;
@@ -81,21 +81,34 @@ UINT createQueues(VOID* memory_ptr) {
   }
 
   //*************************************************************************************************
-  // Allocate the stack for UartQueue
-  /*
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UartQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("Allocate %s stack [FAILED]", UartQueue_Name);
+  // Allocate the stack for I2cQueue
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, I2cQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
+    DEBUG_ERROR("Allocate %s stack [FAILED]", I2cQueue_Name);
     return TX_POOL_ERROR;
   }
-  // Create UartQueue
-  if (tx_queue_create(&uart_queue_,                                  //
-                      const_cast<char*>(UartQueue_Name),             //
+  // Create I2cQueue
+  if (tx_queue_create(&i2c_queue_,                                   //
+                      const_cast<char*>(I2cQueue_Name),              //
                       QueueMessageSize / sizeof(uint32_t), pointer,  //
-                      UartQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
-    DEBUG_ERROR("Create %s [FAILED]", UartQueue_Name);
+                      I2cQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
+    DEBUG_ERROR("Create %s [FAILED]", I2cQueue_Name);
     return TX_QUEUE_ERROR;
   }
-  */
+
+  //*************************************************************************************************
+  // Allocate the stack for DacQueue
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, DacQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
+    DEBUG_ERROR("Allocate %s stack [FAILED]", DacQueue_Name);
+    return TX_POOL_ERROR;
+  }
+  // Create DacQueue
+  if (tx_queue_create(&dac_queue_,                                   //
+                      const_cast<char*>(DacQueue_Name),              //
+                      QueueMessageSize / sizeof(uint32_t), pointer,  //
+                      DacQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
+    DEBUG_ERROR("Create %s [FAILED]", DacQueue_Name);
+    return TX_QUEUE_ERROR;
+  }
 
   //*************************************************************************************************
   // Allocate the stack for GpioQueue
@@ -113,21 +126,6 @@ UINT createQueues(VOID* memory_ptr) {
     return TX_QUEUE_ERROR;
   }
   */
-
-  //*************************************************************************************************
-  // Allocate the stack for I2cQueue
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, I2cQueue_MaxMsgCnt * QueueMessageSize, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("Allocate %s stack [FAILED]", I2cQueue_Name);
-    return TX_POOL_ERROR;
-  }
-  // Create I2cQueue
-  if (tx_queue_create(&i2c_queue_,                                   //
-                      const_cast<char*>(I2cQueue_Name),              //
-                      QueueMessageSize / sizeof(uint32_t), pointer,  //
-                      I2cQueue_MaxMsgCnt * QueueMessageSize) != TX_SUCCESS) {
-    DEBUG_ERROR("Create %s [FAILED]", I2cQueue_Name);
-    return TX_QUEUE_ERROR;
-  }
 
   DEBUG_INFO("Create queues (pool: %d) [OK]", byte_pool->tx_byte_pool_available);
   return TX_SUCCESS;
@@ -149,18 +147,20 @@ TX_QUEUE* getQueue(msg::MsgQueueId queue) {
       qhdl = &ctrl_queue_;
       break;
     }
-    case msg::MsgQueueId::UartThreadQueue: {
-      // qhdl = &uart_queue_;
-      break;
-    }
-    case msg::MsgQueueId::GpioThreadQueue: {
-      // qhdl = &gpio_queue_;
-      break;
-    }
     case msg::MsgQueueId::I2cThreadQueue: {
       qhdl = &i2c_queue_;
       break;
     }
+    case msg::MsgQueueId::DacThreadQueue: {
+      qhdl = &dac_queue_;
+      break;
+    }
+    /*
+    case msg::MsgQueueId::GpioThreadQueue: {
+      qhdl = &gpio_queue_;
+      break;
+    }
+    */
     default: {
       break;
     }

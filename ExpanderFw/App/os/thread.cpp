@@ -7,12 +7,12 @@
 
 #include "os/thread.hpp"
 #include "app/ctrl_srv/CtrlThread.hpp"
-// #include "app/gpio_srv/GpioThread.hpp"
+#include "app/dac_srv/DacThread.hpp"
 #include "app/i2c_srv/I2cThread.hpp"
-// #include "app/uart_srv/UartThread.hpp"
 #include "app/usb_com/UsbReadThread.hpp"
 #include "app/usb_com/UsbWriteThread.hpp"
 #include "util/debug.hpp"
+// #include "app/gpio_srv/GpioThread.hpp"
 
 #define DEBUG_ENABLE_THREAD 1
 #if ((DEBUG_ENABLE_THREAD == 1) && (ENABLE_RTT_DEBUG_OUTPUT == 1))
@@ -30,9 +30,9 @@ namespace os {
 static TX_THREAD usb_read_thread_;
 static TX_THREAD usb_write_thread_;
 static TX_THREAD ctrl_thread_;
-// static TX_THREAD uart_thread_;
-// static TX_THREAD gpio_thread_;
+static TX_THREAD dac_thread_;
 static TX_THREAD i2c_thread_;
+// static TX_THREAD gpio_thread_;
 
 UINT createThreads(VOID* memory_ptr) {
   TX_BYTE_POOL* byte_pool = (TX_BYTE_POOL*)memory_ptr;
@@ -96,25 +96,42 @@ UINT createThreads(VOID* memory_ptr) {
   }
 
   //*************************************************************************************************
-  // Allocate uart stack
-  /*
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, UartThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("Allocate %s stack [FAILED]", UartThread_Name);
+  // Allocate i2c stack
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, I2cThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
+    DEBUG_ERROR("Allocate %s stack [FAILED]", I2cThread_Name);
     return TX_POOL_ERROR;
   }
-  // Create uart thread
-  if (tx_thread_create(&uart_thread_,                                   //
-                       const_cast<char*>(UartThread_Name),              //
-                       app::uart_srv::UartThread::execute, 0, pointer,  //
-                       UartThread_StackSize,                            //
-                       UartThread_Priority,                             //
-                       UartThread_PreemptionThreshold,                  //
-                       UartThread_TimeSlice,                            //
-                       UartThread_AutoStart) != TX_SUCCESS) {
-    DEBUG_ERROR("Create %s [FAILED]", UartThread_Name);
+  // Create i2c thread
+  if (tx_thread_create(&i2c_thread_,                                  //
+                       const_cast<char*>(I2cThread_Name),             //
+                       app::i2c_srv::I2cThread::execute, 0, pointer,  //
+                       I2cThread_StackSize,                           //
+                       I2cThread_Priority,                            //
+                       I2cThread_PreemptionThreshold,                 //
+                       I2cThread_TimeSlice,                           //
+                       I2cThread_AutoStart) != TX_SUCCESS) {
+    DEBUG_ERROR("Create %s [FAILED]", I2cThread_Name);
     return TX_THREAD_ERROR;
   }
-  */
+
+  //*************************************************************************************************
+  // Allocate dac stack
+  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, DacThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
+    DEBUG_ERROR("Allocate %s stack [FAILED]", DacThread_Name);
+    return TX_POOL_ERROR;
+  }
+  // Create dac thread
+  if (tx_thread_create(&dac_thread_,                                  //
+                       const_cast<char*>(DacThread_Name),             //
+                       app::dac_srv::DacThread::execute, 0, pointer,  //
+                       DacThread_StackSize,                           //
+                       DacThread_Priority,                            //
+                       DacThread_PreemptionThreshold,                 //
+                       DacThread_TimeSlice,                           //
+                       DacThread_AutoStart) != TX_SUCCESS) {
+    DEBUG_ERROR("Create %s [FAILED]", DacThread_Name);
+    return TX_THREAD_ERROR;
+  }
 
   //*************************************************************************************************
   // Allocate gpio stack
@@ -136,25 +153,6 @@ UINT createThreads(VOID* memory_ptr) {
     return TX_THREAD_ERROR;
   }
   */
-
-  //*************************************************************************************************
-  // Allocate i2c stack
-  if (tx_byte_allocate(byte_pool, (VOID**)&pointer, I2cThread_StackSize, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("Allocate %s stack [FAILED]", I2cThread_Name);
-    return TX_POOL_ERROR;
-  }
-  // Create i2c thread
-  if (tx_thread_create(&i2c_thread_,                                  //
-                       const_cast<char*>(I2cThread_Name),             //
-                       app::i2c_srv::I2cThread::execute, 0, pointer,  //
-                       I2cThread_StackSize,                           //
-                       I2cThread_Priority,                            //
-                       I2cThread_PreemptionThreshold,                 //
-                       I2cThread_TimeSlice,                           //
-                       I2cThread_AutoStart) != TX_SUCCESS) {
-    DEBUG_ERROR("Create %s [FAILED]", I2cThread_Name);
-    return TX_THREAD_ERROR;
-  }
 
   DEBUG_INFO("Create threads (pool: %d) [OK]", byte_pool->tx_byte_pool_available);
   return TX_SUCCESS;

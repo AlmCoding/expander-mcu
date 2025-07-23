@@ -16,9 +16,9 @@ enum class MsgQueueId {
   UsbReadThreadQueue = 0,
   UsbWriteThreadQueue,
   CtrlThreadQueue,
-  UartThreadQueue,
-  GpioThreadQueue,
   I2cThreadQueue,
+  DacThreadQueue,
+  // GpioThreadQueue,
 };
 
 enum class MsgId {
