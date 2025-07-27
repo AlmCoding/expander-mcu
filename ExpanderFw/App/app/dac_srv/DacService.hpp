@@ -9,6 +9,8 @@
 #define APP_I2C_SRV_DACSERVICE_HPP_
 
 #include "app/ctrl_srv/ctrlTypes.hpp"
+#include "hal/dac/DacConfig.hpp"
+#include "hal/dac/DacController.hpp"
 #include "proto_c/dac.pb.h"
 
 namespace app::dac_srv {
@@ -33,11 +35,14 @@ class DacService {
   int32_t postDataRequest(dac_proto_DacMsg* msg);
   int32_t postConfigRequest(dac_proto_DacMsg* msg);
 
-  Status_t serviceDataRequest(int* dac_master, dac_proto_DacMsg* msg);
-  Status_t serviceConfigRequest(int* dac_config, dac_proto_DacMsg* msg);
+  Status_t serviceDataRequest(dac_proto_DacMsg* msg);
+  Status_t serviceConfigRequest(dac_proto_DacMsg* msg);
 
-  // static dac_proto_DacDataStatusCode convertDataStatus(hal::i2c::I2cMaster::RequestStatus status);
-  // static dac_proto_DacConfigStatusCode convertConfigStatus(hal::i2c::I2cSlave::RequestStatus status);
+  static dac_proto_DacDataStatusCode convertDataStatus(hal::dac::DacController::RequestStatus status);
+  static dac_proto_DacConfigStatusCode convertConfigStatus(hal::dac::DacConfig::RequestStatus status);
+
+  hal::dac::DacController dac_controller_{};
+  hal::dac::DacConfig dac_config_{};
 
   ServiceInfo srv_info_ = {};
 

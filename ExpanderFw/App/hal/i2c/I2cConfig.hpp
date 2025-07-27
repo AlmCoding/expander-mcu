@@ -23,7 +23,9 @@ class I2cConfig {
  public:
   enum class RequestStatus {
     NotInit = 0,
-    Ok,
+    // Pending, => not needed, request is immediately ongoing
+    Ongoing,
+    Complete,
     InvalidClockFreq,
     InvalidSlaveAddr,
     InvalidSlaveAddrWidth,
@@ -42,13 +44,11 @@ class I2cConfig {
     uint32_t clock_freq;
     uint32_t slave_addr;
     SlaveAddrWidth slave_addr_width;
-    bool pullups_enabled;
   } Request;
 
   typedef struct {
     uint32_t sequence_number;
-    uint32_t request_id;
-    RequestStatus status_code;
+    Request request;
   } StatusInfo;
 
   I2cConfig(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
@@ -67,7 +67,7 @@ class I2cConfig {
   Request request_ = {};
   bool service_status_ = false;
 
-  uint32_t seqence_number_ = 0;
+  uint32_t sequence_number_ = 0;
 };
 
 } /* namespace hal::i2c */

@@ -50,6 +50,7 @@ class I2cService {
 
   static i2c_proto_I2cStatusCode convertMasterStatus(hal::i2c::I2cMaster::RequestStatus status);
   static i2c_proto_I2cStatusCode convertSlaveStatus(hal::i2c::I2cSlave::RequestStatus status);
+  static i2c_proto_I2cConfigStatusCode convertConfigStatus(hal::i2c::I2cConfig::RequestStatus status);
 
   hal::i2c::I2cConfig i2c_config0_{ hal::i2c::I2cId::I2c0, &hi2c1 };
   hal::i2c::I2cConfig i2c_config1_{ hal::i2c::I2cId::I2c1, &hi2c3 };

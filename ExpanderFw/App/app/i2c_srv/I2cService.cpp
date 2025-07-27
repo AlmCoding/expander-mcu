@@ -174,9 +174,9 @@ int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
   hal::i2c::I2cConfig::Request request = {};
 
   request.request_id = msg->msg.config_request.request_id;
+  request.status_code = hal::i2c::I2cConfig::RequestStatus::NotInit;
   request.clock_freq = msg->msg.config_request.clock_freq;
   request.slave_addr = msg->msg.config_request.slave_addr;
-  request.pullups_enabled = msg->msg.config_request.pullups_enabled;
 
   if (msg->msg.config_request.slave_addr_width == i2c_proto_AddressWidth::i2c_proto_AddressWidth_Bits7) {
     request.slave_addr_width = hal::i2c::I2cConfig::SlaveAddrWidth::SevenBit;
@@ -260,7 +260,7 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_size) {
     return 0;
   }
 
-  if (sts == Status_t::Error) {
+  if (sts != Status_t::Ok) {
     return -1;
   }
 
@@ -278,14 +278,8 @@ int32_t I2cService::serviceRequest(uint8_t* data, size_t max_size) {
 }
 
 Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_proto_I2cMsg* msg) {
-  size_t master_id;
-  hal::i2c::I2cMaster::StatusInfo info;
-
-  if (i2c_master == &i2c_master0_) {
-    master_id = 0;
-  } else {
-    master_id = 1;
-  }
+  hal::i2c::I2cMaster::StatusInfo info = {};
+  size_t master_id = (i2c_master == &i2c_master0_) ? 0 : 1;
 
   if (i2c_master->serviceStatus(&info, msg->msg.master_status.read_data.bytes,
                                 sizeof(msg->msg.master_status.read_data.bytes)) != Status_t::Ok) {
@@ -296,27 +290,21 @@ Status_t I2cService::serviceMasterRequest(hal::i2c::I2cMaster* i2c_master, i2c_p
   msg->sequence_number = info.sequence_number;
   msg->which_msg = i2c_proto_I2cMsg_master_status_tag;
 
-  msg->msg.master_status.request_id = info.request_id;
-  msg->msg.master_status.status_code = convertMasterStatus(info.status_code);
-  msg->msg.master_status.nack_idx = info.nack_byte_idx;
-  msg->msg.master_status.read_data.size = info.read_size;
+  msg->msg.master_status.request_id = info.request.request_id;
+  msg->msg.master_status.status_code = I2cService::convertMasterStatus(info.request.status_code);
+  msg->msg.master_status.nack_idx = info.request.nack_byte_idx;
+  msg->msg.master_status.read_data.size = info.request.read_size;
   msg->msg.master_status.queue_space = info.queue_space;
-  msg->msg.master_status.buffer_space1 = info.buffer_space1;
-  msg->msg.master_status.buffer_space2 = info.buffer_space2;
+  msg->msg.master_status.buffer_space1 = info.buffer_space.end_to_back;
+  msg->msg.master_status.buffer_space2 = info.buffer_space.front_to_start;
 
-  DEBUG_INFO("Srv master(%d) status (request id: %d) [OK]", master_id, info.request_id);
+  DEBUG_INFO("Srv master(%d) status (request id: %d) [OK]", master_id, info.request.request_id);
   return Status_t::Ok;
 }
 
 Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_proto_I2cMsg* msg) {
-  size_t slave_id;
-  hal::i2c::I2cSlave::StatusInfo info;
-
-  if (i2c_slave == &i2c_slave0_) {
-    slave_id = 0;
-  } else {
-    slave_id = 1;
-  }
+  hal::i2c::I2cSlave::StatusInfo info = {};
+  size_t slave_id = (i2c_slave == &i2c_slave0_) ? 0 : 1;
 
   if (i2c_slave->serviceStatus(&info) != Status_t::Ok) {
     DEBUG_ERROR("Srv slave(%d) status (request/access id: UNKNOWN) [FAILED]", slave_id);
@@ -329,7 +317,7 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
     msg->which_msg = i2c_proto_I2cMsg_slave_status_tag;
 
     msg->msg.slave_status.request_id = info.request.request_id;
-    msg->msg.slave_status.status_code = convertSlaveStatus(info.request.status_code);
+    msg->msg.slave_status.status_code = I2cService::convertSlaveStatus(info.request.status_code);
     msg->msg.slave_status.queue_space = info.queue_space;
 
     size_t read_size = info.request.read_size;
@@ -348,7 +336,7 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
     msg->which_msg = i2c_proto_I2cMsg_slave_notification_tag;
 
     msg->msg.slave_notification.access_id = info.request.access_id;
-    msg->msg.slave_notification.status_code = convertSlaveStatus(info.request.status_code);
+    msg->msg.slave_notification.status_code = I2cService::convertSlaveStatus(info.request.status_code);
     msg->msg.slave_notification.queue_space = info.queue_space;
 
     size_t read_size = info.request.read_size;
@@ -384,14 +372,8 @@ Status_t I2cService::serviceSlaveRequest(hal::i2c::I2cSlave* i2c_slave, i2c_prot
 }
 
 Status_t I2cService::serviceConfigRequest(hal::i2c::I2cConfig* i2c_config, i2c_proto_I2cMsg* msg) {
-  size_t config_id;
-  hal::i2c::I2cConfig::StatusInfo info;
-
-  if (i2c_config == &i2c_config0_) {
-    config_id = 0;
-  } else {
-    config_id = 1;
-  }
+  hal::i2c::I2cConfig::StatusInfo info = {};
+  size_t config_id = (i2c_config == &i2c_config0_) ? 0 : 1;
 
   if (i2c_config->serviceStatus(&info) != Status_t::Ok) {
     DEBUG_ERROR("Srv config(%d) status [FAILED]", config_id);
@@ -401,8 +383,8 @@ Status_t I2cService::serviceConfigRequest(hal::i2c::I2cConfig* i2c_config, i2c_p
   msg->sequence_number = info.sequence_number;
   msg->which_msg = i2c_proto_I2cMsg_config_status_tag;
 
-  msg->msg.config_status.request_id = info.request_id;
-  msg->msg.config_status.status_code = static_cast<i2c_proto_I2cConfigStatusCode>(info.status_code);
+  msg->msg.config_status.request_id = info.request.request_id;
+  msg->msg.config_status.status_code = I2cService::convertConfigStatus(info.request.status_code);
 
   DEBUG_INFO("Srv config(%d) status [OK]", config_id);
   return Status_t::Ok;
@@ -423,10 +405,13 @@ i2c_proto_I2cStatusCode I2cService::convertMasterStatus(hal::i2c::I2cMaster::Req
     case hal::i2c::I2cMaster::RequestStatus::BadRequest:
       return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_BAD_REQUEST;
     case hal::i2c::I2cMaster::RequestStatus::InterfaceError:
+      return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_INTERFACE_ERROR;
     case hal::i2c::I2cMaster::RequestStatus::Pending:
     case hal::i2c::I2cMaster::RequestStatus::Ongoing:
-    default:
+    default: {
+      ETL_ASSERT(false, ETL_ERROR(0));
       return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_INTERFACE_ERROR;
+    }
   }
 }
 
@@ -443,9 +428,36 @@ i2c_proto_I2cStatusCode I2cService::convertSlaveStatus(hal::i2c::I2cSlave::Reque
     case hal::i2c::I2cSlave::RequestStatus::BadRequest:
       return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_BAD_REQUEST;
     case hal::i2c::I2cSlave::RequestStatus::InterfaceError:
-    case hal::i2c::I2cSlave::RequestStatus::Pending:
-    default:
       return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_INTERFACE_ERROR;
+    case hal::i2c::I2cSlave::RequestStatus::Ongoing:
+    default: {
+      ETL_ASSERT(false, ETL_ERROR(0));
+      return i2c_proto_I2cStatusCode::i2c_proto_I2cStatusCode_STS_INTERFACE_ERROR;
+    }
+  }
+}
+
+i2c_proto_I2cConfigStatusCode I2cService::convertConfigStatus(hal::i2c::I2cConfig::RequestStatus status) {
+  switch (status) {
+    case hal::i2c::I2cConfig::RequestStatus::NotInit:
+      return i2c_proto_I2cConfigStatusCode::i2c_proto_I2cConfigStatusCode_CFG_NOT_INIT;
+    case hal::i2c::I2cConfig::RequestStatus::Complete:
+      return i2c_proto_I2cConfigStatusCode::i2c_proto_I2cConfigStatusCode_CFG_SUCCESS;
+    case hal::i2c::I2cConfig::RequestStatus::InvalidClockFreq:
+      return i2c_proto_I2cConfigStatusCode::i2c_proto_I2cConfigStatusCode_CFG_INVALID_CLOCK_FREQ;
+    case hal::i2c::I2cConfig::RequestStatus::InvalidSlaveAddr:
+      return i2c_proto_I2cConfigStatusCode::i2c_proto_I2cConfigStatusCode_CFG_INVALID_SLAVE_ADDR;
+    case hal::i2c::I2cConfig::RequestStatus::InvalidSlaveAddrWidth:
+      return i2c_proto_I2cConfigStatusCode::i2c_proto_I2cConfigStatusCode_CFG_INVALID_SLAVE_ADDR_WIDTH;
+    case hal::i2c::I2cConfig::RequestStatus::InvalidMemAddrWidth:
+      return i2c_proto_I2cConfigStatusCode::i2c_proto_I2cConfigStatusCode_CFG_INVALID_MEM_ADDR_WIDTH;
+    case hal::i2c::I2cConfig::RequestStatus::InterfaceError:
+      return i2c_proto_I2cConfigStatusCode::i2c_proto_I2cConfigStatusCode_CFG_INTERFACE_ERROR;
+    case hal::i2c::I2cConfig::RequestStatus::Ongoing:
+    default: {
+      ETL_ASSERT(false, ETL_ERROR(0));
+      return i2c_proto_I2cConfigStatusCode::i2c_proto_I2cConfigStatusCode_CFG_INTERFACE_ERROR;
+    }
   }
 }
 

@@ -30,7 +30,7 @@ constexpr uint32_t UsbReadThread_StackSize = 4096;
 constexpr uint32_t UsbWriteThread_StackSize = 4096;
 constexpr uint32_t CtrlThread_StackSize = 1024;
 constexpr uint32_t I2cThread_StackSize = 8192;
-constexpr uint32_t DacThread_StackSize = 2048;
+constexpr uint32_t DacThread_StackSize = 8192;
 // constexpr uint32_t GpioThread_StackSize = 1024;
 
 constexpr uint32_t UsbReadThread_Priority = 10;

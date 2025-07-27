@@ -74,7 +74,7 @@ Status_t I2cSlave::init() {
   request_ = {};
 
   access_id_ = 0;
-  seqence_number_ = 0;
+  sequence_number_ = 0;
 
   I2cIrq::getInstance().enableSlaveListen(i2c_handle_);
   return status;
@@ -123,6 +123,9 @@ Status_t I2cSlave::scheduleRequest(Request* request, uint8_t* mem_data, uint32_t
     return exitScheduleRequest(request, seq_num);
   }
 
+  // Request is valid, set request status
+  request->status_code = RequestStatus::Ongoing;
+
   // Copy write data to buffer
   if (request->write_size > 0) {
     std::memcpy(data_buffer_ + request->write_addr, mem_data, request->write_size);
@@ -161,7 +164,7 @@ Status_t I2cSlave::exitScheduleRequest(Request* request, uint32_t seq_num) {
   }
 
   // Update sequence number
-  seqence_number_ = seq_num;
+  sequence_number_ = seq_num;
 
   // Trigger i2c task
   os::msg::BaseMsg msg = {};
@@ -337,11 +340,11 @@ Status_t I2cSlave::serviceStatus(StatusInfo* info) {
 
   Request* request = &info->request;
   if (tx_queue_receive(&request_queue_, request, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("No requests/notifications to service [FAILED]");
+    DEBUG_ERROR("No request to service!");
     return Status_t::Error;
   }
 
-  info->sequence_number = seqence_number_;
+  info->sequence_number = sequence_number_;
   info->addr_width = mem_addr_width_;
 
   uint32_t free_slots = 0;

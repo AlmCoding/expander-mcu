@@ -20,7 +20,7 @@ namespace hal::i2c {
 class I2cMaster {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
-  constexpr static size_t DataBufferSize = 512 + 1;
+  constexpr static size_t DataBufferSize = 512 + 1;  // +1 to distinguish between empty and full buffer
 
  public:
   enum class RequestStatus {
@@ -53,14 +53,15 @@ class I2cMaster {
                 "ThreadX queue messages must be of size 4, 8, 16, 32 or 64 bytes!");
 
   typedef struct {
+    size_t end_to_back;     // [data_end_ to buffer end[
+    size_t front_to_start;  // [0 to data_start_[
+  } Space;
+
+  typedef struct {
     uint32_t sequence_number;
-    uint32_t request_id;
-    RequestStatus status_code;
-    uint32_t nack_byte_idx;
-    uint16_t read_size;
+    Request request;
     uint16_t queue_space;
-    uint16_t buffer_space1;
-    uint16_t buffer_space2;
+    Space buffer_space;
   } StatusInfo;
 
   I2cMaster(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
@@ -80,9 +81,9 @@ class I2cMaster {
   };
 
   typedef struct {
-    size_t end_to_back;     // [data_end_ to buffer end[
-    size_t front_to_start;  // [0 to data_start_[
-  } Space;
+    size_t data_start;  // Start position of data in data buffer
+    size_t data_end;    // End position of data in data buffer
+  } BufferState;
 
   typedef struct {
     uint16_t seq_id;
@@ -90,11 +91,11 @@ class I2cMaster {
     bool ongoing;
   } SequenceState;
 
+  Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   Space getFreeSpace();
   Status_t allocateBufferSpace(Request* request);
-  Status_t allocateBufferSection(size_t* front_offset, size_t* back_offset, Space* space, size_t* section_start,
+  Status_t allocateBufferSection(size_t* front_offset, size_t* back_offset, Space* free_space, size_t* section_start,
                                  size_t section_size);
-  Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   bool readyForNewStart();
   Status_t startRequest();
   Status_t startWrite();
@@ -115,16 +116,14 @@ class I2cMaster {
   uint32_t complete_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(Request) / sizeof(uint32_t))];
 
   uint8_t data_buffer_[DataBufferSize];
-  size_t data_buffer_end_ = DataBufferSize - 1;
-  size_t data_start_ = 0;
-  size_t data_end_ = 0;
+  BufferState buffer_state_ = {};
 
   Request request_ = {};
   bool request_ongoing_ = false;
   TransferState transfer_state_ = TransferState::Write;
   SequenceState sequence_state_ = {};
 
-  uint32_t seqence_number_ = 0;
+  uint32_t sequence_number_ = 0;
 
   friend class I2cIrq;
 };

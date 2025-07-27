@@ -31,14 +31,13 @@ uint32_t I2cConfig::poll() {
 
 Status_t I2cConfig::scheduleRequest(Request* request, uint32_t seq_num) {
   request_ = *request;
-  seqence_number_ = seq_num;
+  sequence_number_ = seq_num;
   service_status_ = true;
 
   DEBUG_INFO("Config I2c(%d) clock_freq: %d", magic_enum::enum_integer(i2c_id_), request_.clock_freq);
   DEBUG_INFO("Config I2c(%d) slave_addr: 0x%X", magic_enum::enum_integer(i2c_id_), request_.slave_addr);
   DEBUG_INFO("Config I2c(%d) addr_width: %s", magic_enum::enum_integer(i2c_id_),
              magic_enum::enum_name(request_.slave_addr_width).cbegin());
-  DEBUG_INFO("Config I2c(%d) pullups_enabled: %d", magic_enum::enum_integer(i2c_id_), request_.pullups_enabled);
 
   uint32_t address_mode = 0;
   if (request_.slave_addr_width == SlaveAddrWidth::SevenBit) {
@@ -68,27 +67,36 @@ Status_t I2cConfig::scheduleRequest(Request* request, uint32_t seq_num) {
     return Status_t::Error;
   }
 
+  // Request is valid, set request status
+  request_.status_code = RequestStatus::Ongoing;
+
   // DeInitialize I2c
   HAL_I2C_DeInit(i2c_handle_);
 
   // ReInitialize I2c
   if (i2c_id_ == I2cId::I2c0) {
-    MX_I2C1_ReInit(address_mode, request_.slave_addr, timing, request_.pullups_enabled);
+    MX_I2C1_ReInit(address_mode, request_.slave_addr, timing, false);
   } else {
-    MX_I2C3_ReInit(address_mode, request_.slave_addr, timing, request_.pullups_enabled);
+    MX_I2C3_ReInit(address_mode, request_.slave_addr, timing, false);
   }
 
-  request_.status_code = RequestStatus::Ok;
+  request_.status_code = RequestStatus::Complete;
   return Status_t::Ok;
 };
 
 Status_t I2cConfig::serviceStatus(StatusInfo* info) {
-  info->sequence_number = seqence_number_;
-  info->request_id = request_.request_id;
-  info->status_code = request_.status_code;
+  Status_t status = Status_t::Ok;
+
+  if (service_status_ == false) {
+    DEBUG_ERROR("No request to service!");
+    return Status_t::Error;
+  }
+
+  info->sequence_number = sequence_number_;
+  info->request = request_;
 
   service_status_ = false;
-  return Status_t::Ok;
+  return status;
 }
 
 uint32_t I2cConfig::getSlaveAddress() const {

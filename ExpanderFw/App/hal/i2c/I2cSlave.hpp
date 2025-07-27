@@ -18,7 +18,6 @@ namespace hal::i2c {
 class I2cSlave {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
-  constexpr static size_t RequestBufferSize = RequestQueue_MaxItemCnt;
   constexpr static size_t WriteDataMaxSize = 1024 + 4;
   constexpr static size_t ReadDataMaxSize = 1024 + 4;
 
@@ -31,7 +30,8 @@ class I2cSlave {
   enum class RequestStatus {
     NotInit = 0,
     NoSpace,
-    Pending,
+    // Pending, => not needed, request is immediately ongoing
+    Ongoing,
     Complete,
     SlaveBusy,
     BadRequest,
@@ -100,7 +100,7 @@ class I2cSlave {
   Request request_ = {};
 
   uint32_t access_id_ = 0;
-  uint32_t seqence_number_ = 0;
+  uint32_t sequence_number_ = 0;
 
   friend class I2cIrq;
 };
