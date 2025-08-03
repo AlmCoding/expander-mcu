@@ -47,10 +47,10 @@ Status_t I2cSlave::config(MemAddrWidth mem_addr_width) {
 
   if (status == Status_t::Ok) {
     I2cIrq::getInstance().registerI2cSlave(this);
-    DEBUG_INFO("Init I2cSlave(%d) [OK]", magic_enum::enum_integer(i2c_id_));
+    DEBUG_INFO("Config I2cSlave(%d) [OK]", magic_enum::enum_integer(i2c_id_));
 
   } else {
-    DEBUG_ERROR("Init I2cSlave(%d) [FAILED]", magic_enum::enum_integer(i2c_id_));
+    DEBUG_ERROR("Config I2cSlave(%d) [FAILED]", magic_enum::enum_integer(i2c_id_));
     status = Status_t::Error;
   }
 

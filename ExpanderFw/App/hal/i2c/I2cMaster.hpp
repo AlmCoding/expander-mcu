@@ -108,7 +108,7 @@ class I2cMaster {
   void freeBufferSpace(Request* request);
 
   I2cId i2c_id_;
-  I2C_HandleTypeDef* i2c_handle_;
+  I2C_HandleTypeDef* i2c_handle_ = nullptr;
   TX_QUEUE pending_queue_;
   TX_QUEUE complete_queue_;
 

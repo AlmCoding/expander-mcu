@@ -15,6 +15,9 @@
 namespace hal::dac {
 
 class DacConfig {
+ private:
+  constexpr static uint16_t DefalutValue = 0xffff / 2;
+
  public:
   enum class RequestStatus {
     NotInit = 0,
@@ -46,15 +49,24 @@ class DacConfig {
     Request request;
   } StatusInfo;
 
-  DacConfig() = default;
+  DacConfig(SPI_HandleTypeDef* spi_handle);
   virtual ~DacConfig() = default;
 
+  Status_t config();
+  Status_t init();
   uint32_t poll();
 
   Status_t scheduleRequest(Request* request, uint32_t seq_num);
   Status_t serviceStatus(StatusInfo* info);
 
  private:
+  Status_t softwareReset();
+  Status_t enableInternalVoltageRef();
+  Status_t setDefaultGains();
+  Status_t setDefaultValues();
+
+  SPI_HandleTypeDef* spi_handle_ = nullptr;
+
   Request request_;
   bool service_status_ = false;
 

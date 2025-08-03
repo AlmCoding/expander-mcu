@@ -64,7 +64,7 @@ class I2cSlave {
   I2cSlave(I2cId i2c_id, I2C_HandleTypeDef* i2c_handle);
   virtual ~I2cSlave() = default;
 
-  Status_t config(MemAddrWidth mem_addr_width);
+  Status_t config(MemAddrWidth mem_addr_width = MemAddrWidth::TwoByte);
   Status_t init();
   uint32_t poll();
 
@@ -84,7 +84,7 @@ class I2cSlave {
   Status_t notifyAccessRequest(RequestStatus status_code);
 
   I2cId i2c_id_;
-  I2C_HandleTypeDef* i2c_handle_;
+  I2C_HandleTypeDef* i2c_handle_ = nullptr;
 
   TX_QUEUE request_queue_;
   uint32_t request_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(Request) / sizeof(uint32_t))];

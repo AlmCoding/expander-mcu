@@ -9,6 +9,7 @@
 #include "enum/magic_enum.hpp"
 #include "etl/algorithm.h"      // etl::max
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
+#include "hal/dac/DACxx6x.hpp"
 #include "os/msg/msg_broker.hpp"
 #include "util/debug.hpp"
 
@@ -25,7 +26,7 @@
 
 namespace hal::dac {
 
-DacController::DacController() {
+DacController::DacController(SPI_HandleTypeDef* spi_handle) : spi_handle_{ spi_handle } {
   uint32_t sts = TX_SUCCESS;
   sts = tx_queue_create(&request_queue_,                       //
                         const_cast<char*>("DacCtrlRequestQ"),  //
@@ -35,13 +36,16 @@ DacController::DacController() {
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 }
 
-Status_t DacController::config() {
+Status_t DacController::config(DacConfig::Mode mode) {
   Status_t status = init();
 
+  mode_ = mode;
+  DEBUG_INFO("Config DacController mode: %s", magic_enum::enum_name(mode).cbegin());
+
   if (status == Status_t::Ok) {
-    DEBUG_INFO("Init DacController [OK]");
+    DEBUG_INFO("Config DacController [OK]");
   } else {
-    DEBUG_ERROR("Init DacController [FAILED]");
+    DEBUG_ERROR("Config DacController [FAILED]");
     status = Status_t::Error;
   }
 
@@ -60,8 +64,6 @@ Status_t DacController::init() {
   buffer_state_ch2_ = {};
 
   sequence_number_ = 0;
-
-  DEBUG_INFO("Init DacController [OK]");
   return status;
 }
 
@@ -240,6 +242,63 @@ Status_t DacController::serviceStatus(StatusInfo* info) {
   info->buffer_space_ch1 = static_cast<uint16_t>(free_space_ch1.end_to_back + free_space_ch1.front_to_start);
   info->buffer_space_ch2 = static_cast<uint16_t>(free_space_ch2.end_to_back + free_space_ch2.front_to_start);
   return status;
+}
+
+Status_t DacController::updateSample(bool ch1, bool ch2) {
+  Status_t status = Status_t::Ok;
+
+  if (ch1 == true && buffer_state_ch1_.data_start != buffer_state_ch1_.data_end) {
+    Sample_t sample = data_buffer_ch1[buffer_state_ch1_.data_start];
+    status = writeValue(DacId::Dac0, sample, DacUpdate::Yes);
+    buffer_state_ch1_.data_start = (buffer_state_ch1_.data_start + 1) % DataBufferSize;
+  }
+
+  if (ch2) {
+    if (buffer_state_ch2_.data_start == buffer_state_ch2_.data_end) {
+      DEBUG_WARN("No data to update for channel 2!");
+      return Status_t::Error;
+    }
+    Sample_t sample = data_buffer_ch2[buffer_state_ch2_.data_start];
+    status = writeValue(DacId::Dac1, sample, DacUpdate::Yes);
+    buffer_state_ch2_.data_start = (buffer_state_ch2_.data_start + 1) % DataBufferSize;
+  }
+
+  return status;
+}
+
+Status_t DacController::writeValue(DacId dac_id, uint16_t value, DacUpdate update) {
+  HAL_StatusTypeDef hal_status;
+  uint8_t data[3];
+
+  switch (update) {
+    case DacUpdate::No:
+      data[0] = DAC_CMD_WRITE_REG_N;
+      break;
+    case DacUpdate::Yes:
+      data[0] = DAC_CMD_WRITE_REG_N_UPDATE_REG_N;
+      break;
+    case DacUpdate::All:
+      data[0] = DAC_CMD_WRITE_REG_N_UPDATE_ALL;
+      break;
+    default:
+      ETL_ASSERT(false, ETL_ERROR(0));
+  }
+
+  if (dac_id == DacId::Dac0) {
+    data[0] |= DAC_ADDR_DAC_A;
+  } else {
+    data[0] |= DAC_ADDR_DAC_B;
+  }
+
+  data[1] = static_cast<uint8_t>(value >> 8);  // MSB
+  data[2] = static_cast<uint8_t>(value & 0xFF);
+
+  hal_status = HAL_SPI_Transmit(spi_handle_, data, sizeof(data), 0);
+  if (hal_status != HAL_OK) {
+    DEBUG_ERROR("Write value failed (HAL error: %d)", hal_status);
+    return Status_t::Error;
+  }
+  return Status_t::Ok;
 }
 
 }  // namespace hal::dac

@@ -28,8 +28,8 @@
 namespace app::i2c_srv {
 
 void I2cService::init(app::ctrl::RequestSrvCallback request_service_cb) {
-  i2c_slave0_.config(hal::i2c::I2cSlave::MemAddrWidth::TwoByte);
-  i2c_slave1_.config(hal::i2c::I2cSlave::MemAddrWidth::TwoByte);
+  i2c_slave0_.config();
+  i2c_slave1_.config();
 
   i2c_master0_.config();
   i2c_master1_.config();
@@ -210,7 +210,6 @@ int32_t I2cService::postConfigRequest(i2c_proto_I2cMsg* msg) {
   }
 
   if (i2c_config->scheduleRequest(&request, msg->sequence_number) == Status_t::Ok) {
-    DEBUG_INFO("Config request [OK]");
     i2c_slave->config(mem_addr_width);
     i2c_master->config();
     status = 0;

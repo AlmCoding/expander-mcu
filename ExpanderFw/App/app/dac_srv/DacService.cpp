@@ -28,8 +28,10 @@
 namespace app::dac_srv {
 
 void DacService::init(app::ctrl::RequestSrvCallback request_service_cb) {
+  srv_info_ = {};
   request_service_cb_ = request_service_cb;
 
+  dac_config_.config();
   dac_controller_.config();
 }
 
@@ -114,6 +116,7 @@ int32_t DacService::postConfigRequest(dac_proto_DacMsg* msg) {
   DEBUG_INFO("Post config request (req: %d)", msg->msg.config_request.request_id);
 
   if (dac_config_.scheduleRequest(&request, msg->sequence_number) == Status_t::Ok) {
+    dac_controller_.config(request.mode);
     status = 0;
   }
 

@@ -9,6 +9,7 @@
 #define HAL_DAC_DACCONTROLLER_HPP_
 
 #include "common.hpp"
+#include "hal/dac/DacConfig.hpp"
 #include "main.h"
 #include "tx_api.h"
 
@@ -21,6 +22,17 @@ class DacController {
 
  public:
   typedef uint16_t Sample_t;
+
+  enum class DacId {
+    Dac0 = 0,
+    Dac1,
+  };
+
+  enum class DacUpdate {
+    No = 0,
+    Yes,
+    All,
+  };
 
   enum class RequestStatus {
     NotInit = 0,
@@ -55,10 +67,10 @@ class DacController {
     uint16_t buffer_space_ch2;
   } StatusInfo;
 
-  DacController();
+  DacController(SPI_HandleTypeDef* spi_handle);
   virtual ~DacController() = default;
 
-  Status_t config();
+  Status_t config(DacConfig::Mode mode = DacConfig::Mode::Static);
   Status_t init();
   uint32_t poll();
 
@@ -81,8 +93,15 @@ class DacController {
   Status_t allocateBufferSpace(Request* request, Sample_t* data_ch1, Sample_t* data_ch2);
   Status_t allocateBufferSection(BufferState* buffer_info, Sample_t* src_data, Sample_t* dest_data, size_t size);
 
+  Status_t updateSample(bool ch1, bool ch2);
+  Status_t writeValue(DacId dac_id, uint16_t value, DacUpdate update);
+
+  SPI_HandleTypeDef* spi_handle_ = nullptr;
+
   TX_QUEUE request_queue_;
   uint32_t request_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(Request) / sizeof(uint32_t))];
+
+  DacConfig::Mode mode_ = DacConfig::Mode::Static;
 
   Sample_t data_buffer_ch1[DataBufferSize];
   Sample_t data_buffer_ch2[DataBufferSize];

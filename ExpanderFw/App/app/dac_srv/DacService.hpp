@@ -12,6 +12,7 @@
 #include "hal/dac/DacConfig.hpp"
 #include "hal/dac/DacController.hpp"
 #include "proto_c/dac.pb.h"
+#include "spi.h"
 
 namespace app::dac_srv {
 
@@ -41,8 +42,8 @@ class DacService {
   static dac_proto_DacDataStatusCode convertDataStatus(hal::dac::DacController::RequestStatus status);
   static dac_proto_DacConfigStatusCode convertConfigStatus(hal::dac::DacConfig::RequestStatus status);
 
-  hal::dac::DacController dac_controller_{};
-  hal::dac::DacConfig dac_config_{};
+  hal::dac::DacController dac_controller_{ &hspi3 };
+  hal::dac::DacConfig dac_config_{ &hspi3 };
 
   ServiceInfo srv_info_ = {};
 
