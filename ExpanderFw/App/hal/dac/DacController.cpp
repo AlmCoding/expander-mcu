@@ -36,11 +36,23 @@ DacController::DacController(SPI_HandleTypeDef* spi_handle) : spi_handle_{ spi_h
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 }
 
-Status_t DacController::config(DacConfig::Mode mode) {
-  Status_t status = init();
+Status_t DacController::config(bool config_ch0, DacConfig::Mode mode_ch0, bool config_ch1, DacConfig::Mode mode_ch1) {
+  Status_t status = init(config_ch0, config_ch1);
 
-  mode_ = mode;
-  DEBUG_INFO("Config DacController mode: %s", magic_enum::enum_name(mode).cbegin());
+  if (config_ch0 == false && config_ch1 == false) {
+    DEBUG_ERROR("No channel to configure!");
+    return Status_t::Error;
+  }
+
+  if (config_ch0 == true) {
+    mode_ch0_ = mode_ch0;
+    DEBUG_INFO("DacController (ch0) mode: %s", magic_enum::enum_name(mode_ch0).cbegin());
+  }
+
+  if (config_ch1 == true) {
+    mode_ch1_ = mode_ch1;
+    DEBUG_INFO("DacController (ch1) mode: %s", magic_enum::enum_name(mode_ch1).cbegin());
+  }
 
   if (status == Status_t::Ok) {
     DEBUG_INFO("Config DacController [OK]");
@@ -53,15 +65,24 @@ Status_t DacController::config(DacConfig::Mode mode) {
   return status;
 }
 
-Status_t DacController::init() {
+Status_t DacController::init(bool init_ch0, bool init_ch1) {
   Status_t status = Status_t::Ok;
 
-  tx_queue_flush(&request_queue_);
+  if (init_ch0 == true) {
+    std::memset(data_buffer_ch0_, 0, sizeof(data_buffer_ch0_));
+    buffer_state_ch0_ = {};
+    run_ch0_ = false;
+  }
 
-  std::memset(data_buffer_ch1, 0, sizeof(data_buffer_ch1));
-  std::memset(data_buffer_ch2, 0, sizeof(data_buffer_ch2));
-  buffer_state_ch1_ = {};
-  buffer_state_ch2_ = {};
+  if (init_ch1 == true) {
+    std::memset(data_buffer_ch1_, 0, sizeof(data_buffer_ch1_));
+    buffer_state_ch1_ = {};
+    run_ch1_ = false;
+  }
+
+  if (init_ch0 == true && init_ch1 == true) {
+    tx_queue_flush(&request_queue_);
+  }
 
   sequence_number_ = 0;
   return status;
@@ -81,12 +102,12 @@ uint32_t DacController::poll() {
   return service_requests;
 }
 
-Status_t DacController::scheduleRequest(Request* request, Sample_t* data_ch1, Sample_t* data_ch2, uint32_t seq_num) {
+Status_t DacController::scheduleRequest(Request* request, Sample_t* data_ch0, Sample_t* data_ch1, uint32_t seq_num) {
   uint32_t sts = TX_SUCCESS;
 
   // Check for invalid sample counts
-  if ((request->sample_count_ch1 == 0 && request->sample_count_ch2 == 0) ||
-      (request->sample_count_ch1 > DataBufferSize) || (request->sample_count_ch2 > DataBufferSize)) {
+  if ((request->sample_count_ch0 == 0 && request->sample_count_ch1 == 0) ||
+      (request->sample_count_ch0 > DataBufferSize) || (request->sample_count_ch1 > DataBufferSize)) {
     DEBUG_ERROR("Invalid request (req: %d)", request->request_id);
     request->status_code = RequestStatus::BadRequest;
     return exitScheduleRequest(request, seq_num);
@@ -105,10 +126,23 @@ Status_t DacController::scheduleRequest(Request* request, Sample_t* data_ch1, Sa
 
   request->status_code = RequestStatus::Ongoing;
 
-  if (allocateBufferSpace(request, data_ch1, data_ch2) != Status_t::Ok) {
+  if (allocateBufferSpace(request, data_ch0, data_ch1) != Status_t::Ok) {
     DEBUG_ERROR("Buffer overflow (req: %d)", request->request_id);
     request->status_code = RequestStatus::NoSpace;
     return exitScheduleRequest(request, seq_num);
+  }
+
+  DacUpdate dac_update;
+  if (request->run_ch0 == true) {
+    run_ch0_ = true;
+    dac_update = (request->run_ch1 == true) ? DacUpdate::No : DacUpdate::Yes;
+    updateSample(DacId::Dac0, dac_update);
+  }
+
+  if (request->run_ch1 == true) {
+    run_ch1_ = true;
+    dac_update = (request->run_ch0 == true) ? DacUpdate::All : DacUpdate::Yes;
+    updateSample(DacId::Dac1, dac_update);
   }
 
   // Set request status to complete
@@ -178,14 +212,15 @@ DacController::Space DacController::getFreeSpace(BufferState* buffer_state) {
   return space;
 }
 
-Status_t DacController::allocateBufferSpace(Request* request, Sample_t* data_ch1, Sample_t* data_ch2) {
+Status_t DacController::allocateBufferSpace(Request* request, Sample_t* data_ch0, Sample_t* data_ch1) {
   Status_t status = Status_t::Ok;
 
-  if (request->sample_count_ch1 > 0) {
-    status = allocateBufferSection(&buffer_state_ch1_, data_ch1, data_buffer_ch1, request->sample_count_ch1);
+  if (request->sample_count_ch0 > 0) {
+    status = allocateBufferSection(&buffer_state_ch0_, data_ch0, data_buffer_ch0_, request->sample_count_ch0);
   }
-  if (request->sample_count_ch2 > 0) {
-    status = allocateBufferSection(&buffer_state_ch2_, data_ch2, data_buffer_ch2, request->sample_count_ch2);
+
+  if (request->sample_count_ch1 > 0) {
+    status = allocateBufferSection(&buffer_state_ch1_, data_ch1, data_buffer_ch1_, request->sample_count_ch1);
   }
 
   if (status != Status_t::Ok) {
@@ -237,30 +272,42 @@ Status_t DacController::serviceStatus(StatusInfo* info) {
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
   info->queue_space = static_cast<uint16_t>(free_slots);
 
+  Space free_space_ch0 = getFreeSpace(&buffer_state_ch0_);
   Space free_space_ch1 = getFreeSpace(&buffer_state_ch1_);
-  Space free_space_ch2 = getFreeSpace(&buffer_state_ch2_);
+  info->buffer_space_ch0 = static_cast<uint16_t>(free_space_ch0.end_to_back + free_space_ch0.front_to_start);
   info->buffer_space_ch1 = static_cast<uint16_t>(free_space_ch1.end_to_back + free_space_ch1.front_to_start);
-  info->buffer_space_ch2 = static_cast<uint16_t>(free_space_ch2.end_to_back + free_space_ch2.front_to_start);
   return status;
 }
 
-Status_t DacController::updateSample(bool ch1, bool ch2) {
+Status_t DacController::updateSample(DacId dac_id, DacUpdate dac_update) {
   Status_t status = Status_t::Ok;
 
-  if (ch1 == true && buffer_state_ch1_.data_start != buffer_state_ch1_.data_end) {
-    Sample_t sample = data_buffer_ch1[buffer_state_ch1_.data_start];
-    status = writeValue(DacId::Dac0, sample, DacUpdate::Yes);
-    buffer_state_ch1_.data_start = (buffer_state_ch1_.data_start + 1) % DataBufferSize;
-  }
+  DacConfig::Mode mode = (dac_id == DacId::Dac0) ? mode_ch0_ : mode_ch1_;
+  Sample_t* data_buffer = (dac_id == DacId::Dac0) ? data_buffer_ch0_ : data_buffer_ch1_;
+  BufferState* buffer_state = (dac_id == DacId::Dac0) ? &buffer_state_ch0_ : &buffer_state_ch1_;
+  // bool run = (dac_id == DacId::Dac0) ? run_ch0_ : run_ch1_;
 
-  if (ch2) {
-    if (buffer_state_ch2_.data_start == buffer_state_ch2_.data_end) {
-      DEBUG_WARN("No data to update for channel 2!");
-      return Status_t::Error;
+  switch (mode) {
+    case DacConfig::Mode::Static: {
+      DEBUG_INFO("Update sample (dac: %s, mode: Static, update: %s)",  //
+                 magic_enum::enum_name(dac_id).cbegin(), magic_enum::enum_name(dac_update).cbegin());
+      Sample_t sample = data_buffer[buffer_state->data_start];
+      status = writeValue(dac_id, sample, dac_update);
+      buffer_state->data_start += 1;
+      if (buffer_state->data_start >= DataBufferSize) {
+        buffer_state->data_start = 0;  // Wrap around
+      }
+      break;
     }
-    Sample_t sample = data_buffer_ch2[buffer_state_ch2_.data_start];
-    status = writeValue(DacId::Dac1, sample, DacUpdate::Yes);
-    buffer_state_ch2_.data_start = (buffer_state_ch2_.data_start + 1) % DataBufferSize;
+    case DacConfig::Mode::Periodic: {
+      break;
+    }
+    case DacConfig::Mode::Streaming: {
+      break;
+    }
+    default: {
+      ETL_ASSERT(false, ETL_ERROR(0));
+    }
   }
 
   return status;
@@ -293,7 +340,10 @@ Status_t DacController::writeValue(DacId dac_id, uint16_t value, DacUpdate updat
   data[1] = static_cast<uint8_t>(value >> 8);  // MSB
   data[2] = static_cast<uint8_t>(value & 0xFF);
 
-  hal_status = HAL_SPI_Transmit(spi_handle_, data, sizeof(data), 0);
+  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_RESET);
+  hal_status = HAL_SPI_Transmit(spi_handle_, data, sizeof(data), HAL_MAX_DELAY);
+  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_SET);
+
   if (hal_status != HAL_OK) {
     DEBUG_ERROR("Write value failed (HAL error: %d)", hal_status);
     return Status_t::Error;

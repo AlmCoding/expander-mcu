@@ -104,3 +104,4 @@ pullups
 bootloader
 unhandled
 dac
+vref

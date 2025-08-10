@@ -86,16 +86,17 @@ int32_t DacService::postDataRequest(dac_proto_DacMsg* msg) {
 
   request.request_id = msg->msg.data_request.request_id;
   request.status_code = hal::dac::DacController::RequestStatus::NotInit;
-  request.run = msg->msg.data_request.run;
+  request.run_ch0 = msg->msg.data_request.run_ch0;
+  request.run_ch1 = msg->msg.data_request.run_ch1;
+  request.sample_count_ch0 = msg->msg.data_request.data_ch0.size / sizeof(hal::dac::DacController::Sample_t);
   request.sample_count_ch1 = msg->msg.data_request.data_ch1.size / sizeof(hal::dac::DacController::Sample_t);
-  request.sample_count_ch2 = msg->msg.data_request.data_ch2.size / sizeof(hal::dac::DacController::Sample_t);
 
   DEBUG_INFO("Post data request (req: %d)", msg->msg.data_request.request_id);
 
   if (dac_controller_.scheduleRequest(
           &request,                                                                                    //
+          reinterpret_cast<hal::dac::DacController::Sample_t*>(msg->msg.data_request.data_ch0.bytes),  //
           reinterpret_cast<hal::dac::DacController::Sample_t*>(msg->msg.data_request.data_ch1.bytes),  //
-          reinterpret_cast<hal::dac::DacController::Sample_t*>(msg->msg.data_request.data_ch2.bytes),  //
           msg->sequence_number) == Status_t::Ok) {
     status = 0;
   }
@@ -109,14 +110,19 @@ int32_t DacService::postConfigRequest(dac_proto_DacMsg* msg) {
 
   request.request_id = msg->msg.config_request.request_id;
   request.status_code = hal::dac::DacConfig::RequestStatus::NotInit;
-  request.mode = static_cast<hal::dac::DacConfig::Mode>(msg->msg.config_request.mode);
-  request.sampling_rate = msg->msg.config_request.sampling_rate;
-  request.periodic_samples = msg->msg.config_request.periodic_samples;
+  request.config_ch0 = msg->msg.config_request.config_ch0;
+  request.config_ch1 = msg->msg.config_request.config_ch1;
+  request.mode_ch0 = static_cast<hal::dac::DacConfig::Mode>(msg->msg.config_request.mode_ch0);
+  request.mode_ch1 = static_cast<hal::dac::DacConfig::Mode>(msg->msg.config_request.mode_ch1);
+  request.sampling_rate_ch0 = msg->msg.config_request.sampling_rate_ch0;
+  request.sampling_rate_ch1 = msg->msg.config_request.sampling_rate_ch1;
+  request.periodic_samples_ch0 = msg->msg.config_request.periodic_samples_ch0;
+  request.periodic_samples_ch1 = msg->msg.config_request.periodic_samples_ch1;
 
   DEBUG_INFO("Post config request (req: %d)", msg->msg.config_request.request_id);
 
   if (dac_config_.scheduleRequest(&request, msg->sequence_number) == Status_t::Ok) {
-    dac_controller_.config(request.mode);
+    dac_controller_.config(request.config_ch0, request.mode_ch0, request.config_ch1, request.mode_ch1);
     status = 0;
   }
 
@@ -175,8 +181,8 @@ Status_t DacService::serviceDataRequest(dac_proto_DacMsg* msg) {
   msg->msg.data_status.request_id = info.request.request_id;
   msg->msg.data_status.status_code = DacService::convertDataStatus(info.request.status_code);
   msg->msg.data_status.queue_space = info.queue_space;
+  msg->msg.data_status.buffer_space_ch0 = info.buffer_space_ch0;
   msg->msg.data_status.buffer_space_ch1 = info.buffer_space_ch1;
-  msg->msg.data_status.buffer_space_ch2 = info.buffer_space_ch2;
 
   DEBUG_INFO("Srv data status (req: %d) [OK]", msg->msg.data_request.request_id);
   return Status_t::Ok;
@@ -229,6 +235,8 @@ dac_proto_DacConfigStatusCode DacService::convertConfigStatus(hal::dac::DacConfi
       return dac_proto_DacConfigStatusCode::dac_proto_DacConfigStatusCode_CFG_SUCCESS;
     case hal::dac::DacConfig::RequestStatus::InvalidMode:
       return dac_proto_DacConfigStatusCode::dac_proto_DacConfigStatusCode_CFG_INVALID_MODE;
+    case hal::dac::DacConfig::RequestStatus::InvalidConfigFlags:
+      return dac_proto_DacConfigStatusCode::dac_proto_DacConfigStatusCode_CFG_INVLAID_CONFIG_FLAGS;
     case hal::dac::DacConfig::RequestStatus::InvalidSamplingRate:
       return dac_proto_DacConfigStatusCode::dac_proto_DacConfigStatusCode_CFG_INVALID_SAMPLING_RATE;
     case hal::dac::DacConfig::RequestStatus::InvalidPeriodicSamples:

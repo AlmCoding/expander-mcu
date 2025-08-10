@@ -24,6 +24,7 @@ class DacConfig {
     // Pending, => not needed, request is immediately ongoing
     Ongoing,
     Complete,
+    InvalidConfigFlags,
     InvalidMode,
     InvalidSamplingRate,
     InvalidPeriodicSamples,
@@ -39,9 +40,14 @@ class DacConfig {
   typedef struct {
     uint32_t request_id;
     RequestStatus status_code;
-    Mode mode;
-    uint32_t sampling_rate;     // in Hz
-    uint32_t periodic_samples;  // number of samples for periodic mode
+    bool config_ch0;
+    bool config_ch1;
+    Mode mode_ch0;
+    Mode mode_ch1;
+    uint32_t sampling_rate_ch0;  // in Hz
+    uint32_t sampling_rate_ch1;
+    uint32_t periodic_samples_ch0;  // number of samples for periodic mode
+    uint32_t periodic_samples_ch1;
   } Request;
 
   typedef struct {

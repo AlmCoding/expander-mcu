@@ -47,9 +47,10 @@ class DacController {
   typedef struct {
     uint32_t request_id;
     RequestStatus status_code;
-    bool run;
+    bool run_ch0;
+    bool run_ch1;
+    uint32_t sample_count_ch0;
     uint32_t sample_count_ch1;
-    uint32_t sample_count_ch2;
     uint32_t place_holder_word6 = 0;
     uint32_t place_holder_word7 = 0;
     uint32_t place_holder_word8 = 0;
@@ -63,18 +64,19 @@ class DacController {
     uint32_t sequence_number;
     Request request;
     uint16_t queue_space;
+    uint16_t buffer_space_ch0;
     uint16_t buffer_space_ch1;
-    uint16_t buffer_space_ch2;
   } StatusInfo;
 
   DacController(SPI_HandleTypeDef* spi_handle);
   virtual ~DacController() = default;
 
-  Status_t config(DacConfig::Mode mode = DacConfig::Mode::Static);
-  Status_t init();
+  Status_t config(bool config_ch0 = true, DacConfig::Mode mode_ch0 = DacConfig::Mode::Static,  //
+                  bool config_ch1 = true, DacConfig::Mode mode_ch1 = DacConfig::Mode::Static);
+  Status_t init(bool init_ch1, bool init_ch2);
   uint32_t poll();
 
-  Status_t scheduleRequest(Request* request, Sample_t* data_ch1, Sample_t* data_ch2, uint32_t seq_num);
+  Status_t scheduleRequest(Request* request, Sample_t* data_ch0, Sample_t* data_ch1, uint32_t seq_num);
   Status_t serviceStatus(StatusInfo* info);
 
  private:
@@ -90,10 +92,10 @@ class DacController {
 
   Status_t exitScheduleRequest(Request* request, uint32_t seq_num);
   Space getFreeSpace(BufferState* buffer_info);
-  Status_t allocateBufferSpace(Request* request, Sample_t* data_ch1, Sample_t* data_ch2);
+  Status_t allocateBufferSpace(Request* request, Sample_t* data_ch0, Sample_t* data_ch1);
   Status_t allocateBufferSection(BufferState* buffer_info, Sample_t* src_data, Sample_t* dest_data, size_t size);
 
-  Status_t updateSample(bool ch1, bool ch2);
+  Status_t updateSample(DacId dac_id, DacUpdate dac_update);
   Status_t writeValue(DacId dac_id, uint16_t value, DacUpdate update);
 
   SPI_HandleTypeDef* spi_handle_ = nullptr;
@@ -101,12 +103,15 @@ class DacController {
   TX_QUEUE request_queue_;
   uint32_t request_queue_buffer_[RequestQueue_MaxItemCnt * (sizeof(Request) / sizeof(uint32_t))];
 
-  DacConfig::Mode mode_ = DacConfig::Mode::Static;
+  DacConfig::Mode mode_ch0_ = DacConfig::Mode::Static;
+  DacConfig::Mode mode_ch1_ = DacConfig::Mode::Static;
 
-  Sample_t data_buffer_ch1[DataBufferSize];
-  Sample_t data_buffer_ch2[DataBufferSize];
+  Sample_t data_buffer_ch0_[DataBufferSize];
+  Sample_t data_buffer_ch1_[DataBufferSize];
+  BufferState buffer_state_ch0_ = {};
   BufferState buffer_state_ch1_ = {};
-  BufferState buffer_state_ch2_ = {};
+  bool run_ch0_ = false;
+  bool run_ch1_ = false;
 
   uint32_t sequence_number_ = 0;
 };

@@ -13,7 +13,6 @@
 namespace hal::dac {
 
 // constexpr uint8_t DAC_CMD_MASK = 0b00111000;
-
 constexpr uint8_t DAC_CMD_WRITE_REG_N = 0b00000000;
 constexpr uint8_t DAC_CMD_UPDATE_REG_N = 0b00001000;
 constexpr uint8_t DAC_CMD_WRITE_REG_N_UPDATE_ALL = 0b00010000;
@@ -23,10 +22,9 @@ constexpr uint8_t DAC_CMD_SOFTWARE_RESET = 0b00101000;
 constexpr uint8_t DAC_CMD_ENABLE_OR_DISABLE_VREF = 0b00111000;
 
 // constexpr uint8_t DAC_ADDR_MASK = 0b00000111;
-
-constexpr uint8_t DAC_ADDR_DAC_A = 0b00000001;
-constexpr uint8_t DAC_ADDR_DAC_B = 0b00000010;
-constexpr uint8_t DAC_ADDR_DAC_AB = 0b00000011;
+constexpr uint8_t DAC_ADDR_DAC_A = 0b00000000;
+constexpr uint8_t DAC_ADDR_DAC_B = 0b00000001;
+constexpr uint8_t DAC_ADDR_DAC_AB = 0b00000111;
 constexpr uint8_t DAC_ADDR_GAIN = 0b00000010;
 
 // DAC data values for configuration commands

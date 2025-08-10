@@ -42,8 +42,8 @@ class DacService {
   static dac_proto_DacDataStatusCode convertDataStatus(hal::dac::DacController::RequestStatus status);
   static dac_proto_DacConfigStatusCode convertConfigStatus(hal::dac::DacConfig::RequestStatus status);
 
-  hal::dac::DacController dac_controller_{ &hspi3 };
-  hal::dac::DacConfig dac_config_{ &hspi3 };
+  hal::dac::DacController dac_controller_{ &hspi1 };
+  hal::dac::DacConfig dac_config_{ &hspi1 };
 
   ServiceInfo srv_info_ = {};
 
