@@ -23,17 +23,6 @@ class DacController {
  public:
   typedef uint16_t Sample_t;
 
-  enum class DacId {
-    Dac0 = 0,
-    Dac1,
-  };
-
-  enum class DacUpdate {
-    No = 0,
-    Yes,
-    All,
-  };
-
   enum class RequestStatus {
     NotInit = 0,
     NoSpace,
@@ -114,6 +103,8 @@ class DacController {
   bool run_ch1_ = false;
 
   uint32_t sequence_number_ = 0;
+
+  friend class DacIrq;
 };
 
 }  // namespace hal::dac

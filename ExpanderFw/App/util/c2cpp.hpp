@@ -15,6 +15,7 @@ extern "C" {
 
 void notifyUsbDeviceActivate(void* cdc_acm);
 void notifyUsbDeviceDeactivate();
+void timerExpired();
 
 #ifdef __cplusplus
 }  // extern "C"

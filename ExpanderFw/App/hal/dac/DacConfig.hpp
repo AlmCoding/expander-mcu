@@ -14,9 +14,22 @@
 
 namespace hal::dac {
 
+enum class DacId {
+  Dac0 = 0,
+  Dac1,
+};
+
+enum class DacUpdate {
+  No = 0,
+  Yes,
+  All,
+};
+
 class DacConfig {
  private:
   constexpr static uint16_t DefalutValue = 0xffff / 2;
+  constexpr static uint32_t MinSamplingRate = 1;       // in Hz
+  constexpr static uint32_t MaxSamplingRate = 500000;  // in Hz
 
  public:
   enum class RequestStatus {

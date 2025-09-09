@@ -6,6 +6,7 @@
  */
 
 #include "util/c2cpp.hpp"
+#include "hal/dac/DacIrq.hpp"
 #include "os/msg/msg_broker.hpp"
 #include "util/debug.hpp"
 
@@ -56,6 +57,11 @@ void notifyUsbDeviceDeactivate() {
   if (success == false) {
     DEBUG_INFO("Send UsbDeviceDeactivate msg [FAILED]");
   }
+}
+
+void timerExpired() {
+  hal::dac::DacIrq::getInstance().timerExpired();
+  HAL_GPIO_TogglePin(GPIOA, TEST_POINT_Pin);
 }
 
 }  // namespace util

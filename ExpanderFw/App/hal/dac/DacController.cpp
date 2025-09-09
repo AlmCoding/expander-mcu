@@ -10,6 +10,7 @@
 #include "etl/algorithm.h"      // etl::max
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "hal/dac/DACxx6x.hpp"
+#include "hal/dac/DacIrq.hpp"
 #include "os/msg/msg_broker.hpp"
 #include "util/debug.hpp"
 
@@ -45,13 +46,15 @@ Status_t DacController::config(bool config_ch0, DacConfig::Mode mode_ch0, bool c
   }
 
   if (config_ch0 == true) {
+    DEBUG_INFO("Config (ch0) mode: %s", magic_enum::enum_name(mode_ch0).cbegin());
     mode_ch0_ = mode_ch0;
-    DEBUG_INFO("DacController (ch0) mode: %s", magic_enum::enum_name(mode_ch0).cbegin());
+    run_ch0_ = false;
   }
 
   if (config_ch1 == true) {
+    DEBUG_INFO("Config (ch1) mode: %s", magic_enum::enum_name(mode_ch1).cbegin());
     mode_ch1_ = mode_ch1;
-    DEBUG_INFO("DacController (ch1) mode: %s", magic_enum::enum_name(mode_ch1).cbegin());
+    run_ch1_ = false;
   }
 
   if (status == Status_t::Ok) {
@@ -137,12 +140,22 @@ Status_t DacController::scheduleRequest(Request* request, Sample_t* data_ch0, Sa
     run_ch0_ = true;
     dac_update = (request->run_ch1 == true) ? DacUpdate::No : DacUpdate::Yes;
     updateSample(DacId::Dac0, dac_update);
+    if (mode_ch0_ == DacConfig::Mode::Static) {
+      buffer_state_ch0_ = {};
+    } else if (mode_ch0_ == DacConfig::Mode::Periodic) {
+      DacIrq::getInstance().enableDacChannel(DacId::Dac0);
+    }
   }
 
   if (request->run_ch1 == true) {
     run_ch1_ = true;
     dac_update = (request->run_ch0 == true) ? DacUpdate::All : DacUpdate::Yes;
     updateSample(DacId::Dac1, dac_update);
+    if (mode_ch1_ == DacConfig::Mode::Static) {
+      buffer_state_ch1_ = {};
+    } else if (mode_ch1_ == DacConfig::Mode::Periodic) {
+      DacIrq::getInstance().enableDacChannel(DacId::Dac1);
+    }
   }
 
   // Set request status to complete
@@ -282,34 +295,16 @@ Status_t DacController::serviceStatus(StatusInfo* info) {
 Status_t DacController::updateSample(DacId dac_id, DacUpdate dac_update) {
   Status_t status = Status_t::Ok;
 
-  DacConfig::Mode mode = (dac_id == DacId::Dac0) ? mode_ch0_ : mode_ch1_;
   Sample_t* data_buffer = (dac_id == DacId::Dac0) ? data_buffer_ch0_ : data_buffer_ch1_;
   BufferState* buffer_state = (dac_id == DacId::Dac0) ? &buffer_state_ch0_ : &buffer_state_ch1_;
-  // bool run = (dac_id == DacId::Dac0) ? run_ch0_ : run_ch1_;
+  size_t data_end = (dac_id == DacId::Dac0) ? buffer_state_ch0_.data_end : buffer_state_ch1_.data_end;
 
-  switch (mode) {
-    case DacConfig::Mode::Static: {
-      DEBUG_INFO("Update sample (dac: %s, mode: Static, update: %s)",  //
-                 magic_enum::enum_name(dac_id).cbegin(), magic_enum::enum_name(dac_update).cbegin());
-      Sample_t sample = data_buffer[buffer_state->data_start];
-      status = writeValue(dac_id, sample, dac_update);
-      buffer_state->data_start += 1;
-      if (buffer_state->data_start >= DataBufferSize) {
-        buffer_state->data_start = 0;  // Wrap around
-      }
-      break;
-    }
-    case DacConfig::Mode::Periodic: {
-      break;
-    }
-    case DacConfig::Mode::Streaming: {
-      break;
-    }
-    default: {
-      ETL_ASSERT(false, ETL_ERROR(0));
-    }
+  Sample_t sample = data_buffer[buffer_state->data_start];
+  status = writeValue(dac_id, sample, dac_update);
+  buffer_state->data_start += 1;
+  if (buffer_state->data_start >= data_end) {
+    buffer_state->data_start = 0;  // Wrap around
   }
-
   return status;
 }
 
@@ -340,10 +335,9 @@ Status_t DacController::writeValue(DacId dac_id, uint16_t value, DacUpdate updat
   data[1] = static_cast<uint8_t>(value >> 8);  // MSB
   data[2] = static_cast<uint8_t>(value & 0xFF);
 
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_RESET);
   hal_status = HAL_SPI_Transmit(spi_handle_, data, sizeof(data), HAL_MAX_DELAY);
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_SET);
-
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_SET);
   if (hal_status != HAL_OK) {
     DEBUG_ERROR("Write value failed (HAL error: %d)", hal_status);
     return Status_t::Error;

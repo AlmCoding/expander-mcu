@@ -6,7 +6,6 @@
  */
 
 #include "hal/i2c/I2cIrq.hpp"
-#include "enum/magic_enum.hpp"
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "util/debug.hpp"
 

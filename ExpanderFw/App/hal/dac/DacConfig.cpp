@@ -7,6 +7,7 @@
 
 #include "hal/dac/DacConfig.hpp"
 #include "enum/magic_enum.hpp"
+#include "etl/algorithm.h"      // etl::max
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
 #include "hal/dac/DACxx6x.hpp"
 #include "util/debug.hpp"
@@ -44,7 +45,7 @@ Status_t DacConfig::init() {
   Status_t status = Status_t::Ok;
   service_status_ = false;
 
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_SET);
   tx_thread_sleep(1);
 
   // Reset the DAC
@@ -52,21 +53,16 @@ Status_t DacConfig::init() {
     DEBUG_ERROR("Software reset [FAILED]");
     return status;
   }
-  // tx_thread_sleep(1);
 
-  // Enable internal voltage reference
   if (enableInternalVoltageRef() != Status_t::Ok) {
     DEBUG_ERROR("Enable internal Vref [FAILED]");
     return status;
   }
-  // tx_thread_sleep(1);
 
-  // Set default gains
   if (setDefaultGains() != Status_t::Ok) {
     DEBUG_ERROR("Set default gains [FAILED]");
     return status;
   }
-  // tx_thread_sleep(1);
 
   // Set default values
   if (setDefaultValues() != Status_t::Ok) {
@@ -92,21 +88,29 @@ Status_t DacConfig::scheduleRequest(Request* request, uint32_t seq_num) {
     return Status_t::Error;
   }
 
-  if (request_.config_ch0 == true) {
-    DEBUG_INFO("DacConfig (ch0) mode: %s", magic_enum::enum_name(request_.mode_ch0).cbegin());
-    DEBUG_INFO("DacConfig (ch0) sampling_rate: %d", request_.sampling_rate_ch0);
-    DEBUG_INFO("DacConfig (ch0) periodic_samples: %d", request_.periodic_samples_ch0);
-  }
-
-  if (request_.config_ch1 == true) {
-    DEBUG_INFO("DacConfig (ch1) mode: %s", magic_enum::enum_name(request_.mode_ch1).cbegin());
-    DEBUG_INFO("DacConfig (ch1) sampling_rate: %d", request_.sampling_rate_ch1);
-    DEBUG_INFO("DacConfig (ch1) periodic_samples: %d", request_.periodic_samples_ch1);
+  uint32_t smaller_sampling_rate = etl::min(request_.sampling_rate_ch0, request_.sampling_rate_ch1);
+  uint32_t larger_sampling_rate = etl::max(request_.sampling_rate_ch0, request_.sampling_rate_ch1);
+  if (smaller_sampling_rate < DacConfig::MinSamplingRate ||  //
+      larger_sampling_rate > DacConfig::MaxSamplingRate ||   //
+      larger_sampling_rate % smaller_sampling_rate != 0) {
+    DEBUG_ERROR("Invalid sampling rate(s) (ch0: %d, ch1: %d)", request_.sampling_rate_ch0, request_.sampling_rate_ch1);
+    request_.status_code = RequestStatus::InvalidSamplingRate;
+    return Status_t::Error;
   }
 
   request_.status_code = RequestStatus::Ongoing;
 
-  // TODO ...
+  if (request_.config_ch0 == true) {
+    DEBUG_INFO("Config (ch0) mode: %s", magic_enum::enum_name(request_.mode_ch0).cbegin());
+    DEBUG_INFO("Config (ch0) sampling_rate: %d", request_.sampling_rate_ch0);
+    DEBUG_INFO("Config (ch0) periodic_samples: %d", request_.periodic_samples_ch0);
+  }
+
+  if (request_.config_ch1 == true) {
+    DEBUG_INFO("Config (ch1) mode: %s", magic_enum::enum_name(request_.mode_ch1).cbegin());
+    DEBUG_INFO("Config (ch1) sampling_rate: %d", request_.sampling_rate_ch1);
+    DEBUG_INFO("Config (ch1) periodic_samples: %d", request_.periodic_samples_ch1);
+  }
 
   request_.status_code = RequestStatus::Complete;
   return Status_t::Ok;
@@ -131,9 +135,9 @@ Status_t DacConfig::softwareReset() {
   HAL_StatusTypeDef hal_status;
   uint8_t data[3] = { DAC_CMD_SOFTWARE_RESET, 0, DAC_DATA_POWER_ON_RESET };
 
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_RESET);
   hal_status = HAL_SPI_Transmit(spi_handle_, data, sizeof(data), HAL_MAX_DELAY);
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_SET);
 
   if (hal_status != HAL_OK) {
     DEBUG_ERROR("Software reset failed (HAL error: %d)", hal_status);
@@ -147,9 +151,9 @@ Status_t DacConfig::enableInternalVoltageRef() {
   HAL_StatusTypeDef hal_status;
   uint8_t data[3] = { DAC_CMD_ENABLE_OR_DISABLE_VREF, 0, DAC_DATA_VREF_ENABLE };
 
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_RESET);
   hal_status = HAL_SPI_Transmit(spi_handle_, data, sizeof(data), HAL_MAX_DELAY);
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_SET);
 
   if (hal_status != HAL_OK) {
     DEBUG_ERROR("Enable internal voltage reference failed (HAL error: %d)", hal_status);
@@ -163,9 +167,9 @@ Status_t DacConfig::setDefaultGains() {
   HAL_StatusTypeDef hal_status;
   uint8_t data[3] = { DAC_CMD_WRITE_REG_N | DAC_ADDR_GAIN, 0, DAC_DATA_GAIN_A1_B1 };
 
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_RESET);
   hal_status = HAL_SPI_Transmit(spi_handle_, data, sizeof(data), HAL_MAX_DELAY);
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_SET);
 
   if (hal_status != HAL_OK) {
     DEBUG_ERROR("Set default gains failed (HAL error: %d)", hal_status);
@@ -180,9 +184,9 @@ Status_t DacConfig::setDefaultValues() {
   uint8_t data[3] = { DAC_CMD_WRITE_REG_N_UPDATE_REG_N | DAC_ADDR_DAC_AB,  //
                       static_cast<uint8_t>(DefalutValue >> 8), static_cast<uint8_t>(DefalutValue & 0xFF) };
 
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_RESET);
   hal_status = HAL_SPI_Transmit(spi_handle_, data, sizeof(data), HAL_MAX_DELAY);
-  HAL_GPIO_WritePin(GPIOA, DAC_SYNC_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_SET);
 
   if (hal_status != HAL_OK) {
     DEBUG_ERROR("Set default values failed (HAL error: %d)", hal_status);

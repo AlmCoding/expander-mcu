@@ -30,9 +30,12 @@ namespace app::dac_srv {
 void DacService::init(app::ctrl::RequestSrvCallback request_service_cb) {
   srv_info_ = {};
   request_service_cb_ = request_service_cb;
+  hal::dac::DacIrq::getInstance().setTimerHandle(&htim5);
+  hal::dac::DacIrq::getInstance().setDacCtrlHandle(&dac_controller_);
 
   dac_config_.config();
   dac_controller_.config();
+  hal::dac::DacIrq::getInstance().config();
 }
 
 void DacService::poll() {
@@ -122,7 +125,10 @@ int32_t DacService::postConfigRequest(dac_proto_DacMsg* msg) {
   DEBUG_INFO("Post config request (req: %d)", msg->msg.config_request.request_id);
 
   if (dac_config_.scheduleRequest(&request, msg->sequence_number) == Status_t::Ok) {
-    dac_controller_.config(request.config_ch0, request.mode_ch0, request.config_ch1, request.mode_ch1);
+    dac_controller_.config(request.config_ch0, request.mode_ch0,  //
+                           request.config_ch1, request.mode_ch1);
+    hal::dac::DacIrq::getInstance().config(request.config_ch0, request.sampling_rate_ch0,  //
+                                           request.config_ch1, request.sampling_rate_ch1);
     status = 0;
   }
 

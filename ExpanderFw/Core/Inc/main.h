@@ -57,7 +57,9 @@ void initPeripherals();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define DAC_SYNC_Pin GPIO_PIN_2
+#define TEST_POINT_Pin GPIO_PIN_2
+#define TEST_POINT_GPIO_Port GPIOA
+#define DAC_SYNC_Pin GPIO_PIN_4
 #define DAC_SYNC_GPIO_Port GPIOA
 #define HW_VERSION_0_Pin GPIO_PIN_12
 #define HW_VERSION_0_GPIO_Port GPIOB
