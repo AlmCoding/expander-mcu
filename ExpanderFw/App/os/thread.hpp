@@ -23,7 +23,7 @@ constexpr char DacThread_Name[] = "DacThread";
 constexpr TickNum UsbWriteThread_CycleTicks = TX_WAIT_FOREVER;  // event driven
 constexpr TickNum CtrlThread_CycleTicks = Ticks500ms;           // heart beat led
 constexpr TickNum I2cThread_CycleTicks = Ticks1ms;
-constexpr TickNum DacThread_CycleTicks = Ticks10ms;
+constexpr TickNum DacThread_CycleTicks = Ticks1ms;
 // constexpr TickNum GpioThread_CycleTicks = TX_WAIT_FOREVER;  // event driven
 
 constexpr uint32_t UsbReadThread_StackSize = 4096;

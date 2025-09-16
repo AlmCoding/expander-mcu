@@ -182,16 +182,33 @@ Status_t DacService::serviceDataRequest(dac_proto_DacMsg* msg) {
   }
 
   msg->sequence_number = info.sequence_number;
-  msg->which_msg = dac_proto_DacMsg_data_status_tag;
 
-  msg->msg.data_status.request_id = info.request.request_id;
-  msg->msg.data_status.status_code = DacService::convertDataStatus(info.request.status_code);
-  msg->msg.data_status.queue_space = info.queue_space;
-  msg->msg.data_status.buffer_space_ch0 = info.buffer_space_ch0;
-  msg->msg.data_status.buffer_space_ch1 = info.buffer_space_ch1;
+  if (info.notify == false) {
+    msg->which_msg = dac_proto_DacMsg_data_status_tag;
 
-  DEBUG_INFO("Srv data status (req: %d) [OK]", msg->msg.data_request.request_id);
-  return Status_t::Ok;
+    msg->msg.data_status.request_id = info.request.request_id;
+    msg->msg.data_status.status_code = DacService::convertDataStatus(info.request.status_code);
+    msg->msg.data_status.queue_space = info.queue_space;
+    msg->msg.data_status.buffer_space_ch0 = info.buffer_space_ch0;
+    msg->msg.data_status.buffer_space_ch1 = info.buffer_space_ch1;
+
+    DEBUG_INFO("Srv data status (req: %d) [OK]", msg->msg.data_request.request_id);
+    return Status_t::Ok;
+
+  } else {
+    msg->which_msg = dac_proto_DacMsg_notification_tag;
+
+    msg->msg.notification.buffer_underrun_ch0 =
+        (info.buffer_status_ch0 == hal::dac::DacController::BufferStatus::Underrun);
+    msg->msg.notification.buffer_underrun_ch1 =
+        (info.buffer_status_ch1 == hal::dac::DacController::BufferStatus::Underrun);
+    msg->msg.notification.queue_space = info.queue_space;
+    msg->msg.notification.buffer_space_ch0 = info.buffer_space_ch0;
+    msg->msg.notification.buffer_space_ch1 = info.buffer_space_ch1;
+
+    DEBUG_INFO("Srv data notification [OK]");
+    return Status_t::Ok;
+  }
 }
 
 Status_t DacService::serviceConfigRequest(dac_proto_DacMsg* msg) {

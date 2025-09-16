@@ -48,13 +48,13 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, TEST_POINT_Pin|LED_HRTB_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, TEST_POINT_Pin|REQUEST_RX_TP_Pin|LED_HRTB_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(DAC_SYNC_GPIO_Port, DAC_SYNC_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pins : TEST_POINT_Pin DAC_SYNC_Pin LED_HRTB_Pin */
-  GPIO_InitStruct.Pin = TEST_POINT_Pin|DAC_SYNC_Pin|LED_HRTB_Pin;
+  /*Configure GPIO pins : TEST_POINT_Pin DAC_SYNC_Pin REQUEST_RX_TP_Pin LED_HRTB_Pin */
+  GPIO_InitStruct.Pin = TEST_POINT_Pin|DAC_SYNC_Pin|REQUEST_RX_TP_Pin|LED_HRTB_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

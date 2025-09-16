@@ -93,12 +93,14 @@ void DacIrq::enableDacChannel(DacId dac_id) {
     sampling_ratio_ = sampling_rate_ch0_ / sampling_rate_ch1_;
     base_channel_id_ = DacId::Dac0;
     ratio_channel_id_ = DacId::Dac1;
+    enable_base_channel_ = &enable_ch0_;
     enable_ratio_channel_ = &enable_ch1_;
   } else {
     sampling_rate = sampling_rate_ch1_;
     sampling_ratio_ = sampling_rate_ch1_ / sampling_rate_ch0_;
     base_channel_id_ = DacId::Dac1;
     ratio_channel_id_ = DacId::Dac0;
+    enable_base_channel_ = &enable_ch1_;
     enable_ratio_channel_ = &enable_ch0_;
   }
   ratio_counter_ = sampling_ratio_;
@@ -159,7 +161,10 @@ void DacIrq::timerExpired() {
       dac_ctrl_handle_->updateSample(ratio_channel_id_, DacUpdate::No);
     }
   }
-  dac_ctrl_handle_->updateSample(base_channel_id_, DacUpdate::All);
+
+  if (*enable_base_channel_ == true) {
+    dac_ctrl_handle_->updateSample(base_channel_id_, DacUpdate::All);
+  }
 }
 
 }  // namespace hal::dac

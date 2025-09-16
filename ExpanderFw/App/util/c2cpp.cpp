@@ -60,8 +60,10 @@ void notifyUsbDeviceDeactivate() {
 }
 
 void timerExpired() {
+  HAL_GPIO_WritePin(GPIOA, TEST_POINT_Pin, GPIO_PIN_SET);
   hal::dac::DacIrq::getInstance().timerExpired();
-  HAL_GPIO_TogglePin(GPIOA, TEST_POINT_Pin);
+  HAL_GPIO_WritePin(GPIOA, TEST_POINT_Pin, GPIO_PIN_RESET);
+  // HAL_GPIO_TogglePin(GPIOA, TEST_POINT_Pin);
 }
 
 }  // namespace util

@@ -19,6 +19,10 @@ class DacController {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
   constexpr static size_t DataBufferSize = 1024 + 1;  // +1 to distinguish between empty and full buffer
+  constexpr static size_t BufferFullThreshold = 64;   // Threshold buffer is full when space is below this value
+  constexpr static size_t NotifySpaceThreshold = 64;  // Threshold to notify space info when space is above this value
+  static_assert(BufferFullThreshold <= NotifySpaceThreshold,
+                "BufferFullThreshold must be less than NotifySpaceThreshold!");
 
  public:
   typedef uint16_t Sample_t;
@@ -49,12 +53,22 @@ class DacController {
                  (sizeof(Request) == 32) || (sizeof(Request) == 64)),
                 "ThreadX queue messages must be of size 4, 8, 16, 32 or 64 bytes!");
 
+  enum class BufferStatus {
+    NotInit = 0,
+    Ok,
+    Full,
+    Underrun,
+  };
+
   typedef struct {
     uint32_t sequence_number;
     Request request;
     uint16_t queue_space;
     uint16_t buffer_space_ch0;
     uint16_t buffer_space_ch1;
+    BufferStatus buffer_status_ch0;
+    BufferStatus buffer_status_ch1;
+    bool notify;
   } StatusInfo;
 
   DacController(SPI_HandleTypeDef* spi_handle);
@@ -72,6 +86,8 @@ class DacController {
   typedef struct {
     size_t data_start;  // Start position of data in data buffer
     size_t data_end;    // End position of data in data buffer
+    size_t space;       // Free space in data buffer
+    BufferStatus status;
   } BufferState;
 
   typedef struct {
@@ -101,6 +117,7 @@ class DacController {
   BufferState buffer_state_ch1_ = {};
   bool run_ch0_ = false;
   bool run_ch1_ = false;
+  bool notify_space_info_ = false;
 
   uint32_t sequence_number_ = 0;
 

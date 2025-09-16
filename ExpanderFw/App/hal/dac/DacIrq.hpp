@@ -48,6 +48,7 @@ class DacIrq {
   uint32_t sampling_rate_ch1_ = 1;
   bool enable_ch0_ = false;
   bool enable_ch1_ = false;
+  bool* enable_base_channel_ = nullptr;
   bool* enable_ratio_channel_ = nullptr;
 
   DacId base_channel_id_ = DacId::Dac0;

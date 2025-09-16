@@ -74,17 +74,22 @@ Status_t DacController::init(bool init_ch0, bool init_ch1) {
   if (init_ch0 == true) {
     std::memset(data_buffer_ch0_, 0, sizeof(data_buffer_ch0_));
     buffer_state_ch0_ = {};
+    buffer_state_ch0_.space = DataBufferSize - 1;
+    buffer_state_ch0_.status = BufferStatus::Ok;
     run_ch0_ = false;
   }
 
   if (init_ch1 == true) {
     std::memset(data_buffer_ch1_, 0, sizeof(data_buffer_ch1_));
     buffer_state_ch1_ = {};
+    buffer_state_ch1_.space = DataBufferSize - 1;
+    buffer_state_ch1_.status = BufferStatus::Ok;
     run_ch1_ = false;
   }
 
   if (init_ch0 == true && init_ch1 == true) {
     tx_queue_flush(&request_queue_);
+    notify_space_info_ = false;
   }
 
   sequence_number_ = 0;
@@ -99,6 +104,8 @@ uint32_t DacController::poll() {
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
 
   if (free_slots < RequestQueue_MaxItemCnt) {
+    service_requests = 1;
+  } else if (notify_space_info_ == true) {  // Report space info if no requests are pending
     service_requests = 1;
   }
 
@@ -142,7 +149,9 @@ Status_t DacController::scheduleRequest(Request* request, Sample_t* data_ch0, Sa
     updateSample(DacId::Dac0, dac_update);
     if (mode_ch0_ == DacConfig::Mode::Static) {
       buffer_state_ch0_ = {};
-    } else if (mode_ch0_ == DacConfig::Mode::Periodic) {
+      buffer_state_ch0_.space = DataBufferSize - 1;
+      buffer_state_ch0_.status = BufferStatus::Ok;
+    } else {
       DacIrq::getInstance().enableDacChannel(DacId::Dac0);
     }
   }
@@ -153,7 +162,9 @@ Status_t DacController::scheduleRequest(Request* request, Sample_t* data_ch0, Sa
     updateSample(DacId::Dac1, dac_update);
     if (mode_ch1_ == DacConfig::Mode::Static) {
       buffer_state_ch1_ = {};
-    } else if (mode_ch1_ == DacConfig::Mode::Periodic) {
+      buffer_state_ch1_.space = DataBufferSize - 1;
+      buffer_state_ch1_.status = BufferStatus::Ok;
+    } else {
       DacIrq::getInstance().enableDacChannel(DacId::Dac1);
     }
   }
@@ -218,8 +229,9 @@ DacController::Space DacController::getFreeSpace(BufferState* buffer_state) {
     space.end_to_back -= 1;  // Reserve space for empty/full buffer
   }
 
-  DEBUG_INFO("Space [ds: %d, de: %d, sp1: %d, sp2: %d]",  //
-             buffer_state->data_start, buffer_state->data_end, space.end_to_back, space.front_to_start);
+  DEBUG_INFO("Space [ds: %d, de: %d, sp1: %d, sp2: %d, sum: %d]",  //
+             buffer_state->data_start, buffer_state->data_end, space.end_to_back, space.front_to_start,
+             space.end_to_back + space.front_to_start);
   // Ensure that the total free space does not exceed the buffer size -1 (to distinguish between empty and full buffer)
   ETL_ASSERT((space.end_to_back + space.front_to_start) <= (DataBufferSize - 1), ETL_ERROR(0));
   return space;
@@ -266,16 +278,38 @@ Status_t DacController::allocateBufferSection(BufferState* buffer_state, Sample_
     buffer_state->data_end = size2;
   }
 
+  buffer_state->space -= size;
+  if (buffer_state->space < BufferFullThreshold) {
+    buffer_state->status = BufferStatus::Full;
+  } else if (notify_space_info_ == false) {
+    buffer_state->status = BufferStatus::Ok;
+  }
   return status;
 }
 
 Status_t DacController::serviceStatus(StatusInfo* info) {
   Status_t status = Status_t::Ok;
+  bool notify_space_info = notify_space_info_;
+  notify_space_info_ = false;
 
-  Request* request = &info->request;
-  if (tx_queue_receive(&request_queue_, request, TX_NO_WAIT) != TX_SUCCESS) {
-    DEBUG_ERROR("No request to service!");
-    return Status_t::Error;
+  if (notify_space_info == true &&
+      (buffer_state_ch0_.status == BufferStatus::Underrun || buffer_state_ch1_.status == BufferStatus::Underrun)) {
+    info->buffer_status_ch0 = buffer_state_ch0_.status;
+    info->buffer_status_ch1 = buffer_state_ch1_.status;
+    info->notify = true;
+
+  } else {
+    Request* request = &info->request;
+    if (tx_queue_receive(&request_queue_, request, TX_NO_WAIT) != TX_SUCCESS) {
+      if (notify_space_info == true) {
+        info->buffer_status_ch0 = buffer_state_ch0_.status;
+        info->buffer_status_ch1 = buffer_state_ch1_.status;
+        info->notify = true;
+      } else {
+        DEBUG_ERROR("No request/notification to service!");
+        return Status_t::Error;
+      }
+    }
   }
 
   info->sequence_number = sequence_number_;
@@ -285,25 +319,53 @@ Status_t DacController::serviceStatus(StatusInfo* info) {
   ETL_ASSERT(sts == TX_SUCCESS, ETL_ERROR(0));
   info->queue_space = static_cast<uint16_t>(free_slots);
 
-  Space free_space_ch0 = getFreeSpace(&buffer_state_ch0_);
-  Space free_space_ch1 = getFreeSpace(&buffer_state_ch1_);
-  info->buffer_space_ch0 = static_cast<uint16_t>(free_space_ch0.end_to_back + free_space_ch0.front_to_start);
-  info->buffer_space_ch1 = static_cast<uint16_t>(free_space_ch1.end_to_back + free_space_ch1.front_to_start);
+  info->buffer_space_ch0 = static_cast<uint16_t>(buffer_state_ch0_.space);
+  info->buffer_space_ch1 = static_cast<uint16_t>(buffer_state_ch1_.space);
   return status;
 }
 
 Status_t DacController::updateSample(DacId dac_id, DacUpdate dac_update) {
   Status_t status = Status_t::Ok;
+  DacConfig::Mode mode = DacConfig::Mode::Static;
+  Sample_t* data_buffer = nullptr;
+  BufferState* buffer_state = nullptr;
 
-  Sample_t* data_buffer = (dac_id == DacId::Dac0) ? data_buffer_ch0_ : data_buffer_ch1_;
-  BufferState* buffer_state = (dac_id == DacId::Dac0) ? &buffer_state_ch0_ : &buffer_state_ch1_;
-  size_t data_end = (dac_id == DacId::Dac0) ? buffer_state_ch0_.data_end : buffer_state_ch1_.data_end;
+  if (dac_id == DacId::Dac0) {
+    mode = mode_ch0_;
+    data_buffer = data_buffer_ch0_;
+    buffer_state = &buffer_state_ch0_;
+  } else {
+    mode = mode_ch1_;
+    data_buffer = data_buffer_ch1_;
+    buffer_state = &buffer_state_ch1_;
+  }
 
   Sample_t sample = data_buffer[buffer_state->data_start];
   status = writeValue(dac_id, sample, dac_update);
-  buffer_state->data_start += 1;
-  if (buffer_state->data_start >= data_end) {
-    buffer_state->data_start = 0;  // Wrap around
+  buffer_state->data_start++;
+  buffer_state->space++;
+
+  if (mode == DacConfig::Mode::Streaming) {
+    if (buffer_state->data_start == DataBufferSize) {
+      buffer_state->data_start = 0;  // Wrap around
+    }
+    if (buffer_state->data_start == buffer_state->data_end) {
+      buffer_state->status = BufferStatus::Underrun;
+      notify_space_info_ = true;  // Notify space info on buffer underrun
+      DacIrq::getInstance().disableDacChannel(dac_id);
+      DEBUG_ERROR("Buffer underrun (DacId: %d)", static_cast<int>(dac_id));
+
+    } else {
+      if (buffer_state->status == BufferStatus::Full && buffer_state->space >= NotifySpaceThreshold) {
+        buffer_state->status = BufferStatus::Ok;
+        notify_space_info_ = true;  // Notify space info once when space becomes available
+      }
+    }
+
+  } else {  // Perioic/Static mode
+    if (buffer_state->data_start == buffer_state->data_end) {
+      buffer_state->data_start = 0;  // Wrap around
+    }
   }
   return status;
 }

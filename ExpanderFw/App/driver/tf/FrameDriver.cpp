@@ -7,6 +7,7 @@
 
 #include "driver/tf/FrameDriver.hpp"
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
+#include "main.h"
 #include "util/Stopwatch.hpp"
 #include "util/debug.hpp"
 
@@ -90,8 +91,10 @@ void FrameDriver::receiveData(const uint8_t* data, size_t size) {
 TF_Result typeCallback(TinyFrame* /*tf*/, TF_Msg* msg) {
   DEBUG_INFO("=>I msg (type: %d, size: %d)", msg->type, msg->len);
 
+  HAL_GPIO_WritePin(GPIOA, REQUEST_RX_TP_Pin, GPIO_PIN_RESET);
   auto& tf_driver = driver::tf::FrameDriver::getInstance();
   tf_driver.callRxCallback(static_cast<TfMsgType>(msg->type), msg->data, msg->len);
+  HAL_GPIO_WritePin(GPIOA, REQUEST_RX_TP_Pin, GPIO_PIN_SET);
 
   return TF_STAY;
 }
