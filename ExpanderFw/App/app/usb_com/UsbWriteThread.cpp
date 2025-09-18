@@ -8,6 +8,7 @@
 #include "app/usb_com/UsbWriteThread.hpp"
 #include "driver/tf/FrameDriver.hpp"
 #include "etl/error_handler.h"  // etl::ETL_ASSERT()
+#include "main.h"
 #include "os/msg/msg_broker.hpp"
 #include "os/thread.hpp"
 #include "util/Stopwatch.hpp"
@@ -92,7 +93,9 @@ void UsbWriteThread::serviceUpstream(os::msg::BaseMsg* msg) {
   while (msg->cnt > 0) {
     DEBUG_INFO("Service upstream (not: %d, idx: %d, msg: %d)", msg_count_, msg->cnt, msg->type);
     stopwatch.start();
+    HAL_GPIO_WritePin(REQUEST_TX_TP_GPIO_Port, REQUEST_TX_TP_Pin, GPIO_PIN_SET);
     tf_driver.callTxCallback(msg->type, UsbWriteThread::usb_write_buffer_, UsbWriteThread::UsbWriteBufferSize);
+    HAL_GPIO_WritePin(REQUEST_TX_TP_GPIO_Port, REQUEST_TX_TP_Pin, GPIO_PIN_RESET);
     stopwatch.stop();
     DEBUG_INFO("Service upstream (not: %d, idx: %d, msg: %d, time: %d us) [OK]",  //
                msg_count_, msg->cnt, msg->type, stopwatch.time());
@@ -127,8 +130,10 @@ int32_t UsbWriteThread::postRequest_cb(const uint8_t* data, size_t size) {
   echo_data_ = const_cast<uint8_t*>(data);
   echo_size_ = size;
   auto& tf_driver = driver::tf::FrameDriver::getInstance();
+  HAL_GPIO_WritePin(REQUEST_TX_TP_GPIO_Port, REQUEST_TX_TP_Pin, GPIO_PIN_SET);
   tf_driver.callTxCallback(UsbWriteThread::ThreadTfMsgType, UsbWriteThread::usb_write_buffer_,
                            UsbWriteThread::UsbWriteBufferSize);
+  HAL_GPIO_WritePin(REQUEST_TX_TP_GPIO_Port, REQUEST_TX_TP_Pin, GPIO_PIN_RESET);
   return 0;
 }
 

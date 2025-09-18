@@ -61,6 +61,8 @@ void initPeripherals();
 #define TEST_POINT_GPIO_Port GPIOA
 #define DAC_SYNC_Pin GPIO_PIN_4
 #define DAC_SYNC_GPIO_Port GPIOA
+#define REQUEST_TX_TP_Pin GPIO_PIN_5
+#define REQUEST_TX_TP_GPIO_Port GPIOA
 #define REQUEST_RX_TP_Pin GPIO_PIN_7
 #define REQUEST_RX_TP_GPIO_Port GPIOA
 #define HW_VERSION_0_Pin GPIO_PIN_12

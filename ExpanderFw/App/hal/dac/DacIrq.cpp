@@ -149,6 +149,10 @@ void DacIrq::disableDacChannel(DacId dac_id) {
   }
 }
 
+bool DacIrq::isTimerRunning() const {
+  return timer_running_;
+}
+
 void DacIrq::timerExpired() {
   ETL_ASSERT(dac_ctrl_handle_ != nullptr, ETL_ERROR(0));
   ETL_ASSERT(enable_ratio_channel_ != nullptr, ETL_ERROR(0));

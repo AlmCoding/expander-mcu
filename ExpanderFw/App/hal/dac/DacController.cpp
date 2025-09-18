@@ -48,13 +48,11 @@ Status_t DacController::config(bool config_ch0, DacConfig::Mode mode_ch0, bool c
   if (config_ch0 == true) {
     DEBUG_INFO("Config (ch0) mode: %s", magic_enum::enum_name(mode_ch0).cbegin());
     mode_ch0_ = mode_ch0;
-    run_ch0_ = false;
   }
 
   if (config_ch1 == true) {
     DEBUG_INFO("Config (ch1) mode: %s", magic_enum::enum_name(mode_ch1).cbegin());
     mode_ch1_ = mode_ch1;
-    run_ch1_ = false;
   }
 
   if (status == Status_t::Ok) {
@@ -72,19 +70,19 @@ Status_t DacController::init(bool init_ch0, bool init_ch1) {
   Status_t status = Status_t::Ok;
 
   if (init_ch0 == true) {
-    std::memset(data_buffer_ch0_, 0, sizeof(data_buffer_ch0_));
+    DacIrq::getInstance().disableDacChannel(DacId::Dac0);
+    run_ch0_ = false;
     buffer_state_ch0_ = {};
     buffer_state_ch0_.space = DataBufferSize - 1;
     buffer_state_ch0_.status = BufferStatus::Ok;
-    run_ch0_ = false;
   }
 
   if (init_ch1 == true) {
-    std::memset(data_buffer_ch1_, 0, sizeof(data_buffer_ch1_));
+    DacIrq::getInstance().disableDacChannel(DacId::Dac1);
+    run_ch1_ = false;
     buffer_state_ch1_ = {};
     buffer_state_ch1_.space = DataBufferSize - 1;
     buffer_state_ch1_.status = BufferStatus::Ok;
-    run_ch1_ = false;
   }
 
   if (init_ch0 == true && init_ch1 == true) {
@@ -143,30 +141,42 @@ Status_t DacController::scheduleRequest(Request* request, Sample_t* data_ch0, Sa
   }
 
   DacUpdate dac_update;
+  bool timer_running = DacIrq::getInstance().isTimerRunning();
+
   if (request->run_ch0 == true) {
-    run_ch0_ = true;
     dac_update = (request->run_ch1 == true) ? DacUpdate::No : DacUpdate::Yes;
-    updateSample(DacId::Dac0, dac_update);
+
     if (mode_ch0_ == DacConfig::Mode::Static) {
-      buffer_state_ch0_ = {};
-      buffer_state_ch0_.space = DataBufferSize - 1;
-      buffer_state_ch0_.status = BufferStatus::Ok;
+      // TODO: hold timer interrupt for static mode (if ch1 is periodic/streaming)
+      updateSample(DacId::Dac0, dac_update);
+
     } else {
-      DacIrq::getInstance().enableDacChannel(DacId::Dac0);
+      if (run_ch0_ == false) {
+        if (timer_running == false) {
+          updateSample(DacId::Dac0, dac_update);
+        }
+        DacIrq::getInstance().enableDacChannel(DacId::Dac0);
+      }
     }
+    run_ch0_ = true;
   }
 
   if (request->run_ch1 == true) {
-    run_ch1_ = true;
     dac_update = (request->run_ch0 == true) ? DacUpdate::All : DacUpdate::Yes;
-    updateSample(DacId::Dac1, dac_update);
+
     if (mode_ch1_ == DacConfig::Mode::Static) {
-      buffer_state_ch1_ = {};
-      buffer_state_ch1_.space = DataBufferSize - 1;
-      buffer_state_ch1_.status = BufferStatus::Ok;
+      // TODO: hold timer interrupt for static mode (if ch0 is periodic/streaming)
+      updateSample(DacId::Dac1, dac_update);
+
     } else {
-      DacIrq::getInstance().enableDacChannel(DacId::Dac1);
+      if (run_ch1_ == false) {
+        if (timer_running == false) {
+          updateSample(DacId::Dac1, dac_update);
+        }
+        DacIrq::getInstance().enableDacChannel(DacId::Dac1);
+      }
     }
+    run_ch1_ = true;
   }
 
   // Set request status to complete
@@ -353,16 +363,16 @@ Status_t DacController::updateSample(DacId dac_id, DacUpdate dac_update) {
       buffer_state->status = BufferStatus::Underrun;
       notify_space_info_ = true;  // Notify space info on buffer underrun
       DacIrq::getInstance().disableDacChannel(dac_id);
-      DEBUG_ERROR("Buffer underrun (DacId: %d)", static_cast<int>(dac_id));
+      // DEBUG_ERROR("Buffer underrun (DacId: %d)", static_cast<int>(dac_id));
 
     } else {
-      if (buffer_state->status == BufferStatus::Full && buffer_state->space >= NotifySpaceThreshold) {
+      if (buffer_state->status == BufferStatus::Full && buffer_state->space > NotifySpaceThreshold) {
         buffer_state->status = BufferStatus::Ok;
         notify_space_info_ = true;  // Notify space info once when space becomes available
       }
     }
 
-  } else {  // Perioic/Static mode
+  } else {  // Periodic/Static mode
     if (buffer_state->data_start == buffer_state->data_end) {
       buffer_state->data_start = 0;  // Wrap around
     }

@@ -62,7 +62,6 @@ Status_t FrameDriver::registerRxCallback(TfMsgType type, RxCallback callback) {
     rx_callbacks_[static_cast<size_t>(type)] = callback;
     status = Status_t::Ok;
   }
-
   return status;
 }
 
@@ -91,10 +90,10 @@ void FrameDriver::receiveData(const uint8_t* data, size_t size) {
 TF_Result typeCallback(TinyFrame* /*tf*/, TF_Msg* msg) {
   DEBUG_INFO("=>I msg (type: %d, size: %d)", msg->type, msg->len);
 
-  HAL_GPIO_WritePin(GPIOA, REQUEST_RX_TP_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(REQUEST_RX_TP_GPIO_Port, REQUEST_RX_TP_Pin, GPIO_PIN_SET);
   auto& tf_driver = driver::tf::FrameDriver::getInstance();
   tf_driver.callRxCallback(static_cast<TfMsgType>(msg->type), msg->data, msg->len);
-  HAL_GPIO_WritePin(GPIOA, REQUEST_RX_TP_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(REQUEST_RX_TP_GPIO_Port, REQUEST_RX_TP_Pin, GPIO_PIN_RESET);
 
   return TF_STAY;
 }

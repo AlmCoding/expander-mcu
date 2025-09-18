@@ -18,10 +18,10 @@ namespace hal::dac {
 class DacController {
  private:
   constexpr static size_t RequestQueue_MaxItemCnt = 4;
-  constexpr static size_t DataBufferSize = 1024 + 1;  // +1 to distinguish between empty and full buffer
-  constexpr static size_t BufferFullThreshold = 64;   // Threshold buffer is full when space is below this value
-  constexpr static size_t NotifySpaceThreshold = 64;  // Threshold to notify space info when space is above this value
-  static_assert(BufferFullThreshold <= NotifySpaceThreshold,
+  constexpr static size_t DataBufferSize = 1024 + 1;   // +1 to distinguish between empty and full buffer
+  constexpr static size_t BufferFullThreshold = 64;    // Threshold buffer is full when space is below this value
+  constexpr static size_t NotifySpaceThreshold = 128;  // Threshold to notify space info when space is above this value
+  static_assert(BufferFullThreshold < NotifySpaceThreshold,
                 "BufferFullThreshold must be less than NotifySpaceThreshold!");
 
  public:

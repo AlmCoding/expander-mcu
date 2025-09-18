@@ -36,6 +36,7 @@ class DacIrq {
                   bool config_ch1 = true, uint32_t sampling_rate_ch1 = 1);
   void enableDacChannel(DacId dac_id);
   void disableDacChannel(DacId dac_id);
+  bool isTimerRunning() const;
   void timerExpired();
 
  private:
