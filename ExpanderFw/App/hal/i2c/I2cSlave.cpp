@@ -67,7 +67,7 @@ Status_t I2cSlave::init() {
   memset(temp_buffer_, 0, sizeof(temp_buffer_));
 
   mem_addr_width_ = MemAddrWidth::TwoByte;
-  mem_address_ = -1;
+  mem_address_ = 0;
 
   master_write_ongoing_ = false;
   master_read_ongoing_ = false;
@@ -300,7 +300,7 @@ void I2cSlave::readCompleteCb() {  // Master read, slave write
   }
 
   // Reset memory address
-  mem_address_ = -1;
+  mem_address_ = 0;
 }
 
 Status_t I2cSlave::notifyAccessRequest(RequestStatus status_code) {

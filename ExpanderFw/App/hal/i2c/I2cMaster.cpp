@@ -106,8 +106,7 @@ Status_t I2cMaster::scheduleRequest(Request* request, uint8_t* write_data, uint3
   }
 
   // Check for invalid write and read sizes
-  if ((request->write_size == 0 && request->read_size == 0) ||  //
-      (request->write_size > I2cRequestMaxWriteSize) || (request->read_size > I2cRequestMaxReadSize)) {
+  if ((request->write_size > I2cRequestMaxWriteSize) || (request->read_size > I2cRequestMaxReadSize)) {
     DEBUG_ERROR("Invalid request (req: %d)", request->request_id);
     request->status_code = RequestStatus::BadRequest;
     return exitScheduleRequest(request, seq_num);
@@ -333,29 +332,25 @@ Status_t I2cMaster::startRequest() {
     I2cIrq::getInstance().disableSlaveListen(i2c_handle_);
 
     // Request taken from queue
-    if ((request_.write_size > 0) && (request_.read_size == 0)) {
+    if (request_.read_size == 0) {
       // Write only
       transfer_state_ = TransferState::Write;
       status = startWrite();
 
-    } else if ((request_.read_size > 0) && (request_.write_size == 0)) {
+    } else if (request_.write_size == 0) {
       // Read only
       transfer_state_ = TransferState::Read;
       status = startRead();
       /*
-        } else if ((request_.read_size > 0) && (request_.write_size <= 2) && (sequence_state_.ongoing == false)) {
-          // Read register
-          transfer_state_ = TransferState::Write;
-          status = startReadReg();
+      } else if ((request_.read_size > 0) && (request_.write_size <= 2) && (sequence_state_.ongoing == false)) {
+        // Read register
+        transfer_state_ = TransferState::Write;
+        status = startReadReg();
       */
-    } else if ((request_.read_size > 0) && (request_.write_size > 0)) {
+    } else {
       // Write and read
       transfer_state_ = TransferState::Write;
       status = startWrite();
-
-    } else {
-      DEBUG_ERROR("Start request (req: %d) [FAILED]", request_.request_id);
-      status = Status_t::Error;
     }
   }
 
@@ -511,7 +506,9 @@ void I2cMaster::errorCb() {
     DEBUG_INFO("Byte NACK (idx: %d) by slave!", request_.nack_byte_idx);
 
   } else {
-    ETL_ASSERT(false, ETL_ERROR(0));
+    // ETL_ASSERT(false, ETL_ERROR(0));
+    complete(RequestStatus::SlaveBusy);
+    return;
   }
 
   complete(RequestStatus::SlaveNack);

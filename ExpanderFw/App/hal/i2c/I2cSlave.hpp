@@ -93,7 +93,7 @@ class I2cSlave {
   uint8_t temp_buffer_[TempBufferSize];
 
   MemAddrWidth mem_addr_width_ = MemAddrWidth::TwoByte;
-  int32_t mem_address_ = -1;
+  int32_t mem_address_ = 0;
 
   bool master_write_ongoing_ = false;
   bool master_read_ongoing_ = false;
