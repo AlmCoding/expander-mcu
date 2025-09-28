@@ -281,6 +281,9 @@ Status_t DacController::allocateBufferSection(BufferState* buffer_state, Sample_
   // Place data into space1 (end_to_back)
   std::memcpy(dest_data + buffer_state->data_end, src_data, size1 * sizeof(Sample_t));
   buffer_state->data_end += size1;
+  if (buffer_state->data_end >= DataBufferSize) {
+    buffer_state->data_end = 0;
+  }
 
   if (size2 > 0) {
     // Place remaining data into space2 (front_to_start)
@@ -353,9 +356,9 @@ Status_t DacController::updateSample(DacId dac_id, DacUpdate dac_update) {
   Sample_t sample = data_buffer[buffer_state->data_start];
   status = writeValue(dac_id, sample, dac_update);
   buffer_state->data_start++;
-  buffer_state->space++;
 
   if (mode == DacConfig::Mode::Streaming) {
+    buffer_state->space++;
     if (buffer_state->data_start == DataBufferSize) {
       buffer_state->data_start = 0;  // Wrap around
     }
@@ -372,11 +375,17 @@ Status_t DacController::updateSample(DacId dac_id, DacUpdate dac_update) {
       }
     }
 
-  } else {  // Periodic/Static mode
+  } else if (mode == DacConfig::Mode::Periodic) {
     if (buffer_state->data_start == buffer_state->data_end) {
       buffer_state->data_start = 0;  // Wrap around
     }
+  } else {  // Static mode
+    buffer_state->space++;
+    if (buffer_state->data_start == DataBufferSize) {
+      buffer_state->data_start = 0;  // Wrap around
+    }
   }
+
   return status;
 }
 
